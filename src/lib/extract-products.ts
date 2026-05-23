@@ -200,6 +200,7 @@ function extractSingleProduct(unit: RawSellingUnit): Product {
   const { isUnavailable, reason } = extractUnavailability(decorators);
   const badges = extractBadges(decorators);
   const priceRanges = parsePriceRanges(unit.price_ranges);
+  const { name, namePrefix } = extractDisplayNameParts(unit.name);
 
   // If there's a PRICE decorator with a higher value than display_price,
   // that's the original (pre-discount) price. If it's the same or lower,
@@ -208,8 +209,8 @@ function extractSingleProduct(unit: RawSellingUnit): Product {
 
   return {
     id: unit.id,
-    name: unit.name,
-    namePrefix: null,
+    name,
+    namePrefix,
     subtitle: null,
     brand: null,
     highlight: null,
@@ -225,4 +226,13 @@ function extractSingleProduct(unit: RawSellingUnit): Product {
     isUnavailable,
     unavailableReason: reason,
   };
+}
+
+function extractDisplayNameParts(rawName: string): { name: string; namePrefix: string | null } {
+  const bioMatch = rawName.match(/^bio\s+(.+)$/i);
+  if (bioMatch?.[1]) {
+    return { name: bioMatch[1], namePrefix: "Bio" };
+  }
+
+  return { name: rawName, namePrefix: null };
 }
