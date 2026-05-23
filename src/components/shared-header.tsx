@@ -193,6 +193,13 @@ export function SharedHeader({ bottomBar, cartBadgeOverride = null, onSearch }: 
           </div>
 
           <Link
+            href="/cookbook"
+            className="hover:text-foreground shrink-0 text-sm text-gray-500 transition-colors"
+          >
+            {t.cookbookNavLink}
+          </Link>
+
+          <Link
             href="/account/payment"
             className="hover:text-foreground shrink-0 text-sm text-gray-500 transition-colors"
           >
