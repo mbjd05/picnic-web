@@ -177,6 +177,9 @@ const translations = {
     cookbookLoadError: "Recepten konden niet worden geladen.",
     noRecipes: "Geen recepten gevonden.",
     cookingTimeMinutes: "min",
+    saveRecipe: "Recept opslaan",
+    unsaveRecipe: "Recept verwijderen uit opgeslagen recepten",
+    recipeSaveError: "Kan recept niet opslaan.",
 
     // Auth
     signOut: "Uitloggen",
@@ -394,6 +397,9 @@ const translations = {
     cookbookLoadError: "Rezepte konnten nicht geladen werden.",
     noRecipes: "Keine Rezepte gefunden.",
     cookingTimeMinutes: "Min.",
+    saveRecipe: "Rezept speichern",
+    unsaveRecipe: "Rezept aus gespeicherten Rezepten entfernen",
+    recipeSaveError: "Rezept konnte nicht gespeichert werden.",
 
     // Auth
     signOut: "Abmelden",

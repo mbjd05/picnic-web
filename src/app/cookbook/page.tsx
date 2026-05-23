@@ -36,6 +36,8 @@ export default function CookbookPage() {
   const [retryCount, setRetryCount] = useState(0);
   const [recipesState, setRecipesState] = useState<RecipesState>({ status: "loading" });
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [savedRecipeIds, setSavedRecipeIds] = useState<Set<string>>(() => new Set());
+  const [savingRecipeIds, setSavingRecipeIds] = useState<Set<string>>(() => new Set());
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   // Debounce search input
@@ -53,6 +55,21 @@ export default function CookbookPage() {
         setCategoryCounts(counts);
       })
       .catch(() => {});
+    return () => controller.abort();
+  }, []);
+
+  // Fetch saved recipe ids once so recipe cards can show their saved state.
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/cookbook?category=__saved__", { signal: controller.signal })
+      .then((res) => res.json())
+      .then((data: CookbookApiResponse & Partial<ApiErrorResponse>) => {
+        if ("error" in data && data.error) return;
+        setSavedRecipeIds(new Set((data.recipes ?? []).map((recipe) => recipe.id)));
+      })
+      .catch((err: unknown) => {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+      });
     return () => controller.abort();
   }, []);
 
@@ -81,6 +98,9 @@ export default function CookbookPage() {
         const recipes = Array.isArray(data.recipes) ? data.recipes : [];
         if (selectedCategory) {
           setCategoryCounts((prev) => ({ ...prev, [selectedCategory]: recipes.length }));
+        }
+        if (selectedCategory === "__saved__") {
+          setSavedRecipeIds(new Set(recipes.map((recipe) => recipe.id)));
         }
         setRecipesState({ status: "success", recipes });
       })
@@ -125,6 +145,62 @@ export default function CookbookPage() {
     setRecipesState({ status: "loading" });
     setVisibleCount(PAGE_SIZE);
   }, []);
+
+  const handleToggleSaved = useCallback(
+    async (recipe: RecipeItem) => {
+      const wasSaved = savedRecipeIds.has(recipe.id);
+      const nextSaved = !wasSaved;
+
+      setSavingRecipeIds((prev) => new Set(prev).add(recipe.id));
+      setSavedRecipeIds((prev) => {
+        const next = new Set(prev);
+        if (nextSaved) next.add(recipe.id);
+        else next.delete(recipe.id);
+        return next;
+      });
+      setCategoryCounts((prev) => ({
+        ...prev,
+        __saved__: Math.max(0, (prev.__saved__ ?? 0) + (nextSaved ? 1 : -1)),
+      }));
+
+      if (wasSaved && selectedCategory === "__saved__") {
+        setRecipesState((prev) =>
+          prev.status === "success"
+            ? { status: "success", recipes: prev.recipes.filter((item) => item.id !== recipe.id) }
+            : prev
+        );
+      }
+
+      try {
+        const response = await fetch(`/api/recipe/${encodeURIComponent(recipe.id)}/saved`, {
+          method: nextSaved ? "POST" : "DELETE",
+        });
+        const data = (await response.json()) as Partial<ApiErrorResponse>;
+        if (!response.ok || data.error) {
+          throw new Error(data.error ?? t.recipeSaveError);
+        }
+      } catch {
+        setSavedRecipeIds((prev) => {
+          const next = new Set(prev);
+          if (wasSaved) next.add(recipe.id);
+          else next.delete(recipe.id);
+          return next;
+        });
+        setCategoryCounts((prev) => ({
+          ...prev,
+          __saved__: Math.max(0, (prev.__saved__ ?? 0) + (nextSaved ? -1 : 1)),
+        }));
+        setRecipesState({ status: "error", message: t.recipeSaveError });
+      } finally {
+        setSavingRecipeIds((prev) => {
+          const next = new Set(prev);
+          next.delete(recipe.id);
+          return next;
+        });
+      }
+    },
+    [savedRecipeIds, selectedCategory, t.recipeSaveError]
+  );
 
   const visibleRecipes = allRecipes.slice(0, visibleCount);
 
@@ -186,7 +262,13 @@ export default function CookbookPage() {
           <>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
               {visibleRecipes.map((recipe) => (
-                <RecipeCard key={recipe.id} recipe={recipe} />
+                <RecipeCard
+                  key={recipe.id}
+                  recipe={recipe}
+                  isSaved={savedRecipeIds.has(recipe.id)}
+                  isSaving={savingRecipeIds.has(recipe.id)}
+                  onToggleSaved={handleToggleSaved}
+                />
               ))}
             </div>
 
