@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isApiAuthError } from "@/lib/api-error";
 import { readAuthToken, readCountryCode } from "@/lib/auth";
 import { extractProducts } from "@/lib/extract-products";
+import { getTranslations } from "@/lib/i18n";
 import { parseFusionSearchSections } from "@/lib/parse-fusion-search";
 import { buildPicnicClient } from "@/lib/picnic-client";
 import type { ApiErrorResponse, SearchApiResponse, SearchSection } from "@/lib/types";
@@ -39,6 +40,7 @@ export async function GET(
 
   try {
     const client = buildPicnicClient(token, countryCode);
+    const t = getTranslations(countryCode);
 
     const rawSellingUnits = (await client.catalog.search(query)) as RawSellingUnits;
     const orderedFallbackProducts = extractProducts(rawSellingUnits);
@@ -84,7 +86,7 @@ export async function GET(
 
     const sections: SearchSection[] = [
       {
-        title: `Zoekresultaten voor "${query}"`,
+        title: `${t.resultPlural} ${t.resultFor} "${query}"`,
         products,
       },
       ...parsedSections,

@@ -230,19 +230,16 @@ function SearchPage() {
       if (currentQ !== trimmed) {
         router.push(`/?q=${encodeURIComponent(trimmed)}`);
       }
+
       setSearchState({ status: "loading", query: trimmed });
+
       try {
-        const response = await fetch(`/api/search?q=${encodeURIComponent(trimmed)}`);
-        const data: SearchApiResponse | ApiErrorResponse = await response.json();
-        if ("error" in data) {
-          if ("code" in data && data.code === "TOKEN_EXPIRED") {
-            window.location.href = TOKEN_EXPIRED_REDIRECT;
-            return;
-          }
-          setSearchState({ status: "error", query: trimmed, message: data.error });
+        const result = await loadSearchResults(trimmed, t.searchError);
+        if (result.status === "error" && result.message === "TOKEN_EXPIRED") {
+          window.location.href = TOKEN_EXPIRED_REDIRECT;
           return;
         }
-        setSearchState({ status: "success", query: trimmed, products: data.products, sections: data.sections });
+        setSearchState(result);
       } catch {
         setSearchState({ status: "error", query: trimmed, message: t.searchError });
       }
