@@ -41,7 +41,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<AuthApiRe
     const client = buildPicnicClientAnonymous(countryCode);
     const result = await client.auth.login(email.trim(), password);
 
-    const authKey = result.authKey;
+    const authKey = result.authKey || client.authKey;
     if (!authKey) {
       return NextResponse.json({
         success: false,
@@ -52,7 +52,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<AuthApiRe
     if (result.second_factor_authentication_required) {
       // Trigger the 2FA SMS code, then return the partial token to the client
       // so it can be used in the /api/auth/verify-2fa step.
-      await client.auth.generate2FACode("SMS");
+      try {
+        await client.auth.generate2FACode("SMS");
+      } catch (error) {
+        if (!canContinueAfter2FAGenerationError(error)) {
+          return NextResponse.json({ success: false, error: "API_UNREACHABLE" });
+        }
+      }
       // Store the country cookie now so verify-2fa can read it.
       const response = NextResponse.json<AuthApiResponse>({
         success: false,
@@ -88,4 +94,16 @@ export async function POST(request: NextRequest): Promise<NextResponse<AuthApiRe
 
     return NextResponse.json({ success: false, error: "API_UNREACHABLE" });
   }
+}
+
+function canContinueAfter2FAGenerationError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+
+  const message = error.message.toLowerCase();
+  return (
+    message.includes("already") ||
+    message.includes("sent") ||
+    message.includes("required") ||
+    message.includes("2fa")
+  );
 }

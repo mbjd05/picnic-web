@@ -4,14 +4,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useTranslations } from "@/contexts/country-context";
 import { useDebounce } from "@/hooks/use-debounce";
+import { readJsonResponse } from "@/lib/client-fetch";
 import { TOKEN_EXPIRED_REDIRECT } from "@/lib/constants";
-import type { ApiErrorResponse, SearchSuggestion, SuggestionsApiResponse } from "@/lib/types";
+import type { SearchSuggestion, SuggestionsApiResponse } from "@/lib/types";
 import { DEBOUNCE_DELAY_MS, MIN_SUGGESTION_LENGTH } from "@/lib/types";
 
 import { SearchSuggestions } from "./search-suggestions";
 
 type SearchBarProps = {
-  onSearch: (query: string) => void;
+  onSearch?: (query: string) => void | Promise<void>;
   isLoading: boolean;
   initialQuery?: string;
 };
@@ -44,18 +45,15 @@ export function SearchBar({ onSearch, isLoading, initialQuery }: SearchBarProps)
         const url = `/api/suggestions?q=${encodeURIComponent(trimmedInput)}`;
         const response = await fetch(url, { signal: controller.signal });
 
-        if (!response.ok) {
-          if (response.status === 401) {
-            const data: ApiErrorResponse = await response.json();
-            if (data.code === "TOKEN_EXPIRED") {
-              window.location.href = TOKEN_EXPIRED_REDIRECT;
-              return;
-            }
+        const data = await readJsonResponse<SuggestionsApiResponse>(response, t.searchError);
+
+        if ("error" in data) {
+          if (data.code === "TOKEN_EXPIRED") {
+            window.location.href = TOKEN_EXPIRED_REDIRECT;
           }
           return;
         }
 
-        const data: SuggestionsApiResponse = await response.json();
         setRawSuggestions(data.suggestions);
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") {
@@ -70,7 +68,7 @@ export function SearchBar({ onSearch, isLoading, initialQuery }: SearchBarProps)
     return () => {
       controller.abort();
     };
-  }, [shouldFetch, trimmedInput]);
+  }, [shouldFetch, t.searchError, trimmedInput]);
 
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -93,7 +91,7 @@ export function SearchBar({ onSearch, isLoading, initialQuery }: SearchBarProps)
       if (trimmed === "") return;
 
       setShowSuggestions(false);
-      onSearch(trimmed);
+      if (onSearch) onSearch(trimmed);
     },
     [inputValue, onSearch]
   );
@@ -102,7 +100,7 @@ export function SearchBar({ onSearch, isLoading, initialQuery }: SearchBarProps)
     (suggestion: string) => {
       setInputValue(suggestion);
       setShowSuggestions(false);
-      onSearch(suggestion);
+      if (onSearch) onSearch(suggestion);
     },
     [onSearch]
   );

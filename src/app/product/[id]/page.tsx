@@ -20,8 +20,9 @@ import { SharedHeader } from "@/components/shared-header";
 import { CartProvider, useCart } from "@/contexts/cart-context";
 import { useTranslations } from "@/contexts/country-context";
 import { usePageTitle } from "@/hooks/use-page-title";
+import { readJsonResponse } from "@/lib/client-fetch";
 import { TOKEN_EXPIRED_MESSAGE, TOKEN_EXPIRED_REDIRECT } from "@/lib/constants";
-import type { ApiErrorResponse, ProductDetail } from "@/lib/types";
+import type { ProductDetail } from "@/lib/types";
 
 // ─── State ───────────────────────────────────────────────────────────────────
 
@@ -36,7 +37,10 @@ type ProductPageState =
 async function fetchProductDetail(productId: string): Promise<ProductPageState> {
   try {
     const response = await fetch(`/api/product/${encodeURIComponent(productId)}`);
-    const data: ProductDetail | ApiErrorResponse = await response.json();
+    const data = await readJsonResponse<ProductDetail>(
+      response,
+      "Er is iets misgegaan. Probeer het later opnieuw."
+    );
 
     if ("error" in data) {
       if ("code" in data && data.code === "TOKEN_EXPIRED") {

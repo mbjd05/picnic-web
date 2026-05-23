@@ -1,0 +1,324 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+
+import Link from "next/link";
+
+import { ErrorView } from "@/components/error-view";
+import { LoadingSpinner } from "@/components/loading-spinner";
+import { SharedHeader } from "@/components/shared-header";
+import { useTranslations } from "@/contexts/country-context";
+import { usePageTitle } from "@/hooks/use-page-title";
+import { isApiErrorResponse, readJsonResponse } from "@/lib/client-fetch";
+import { TOKEN_EXPIRED_MESSAGE, TOKEN_EXPIRED_REDIRECT } from "@/lib/constants";
+import {
+  getPaymentDisplayName,
+  getPreferredPaymentOption,
+} from "@/lib/payment";
+import type { PaymentBank, PaymentProfile } from "@/lib/types";
+
+const PAYMENT_BANK_STORAGE_KEY = "picnic_payment_option_banks";
+
+const IDEAL_BANKS: PaymentBank[] = [
+  { bank_id: "ABNANL2A", name: "ABN AMRO" },
+  { bank_id: "ASNBNL21", name: "ASN Bank" },
+  { bank_id: "BUNQNL2A", name: "bunq" },
+  { bank_id: "INGBNL2A", name: "ING" },
+  { bank_id: "KNABNL2H", name: "Knab" },
+  { bank_id: "RABONL2U", name: "Rabobank" },
+  { bank_id: "RBRBNL21", name: "RegioBank" },
+  { bank_id: "SNSBNL2A", name: "SNS" },
+  { bank_id: "TRIONL2U", name: "Triodos Bank" },
+  { bank_id: "FVLBNL22", name: "Van Lanschot" },
+  { bank_id: "REVOLT21", name: "Revolut" },
+  { bank_id: "NTSBDEB1", name: "N26" },
+  { bank_id: "NNBANL2G", name: "NN" },
+  { bank_id: "BITSNL2A", name: "Yoursafe" },
+  { bank_id: "ADYBNL2A", name: "Adyen" },
+  { bank_id: "FNOMNL22", name: "Finom" },
+  { bank_id: "BUUTNL2A", name: "BUUT" },
+];
+
+type PageState =
+  | { status: "loading" }
+  | { status: "success"; profile: PaymentProfile }
+  | { status: "error"; message: string };
+
+type StoredBankMetadata = Record<string, { bankId: string; bankName: string }>;
+
+async function fetchPaymentProfile(errorMessage: string): Promise<PageState> {
+  try {
+    const response = await fetch("/api/account/payment-profile");
+    const data = await readJsonResponse<PaymentProfile>(response, errorMessage);
+
+    if (isApiErrorResponse(data)) {
+      if (data.code === "TOKEN_EXPIRED") {
+        return { status: "error", message: TOKEN_EXPIRED_MESSAGE };
+      }
+      return { status: "error", message: data.error };
+    }
+
+    return { status: "success", profile: data };
+  } catch {
+    return { status: "error", message: errorMessage };
+  }
+}
+
+export default function PaymentAccountPage() {
+  const t = useTranslations();
+  usePageTitle(t.paymentMethodsPageTitle);
+
+  const [pageState, setPageState] = useState<PageState>({ status: "loading" });
+  const [selectedBank, setSelectedBank] = useState("");
+  const [storedBankMetadata, setStoredBankMetadata] = useState<StoredBankMetadata>({});
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const loadProfile = useCallback(() => {
+    setPageState({ status: "loading" });
+    fetchPaymentProfile(t.paymentProfileLoadError).then((result) => {
+      if (result.status === "error" && result.message === TOKEN_EXPIRED_MESSAGE) {
+        window.location.href = TOKEN_EXPIRED_REDIRECT;
+        return;
+      }
+      setPageState(result);
+    });
+  }, [t.paymentProfileLoadError]);
+
+  useEffect(() => {
+    try {
+      setStoredBankMetadata(
+        JSON.parse(localStorage.getItem(PAYMENT_BANK_STORAGE_KEY) ?? "{}") as StoredBankMetadata
+      );
+    } catch {
+      setStoredBankMetadata({});
+    }
+
+    let isCancelled = false;
+
+    fetchPaymentProfile(t.paymentProfileLoadError).then((result) => {
+      if (isCancelled) return;
+      if (result.status === "error" && result.message === TOKEN_EXPIRED_MESSAGE) {
+        window.location.href = TOKEN_EXPIRED_REDIRECT;
+        return;
+      }
+      setPageState(result);
+    });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [t.paymentProfileLoadError]);
+
+  const profile = pageState.status === "success" ? pageState.profile : null;
+  const preferredOption = profile ? getPreferredPaymentOption(profile) : null;
+  const idealMethod = useMemo(
+    () =>
+      profile?.available_payment_methods?.find((method) => method.payment_method === "IDEAL") ?? {
+        payment_method: "IDEAL",
+        available_banks: IDEAL_BANKS,
+      },
+    [profile]
+  );
+  const activeSelectedMethod = "IDEAL";
+  const selectedBanks = idealMethod.available_banks ?? IDEAL_BANKS;
+  const isSelectedBankValid = selectedBanks.some((bank) => bank.bank_id === selectedBank);
+  const activeSelectedBank = isSelectedBankValid
+    ? selectedBank
+    : selectedBanks[0]?.bank_id || "";
+
+  async function handleSavePaymentOption() {
+    if (!activeSelectedMethod) return;
+
+    setIsSaving(true);
+    setActionError(null);
+
+    try {
+      const response = await fetch("/api/account/payment-profile/payment-options", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          paymentMethod: activeSelectedMethod,
+          bankId: activeSelectedBank || null,
+        }),
+      });
+      const data = await readJsonResponse<PaymentProfile>(response, t.paymentOptionSaveError);
+
+      if (isApiErrorResponse(data)) {
+        setActionError(data.error);
+        return;
+      }
+
+      const previousIds = new Set(profile?.stored_payment_options?.map((option) => option.id));
+      const createdOption =
+        data.stored_payment_options?.find((option) => !previousIds.has(option.id)) ??
+        data.stored_payment_options?.find(
+          (option) => option.id === data.preferred_payment_option_id
+        );
+      const selectedBankName = selectedBanks.find(
+        (bank) => bank.bank_id === activeSelectedBank
+      )?.name;
+
+      if (createdOption && activeSelectedBank && selectedBankName) {
+        const nextMetadata = {
+          [createdOption.id]: {
+            bankId: activeSelectedBank,
+            bankName: selectedBankName,
+          },
+        };
+        setStoredBankMetadata(nextMetadata);
+        localStorage.setItem(PAYMENT_BANK_STORAGE_KEY, JSON.stringify(nextMetadata));
+      }
+
+      setPageState({ status: "success", profile: data });
+    } catch {
+      setActionError(t.paymentOptionSaveError);
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleRemovePaymentOption(paymentOptionId: string) {
+    setIsSaving(true);
+    setActionError(null);
+
+    try {
+      const response = await fetch(
+        `/api/account/payment-profile/payment-options/${encodeURIComponent(paymentOptionId)}`,
+        { method: "DELETE" }
+      );
+      const data = await readJsonResponse<PaymentProfile>(response, t.paymentOptionRemoveError);
+
+      if (isApiErrorResponse(data)) {
+        setActionError(data.error);
+        return;
+      }
+
+      const { [paymentOptionId]: _removed, ...nextMetadata } = storedBankMetadata;
+      void _removed;
+      setStoredBankMetadata(nextMetadata);
+      localStorage.setItem(PAYMENT_BANK_STORAGE_KEY, JSON.stringify(nextMetadata));
+      setPageState({ status: "success", profile: data });
+    } catch {
+      setActionError(t.paymentOptionRemoveError);
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  return (
+    <div className="flex min-h-full flex-1 flex-col">
+      <SharedHeader />
+
+      <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-8">
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-foreground text-2xl font-bold">{t.paymentMethodsPageTitle}</h1>
+            <p className="mt-1 text-sm text-gray-500">{t.paymentMethodsPageSubtitle}</p>
+          </div>
+          <Link href="/cart" className="text-picnic-red text-sm font-semibold">
+            {t.backToCart}
+          </Link>
+        </div>
+
+        {pageState.status === "loading" && <LoadingSpinner />}
+        {pageState.status === "error" && (
+          <ErrorView message={pageState.message} onRetry={loadProfile} />
+        )}
+        {pageState.status === "success" && profile && (
+          <div className="space-y-6">
+            <section className="border-card-border rounded-xl border bg-white p-4">
+              <h2 className="text-base font-semibold text-gray-900">{t.preferredPaymentMethod}</h2>
+              <p className="mt-2 text-sm text-gray-600">
+                {preferredOption?.display_name ?? t.noPreferredPaymentMethod}
+              </p>
+            </section>
+
+            <section className="border-card-border rounded-xl border bg-white p-4">
+              <h2 className="text-base font-semibold text-gray-900">{t.addPaymentMethod}</h2>
+              <p className="mt-2 text-sm text-gray-600">{t.addPaymentMethodEffectNote}</p>
+              {selectedBanks.length ? (
+                <div className="mt-4 space-y-4">
+                  <div className="block text-sm font-medium text-gray-700">
+                    {t.paymentMethodTitle}
+                    <div className="border-input-border mt-1 rounded-lg border bg-gray-50 px-3 py-2 text-sm font-normal text-gray-900">
+                      {getPaymentDisplayName(profile, "IDEAL")}
+                    </div>
+                  </div>
+
+                  <label className="block text-sm font-medium text-gray-700">
+                    {t.paymentBankLabel}
+                    <select
+                      value={activeSelectedBank}
+                      onChange={(event) => setSelectedBank(event.target.value)}
+                      className="border-input-border mt-1 block w-full rounded-lg border bg-white px-3 py-2 text-sm"
+                    >
+                      {selectedBanks.map((bank) => (
+                        <option key={bank.bank_id} value={bank.bank_id}>
+                          {bank.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={handleSavePaymentOption}
+                    disabled={isSaving || !activeSelectedMethod}
+                    className="bg-picnic-red rounded-lg px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+                  >
+                    {isSaving ? t.savingPaymentMethod : t.addAndUsePaymentMethod}
+                  </button>
+                </div>
+              ) : (
+                <p className="mt-2 text-sm text-gray-600">{t.noAvailablePaymentMethods}</p>
+              )}
+            </section>
+
+            <section className="border-card-border rounded-xl border bg-white p-4">
+              <h2 className="text-base font-semibold text-gray-900">{t.storedPaymentMethods}</h2>
+              {profile.stored_payment_options?.length ? (
+                <div className="mt-3 divide-y divide-gray-100">
+                  {profile.stored_payment_options.slice(0, 1).map((option) => (
+                    <div
+                      key={option.id}
+                      className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          {option.display_name ?? option.payment_method}
+                        </p>
+                        <p className="mt-1 text-xs text-gray-500">
+                          {storedBankMetadata[option.id]?.bankName ??
+                            option.account ??
+                            option.brand ??
+                            t.paymentBankUnknown}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePaymentOption(option.id)}
+                        disabled={isSaving}
+                        className="text-sm font-semibold text-red-600 disabled:text-gray-400"
+                      >
+                        {t.removePaymentMethod}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-2 text-sm text-gray-600">{t.noStoredPaymentMethods}</p>
+              )}
+            </section>
+
+            {actionError && (
+              <p className="text-sm text-red-600" role="alert">
+                {actionError}
+              </p>
+            )}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}

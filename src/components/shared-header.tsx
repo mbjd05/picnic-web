@@ -70,6 +70,7 @@ type SharedHeaderProps = {
     totalPrice: number;
     totalCount: number;
   } | null;
+  onSearch?: (query: string) => void | Promise<void>;
 };
 
 /**
@@ -78,7 +79,7 @@ type SharedHeaderProps = {
  * Fetches /api/cart on mount and shows a price badge on the cart icon.
  * Badge is hidden while loading, on error, or when the cart is empty.
  */
-export function SharedHeader({ bottomBar, cartBadgeOverride = null }: SharedHeaderProps) {
+export function SharedHeader({ bottomBar, cartBadgeOverride = null, onSearch }: SharedHeaderProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const urlQuery = searchParams.get("q") ?? "";
@@ -136,12 +137,7 @@ export function SharedHeader({ bottomBar, cartBadgeOverride = null }: SharedHead
           }
       : fetchedState;
 
-  const handleSearch = useCallback(
-    (query: string) => {
-      router.push(`/?q=${encodeURIComponent(query)}`);
-    },
-    [router]
-  );
+
 
   const countryCode = useCountryCode();
   const switchCountry = useSwitchCountry();
@@ -152,8 +148,13 @@ export function SharedHeader({ bottomBar, cartBadgeOverride = null }: SharedHead
     window.location.href = "/login";
   }, []);
 
+  // Fallback: if no onSearch is provided, default to URL push
+  const defaultSearch = useCallback((query: string) => {
+    router.push(`/?q=${encodeURIComponent(query)}`);
+  }, [router]);
+
   return (
-    <header className="border-card-border sticky top-0 z-20 border-b bg-white/95 backdrop-blur-sm">
+    <header className="border-card-border sticky top-0 z-50 border-b bg-white/95 backdrop-blur-sm">
       <div className="mx-auto flex max-w-7xl items-center gap-4 px-6 py-2">
         {/* Logo */}
         <Link
@@ -168,7 +169,7 @@ export function SharedHeader({ bottomBar, cartBadgeOverride = null }: SharedHead
         <div className="flex flex-1 items-center gap-4">
           <SearchBar
             key={urlQuery}
-            onSearch={handleSearch}
+            onSearch={onSearch ?? defaultSearch}
             isLoading={false}
             initialQuery={urlQuery}
           />
@@ -190,6 +191,13 @@ export function SharedHeader({ bottomBar, cartBadgeOverride = null }: SharedHead
               </button>
             ))}
           </div>
+
+          <Link
+            href="/account/payment"
+            className="hover:text-foreground shrink-0 text-sm text-gray-500 transition-colors"
+          >
+            {t.accountPaymentLink}
+          </Link>
 
           <button
             type="button"

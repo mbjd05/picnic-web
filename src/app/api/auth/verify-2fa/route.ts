@@ -31,7 +31,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<AuthApiRe
     const client = buildPicnicClient(partialToken, countryCode);
     const result = await client.auth.verify2FACode(code.trim());
 
-    const authKey = result.authKey;
+    const authKey = result.authKey || client.authKey;
     if (!authKey) {
       return NextResponse.json({
         success: false,

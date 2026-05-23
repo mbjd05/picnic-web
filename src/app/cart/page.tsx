@@ -10,22 +10,24 @@ import { LoadingSpinner } from "@/components/loading-spinner";
 import { SharedHeader } from "@/components/shared-header";
 import { useTranslations } from "@/contexts/country-context";
 import { usePageTitle } from "@/hooks/use-page-title";
+import { isApiErrorResponse, readJsonResponse } from "@/lib/client-fetch";
 import { TOKEN_EXPIRED_MESSAGE, TOKEN_EXPIRED_REDIRECT } from "@/lib/constants";
-import { createMutationQueue } from "@/lib/mutation-queue";
-import type { ApiErrorResponse, CartData } from "@/lib/types";
+import type { CartData } from "@/lib/types";
 
 type CartPageState =
   | { status: "loading" }
-  | { status: "success"; cart: CartData }
+  | { status: "success"; cart: CartData; isReconciling?: boolean }
   | { status: "empty" }
   | { status: "error"; message: string };
+
+const CART_MUTATION_DEBOUNCE_MS = 220;
 
 async function fetchCart(loadErrorMessage: string): Promise<CartPageState> {
   try {
     const response = await fetch("/api/cart");
-    const data: CartData | ApiErrorResponse = await response.json();
+    const data = await readJsonResponse<CartData>(response, loadErrorMessage);
 
-    if ("error" in data) {
+    if (isApiErrorResponse(data)) {
       if ("code" in data && data.code === "TOKEN_EXPIRED") {
         return { status: "error", message: TOKEN_EXPIRED_MESSAGE };
       }
@@ -42,16 +44,20 @@ async function fetchCart(loadErrorMessage: string): Promise<CartPageState> {
   }
 }
 
-async function postCartMutation(productId: string, action: "add" | "remove"): Promise<CartData> {
+async function postCartMutation(
+  productId: string,
+  action: "add" | "remove",
+  count = 1
+): Promise<CartData> {
   const response = await fetch("/api/cart", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ productId, action, count: 1 }),
+    body: JSON.stringify({ productId, action, count }),
   });
 
-  const data = await response.json();
-  if (!response.ok || "error" in data) {
-    throw new Error(data.error ?? "Cart mutation failed");
+  const data = await readJsonResponse<CartData>(response, "Cart mutation failed");
+  if (isApiErrorResponse(data)) {
+    throw new Error(data.error);
   }
 
   return data as CartData;
@@ -68,7 +74,14 @@ export default function CartPage() {
   const [isPickerOpen, setIsPickerOpen] = useState(false);
 
   const confirmedCartRef = useRef<CartData | null>(null);
-  const queueRef = useRef<ReturnType<typeof createMutationQueue<CartData>> | null>(null);
+  const pendingDeltasRef = useRef(new Map<string, number>());
+  const pendingTimersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const pendingRequestCountRef = useRef(0);
+
+  const hasPendingCartMutations = useCallback(
+    () => pendingDeltasRef.current.size > 0 || pendingTimersRef.current.size > 0 || pendingRequestCountRef.current > 0,
+    []
+  );
 
   const reconcileFromServer = useCallback((cart: CartData) => {
     confirmedCartRef.current = cart;
@@ -76,10 +89,10 @@ export default function CartPage() {
       setPageState({ status: "empty" });
       return;
     }
-    setPageState({ status: "success", cart });
+    setPageState({ status: "success", cart, isReconciling: false });
   }, []);
 
-  const rollbackProduct = useCallback((productId: string) => {
+  const rollbackProduct = useCallback(() => {
     const confirmed = confirmedCartRef.current;
     if (!confirmed) return;
 
@@ -88,28 +101,8 @@ export default function CartPage() {
       return;
     }
 
-    setPageState((prev) => {
-      if (prev.status !== "success") return prev;
-      if (!prev.cart.items.some((item) => item.productId === productId)) {
-        return prev;
-      }
-      return { status: "success", cart: confirmed };
-    });
+    setPageState({ status: "success", cart: confirmed, isReconciling: false });
   }, []);
-
-  useEffect(() => {
-    queueRef.current = createMutationQueue<CartData>((productId, result, error) => {
-      if (error) {
-        rollbackProduct(productId);
-        setToastMessage(cartMutationErrorRef.current);
-        return;
-      }
-
-      if (result) {
-        reconcileFromServer(result);
-      }
-    });
-  }, [reconcileFromServer, rollbackProduct]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -139,8 +132,74 @@ export default function CartPage() {
     setRetryCount((count) => count + 1);
   }, []);
 
-  const enqueueMutation = useCallback((productId: string, action: "add" | "remove") => {
-    queueRef.current?.enqueue(productId, () => postCartMutation(productId, action));
+  const flushProductDelta = useCallback(
+    async (productId: string) => {
+      const delta = pendingDeltasRef.current.get(productId) ?? 0;
+      pendingDeltasRef.current.delete(productId);
+      pendingTimersRef.current.delete(productId);
+
+      if (delta === 0) {
+        if (!hasPendingCartMutations()) {
+          setPageState((prev) =>
+            prev.status === "success" ? { ...prev, isReconciling: false } : prev
+          );
+        }
+        return;
+      }
+
+      pendingRequestCountRef.current += 1;
+
+      let result: CartData | null = null;
+
+      try {
+        result = await postCartMutation(
+          productId,
+          delta > 0 ? "add" : "remove",
+          Math.abs(delta)
+        );
+        confirmedCartRef.current = result;
+      } catch {
+        rollbackProduct();
+        setToastMessage(cartMutationErrorRef.current);
+      } finally {
+        pendingRequestCountRef.current -= 1;
+        if (result && !hasPendingCartMutations()) {
+          reconcileFromServer(result);
+        }
+      }
+    },
+    [hasPendingCartMutations, reconcileFromServer, rollbackProduct]
+  );
+
+  const enqueueDelta = useCallback(
+    (productId: string, delta: number) => {
+      const nextDelta = (pendingDeltasRef.current.get(productId) ?? 0) + delta;
+      pendingDeltasRef.current.set(productId, nextDelta);
+
+      const existingTimer = pendingTimersRef.current.get(productId);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+      }
+
+      const timer = setTimeout(() => {
+        void flushProductDelta(productId);
+      }, CART_MUTATION_DEBOUNCE_MS);
+
+      pendingTimersRef.current.set(productId, timer);
+    },
+    [flushProductDelta]
+  );
+
+  useEffect(() => {
+    const timers = pendingTimersRef.current;
+    const deltas = pendingDeltasRef.current;
+    return () => {
+      for (const timer of timers.values()) {
+        clearTimeout(timer);
+      }
+      timers.clear();
+      deltas.clear();
+    };
   }, []);
 
   const handleIncrement = useCallback(
@@ -157,6 +216,7 @@ export default function CartPage() {
 
         return {
           status: "success",
+          isReconciling: true,
           cart: {
             ...prev.cart,
             totalCount: prev.cart.totalCount + 1,
@@ -167,9 +227,9 @@ export default function CartPage() {
         };
       });
 
-      enqueueMutation(productId, "add");
+      enqueueDelta(productId, 1);
     },
-    [enqueueMutation, pageState]
+    [enqueueDelta, pageState]
   );
 
   const handleDecrement = useCallback(
@@ -201,6 +261,7 @@ export default function CartPage() {
 
         return {
           status: "success",
+          isReconciling: true,
           cart: {
             ...prev.cart,
             totalCount: nextCount,
@@ -209,9 +270,45 @@ export default function CartPage() {
         };
       });
 
-      enqueueMutation(productId, "remove");
+      enqueueDelta(productId, -1);
     },
-    [enqueueMutation, pageState]
+    [enqueueDelta, pageState]
+  );
+
+  const handleRemoveAll = useCallback(
+    (productId: string) => {
+      const current = pageState;
+      if (current.status !== "success") return;
+      const item = current.cart.items.find((line) => line.productId === productId);
+      if (!item || item.isUnavailable || item.quantity <= 0) return;
+
+      setPageState((prev) => {
+        if (prev.status !== "success") return prev;
+
+        const prevItem = prev.cart.items.find((line) => line.productId === productId);
+        if (!prevItem || prevItem.quantity <= 0) return prev;
+
+        const nextItems = prev.cart.items.filter((line) => line.productId !== productId);
+        const nextCount = Math.max(0, prev.cart.totalCount - prevItem.quantity);
+
+        if (nextCount === 0 || nextItems.length === 0) {
+          return { status: "empty" };
+        }
+
+        return {
+          status: "success",
+          isReconciling: true,
+          cart: {
+            ...prev.cart,
+            totalCount: nextCount,
+            items: nextItems,
+          },
+        };
+      });
+
+      enqueueDelta(productId, -item.quantity);
+    },
+    [enqueueDelta, pageState]
   );
 
   const cartBadgeOverride =
@@ -237,8 +334,10 @@ export default function CartPage() {
         {pageState.status === "success" && (
           <CartPageContent
             cart={pageState.cart}
+            isReconciling={pageState.isReconciling ?? false}
             onIncrement={handleIncrement}
             onDecrement={handleDecrement}
+            onRemoveAll={handleRemoveAll}
             onOpenPicker={() => setIsPickerOpen(true)}
           />
         )}

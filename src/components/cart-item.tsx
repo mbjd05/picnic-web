@@ -9,7 +9,7 @@ import { Badge } from "@/components/badge";
 import { PriceDisplay } from "@/components/price-display";
 import { QuantityStepper } from "@/components/quantity-stepper";
 import { UnavailableOverlay } from "@/components/unavailable-product";
-import { useCountryCode } from "@/contexts/country-context";
+import { useCountryCode, useTranslations } from "@/contexts/country-context";
 import { buildImageUrl } from "@/lib/image-url";
 import type { CartItem } from "@/lib/types";
 
@@ -17,6 +17,7 @@ type CartItemCardProps = {
   item: CartItem;
   onIncrement?: () => void;
   onDecrement?: () => void;
+  onRemoveAll?: () => void;
 };
 
 /**
@@ -25,8 +26,9 @@ type CartItemCardProps = {
  * The main content links to the product detail page.
  * When unavailable, applies a visual distinction and renders UnavailableOverlay.
  */
-export function CartItemCard({ item, onIncrement, onDecrement }: CartItemCardProps) {
+export function CartItemCard({ item, onIncrement, onDecrement, onRemoveAll }: CartItemCardProps) {
   const countryCode = useCountryCode();
+  const t = useTranslations();
   const [imgError, setImgError] = useState(false);
   const imageSrc =
     imgError || !item.imageId
@@ -71,15 +73,26 @@ export function CartItemCard({ item, onIncrement, onDecrement }: CartItemCardPro
         </Link>
 
         {/* Quantity + price (hidden for unavailable items) */}
-        {!item.isUnavailable && onIncrement && onDecrement && (
+        {!item.isUnavailable && onIncrement && onDecrement && onRemoveAll && (
           <div className="flex shrink-0 flex-col items-end justify-center gap-1">
-            <QuantityStepper
-              variant="cart"
-              quantity={item.quantity}
-              maxCount={item.maxCount}
-              onIncrement={onIncrement}
-              onDecrement={onDecrement}
-            />
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={onRemoveAll}
+                className="text-picnic-red flex h-8 w-8 items-center justify-center rounded-full bg-red-50 text-lg leading-none font-semibold transition-colors hover:bg-red-100 active:opacity-70"
+                aria-label={`${t.removeItemAriaLabel}: ${item.name}`}
+                title={t.removeItemAriaLabel}
+              >
+                &times;
+              </button>
+              <QuantityStepper
+                variant="cart"
+                quantity={item.quantity}
+                maxCount={item.maxCount}
+                onIncrement={onIncrement}
+                onDecrement={onDecrement}
+              />
+            </div>
             <PriceDisplay displayPrice={item.displayPrice} originalPrice={item.originalPrice} />
           </div>
         )}

@@ -12,8 +12,9 @@ import { SharedHeader } from "@/components/shared-header";
 import { CartProvider } from "@/contexts/cart-context";
 import { useTranslations } from "@/contexts/country-context";
 import { usePageTitle } from "@/hooks/use-page-title";
+import { isApiErrorResponse, readJsonResponse } from "@/lib/client-fetch";
 import { TOKEN_EXPIRED_REDIRECT } from "@/lib/constants";
-import type { ApiErrorResponse, CategoryProductsApiResponse } from "@/lib/types";
+import type { CategoryProductsApiResponse } from "@/lib/types";
 
 export default function ShortcutProductsPage() {
   const t = useTranslations();
@@ -43,9 +44,9 @@ export default function ShortcutProductsPage() {
     const controller = new AbortController();
 
     fetch(`/api/pages/products?pageId=${encodeURIComponent(pageId)}`, { signal: controller.signal })
-      .then((res) => res.json())
-      .then((data: CategoryProductsApiResponse & Partial<ApiErrorResponse>) => {
-        if ("error" in data && data.error) {
+      .then((res) => readJsonResponse<CategoryProductsApiResponse>(res, t.productsLoadError))
+      .then((data) => {
+        if (isApiErrorResponse(data)) {
           if (data.code === "TOKEN_EXPIRED") {
             window.location.href = TOKEN_EXPIRED_REDIRECT;
             return;

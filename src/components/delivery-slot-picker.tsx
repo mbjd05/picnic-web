@@ -19,8 +19,9 @@ import {
   getAllSlots,
 } from "@/components/slot-picker-parts";
 import { useTranslations } from "@/contexts/country-context";
+import { readJsonResponse } from "@/lib/client-fetch";
 import type { DeliverySlotPickerData } from "@/lib/delivery-slot-types";
-import type { ApiErrorResponse, CartData } from "@/lib/types";
+import type { CartData } from "@/lib/types";
 
 // ─── Props & state ───────────────────────────────────────────────────────────
 
@@ -39,7 +40,10 @@ type PickerState =
 
 async function fetchSlots(): Promise<DeliverySlotPickerData> {
   const res = await fetch("/api/cart/delivery-slots");
-  const data: DeliverySlotPickerData | ApiErrorResponse = await res.json();
+  const data = await readJsonResponse<DeliverySlotPickerData>(
+    res,
+    "Kan bezorgmomenten niet laden."
+  );
   if ("error" in data) throw new Error(data.error);
   return data;
 }
@@ -50,7 +54,7 @@ async function selectSlot(slotId: string): Promise<CartData> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ slotId }),
   });
-  const data: CartData | ApiErrorResponse = await res.json();
+  const data = await readJsonResponse<CartData>(res, "Kan bezorgmoment niet kiezen.");
   if ("error" in data) throw new Error(data.error);
   return data;
 }

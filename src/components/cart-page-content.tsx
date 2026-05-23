@@ -33,13 +33,17 @@ export function EmptyView() {
 
 export function CartPageContent({
   cart,
+  isReconciling,
   onIncrement,
   onDecrement,
+  onRemoveAll,
   onOpenPicker,
 }: {
   cart: CartData;
+  isReconciling: boolean;
   onIncrement: (productId: string) => void;
   onDecrement: (productId: string) => void;
+  onRemoveAll: (productId: string) => void;
   onOpenPicker: () => void;
 }) {
   const t = useTranslations();
@@ -60,6 +64,7 @@ export function CartPageContent({
             item={item}
             onIncrement={item.isUnavailable ? undefined : () => onIncrement(item.productId)}
             onDecrement={item.isUnavailable ? undefined : () => onDecrement(item.productId)}
+            onRemoveAll={item.isUnavailable ? undefined : () => onRemoveAll(item.productId)}
           />
         ))}
       </div>
@@ -73,11 +78,12 @@ export function CartPageContent({
         membershipSavings={cart.membershipSavings}
         fees={cart.fees}
         minimumOrderValue={cart.minimumOrderValue}
+        isUpdating={isReconciling}
       />
 
       <ProductSlider title={t.nothingForgotten} products={cart.suggestions} />
 
-      <CheckoutCta />
+      <CheckoutCta totalPrice={cart.totalPrice} minimumOrderValue={cart.minimumOrderValue} />
     </div>
   );
 }

@@ -2,16 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { isApiAuthError } from "@/lib/api-error";
 import { readAuthToken, readCountryCode } from "@/lib/auth";
+import { extractProducts } from "@/lib/extract-products";
 import { parseFusionSearchSections } from "@/lib/parse-fusion-search";
 import { buildPicnicClient } from "@/lib/picnic-client";
-import type { ApiErrorResponse, SearchApiResponse } from "@/lib/types";
+import type { ApiErrorResponse, SearchApiResponse, SearchSection } from "@/lib/types";
+
+type RawSellingUnits = Parameters<typeof extractProducts>[0];
 
 /**
  * GET /api/search?q=<query>
  *
  * Searches the Picnic catalog and returns transformed Product[].
- * Uses the raw Fusion page response to extract full product metadata
- * (promotions, size labels, Bio prefix, unavailability) from the PML structure.
+ *
+ * catalog.search() is used as the source of truth for search relevance/order.
+ * The raw Fusion page is still parsed so Picnic's secondary sections, such as
+ * "Bekijk ook", remain available to the UI.
  */
 export async function GET(
   request: NextRequest
@@ -26,7 +31,6 @@ export async function GET(
   }
 
   const countryCode = readCountryCode(request);
-
   const query = request.nextUrl.searchParams.get("q")?.trim() ?? "";
 
   if (query === "") {
@@ -36,28 +40,61 @@ export async function GET(
   try {
     const client = buildPicnicClient(token, countryCode);
 
-    // Fetch the raw Fusion page to access the full PML structure.
-    // The picnic-api catalog.search() method loses PML-embedded metadata
-    // because it only extracts $..sellingUnit via JSONPath.
-    const rawPage = await (
-      client as unknown as {
-        sendRequest: (
-          method: string,
-          path: string,
-          body: null,
-          includeFusion: boolean
-        ) => Promise<unknown>;
-      }
-    ).sendRequest(
-      "GET",
-      `/pages/search-page-results?search_term=${encodeURIComponent(query)}`,
-      null,
-      true
+    const rawSellingUnits = (await client.catalog.search(query)) as RawSellingUnits;
+    const orderedFallbackProducts = extractProducts(rawSellingUnits);
+
+    let parsedSections: SearchSection[] = [];
+    let enrichedProductsById = new Map(
+      orderedFallbackProducts.map((product) => [product.id, product])
     );
 
-    const { products, sections } = parseFusionSearchSections(rawPage);
+    try {
+      const rawPage = await (
+        client as unknown as {
+          sendRequest: (
+            method: string,
+            path: string,
+            body: null,
+            includeFusion: boolean
+          ) => Promise<unknown>;
+        }
+      ).sendRequest(
+        "GET",
+        `/pages/search-page-results?search_term=${encodeURIComponent(query)}`,
+        null,
+        true
+      );
 
-    return NextResponse.json({ products, sections, query });
+      const { products: parsedProducts, sections } = parseFusionSearchSections(rawPage);
+
+      parsedSections = sections;
+      enrichedProductsById = new Map([
+        ...orderedFallbackProducts.map((product) => [product.id, product] as const),
+        ...parsedProducts.map((product) => [product.id, product] as const),
+      ]);
+    } catch (metadataError) {
+      const message =
+        metadataError instanceof Error ? metadataError.message : "Unknown metadata parse error";
+      console.warn("[/api/search] Falling back to catalog.search() product metadata:", message);
+    }
+
+    const products = orderedFallbackProducts.map(
+      (product) => enrichedProductsById.get(product.id) ?? product
+    );
+
+    const sections: SearchSection[] = [
+      {
+        title: `Zoekresultaten voor "${query}"`,
+        products,
+      },
+      ...parsedSections,
+    ];
+
+    return NextResponse.json({
+      products,
+      sections,
+      query,
+    });
   } catch (error) {
     if (isApiAuthError(error)) {
       return NextResponse.json(

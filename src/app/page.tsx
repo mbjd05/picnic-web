@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -16,6 +16,7 @@ import { CartProvider } from "@/contexts/cart-context";
 import { useTranslations } from "@/contexts/country-context";
 import { usePageTitle } from "@/hooks/use-page-title";
 import type { CategoryItem, ShortcutItem } from "@/lib/category-types";
+import { isApiErrorResponse, readJsonResponse } from "@/lib/client-fetch";
 import { TOKEN_EXPIRED_REDIRECT } from "@/lib/constants";
 import { parsePageIdFromDeepLink } from "@/lib/parse-deep-link";
 import type { ApiErrorResponse, Product, SearchApiResponse, SearchSection } from "@/lib/types";
@@ -36,6 +37,69 @@ type CategoriesState =
   | { status: "loading" }
   | { status: "success"; categories: CategoryItem[]; shortcuts: ShortcutItem[] }
   | { status: "error"; message: string };
+
+async function loadSearchResults(
+  query: string,
+  fallbackError: string,
+  signal?: AbortSignal
+): Promise<SearchState> {
+  try {
+    const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`, { signal });
+    const data = await readJsonResponse<SearchApiResponse>(response, fallbackError);
+
+    if (isApiErrorResponse(data)) {
+      if ("code" in data && data.code === "TOKEN_EXPIRED") {
+        return { status: "error", query, message: "TOKEN_EXPIRED" };
+      }
+      return { status: "error", query, message: data.error };
+    }
+
+    return {
+      status: "success",
+      query,
+      products: data.products,
+      sections: data.sections,
+    };
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw error;
+    }
+    return { status: "error", query, message: fallbackError };
+  }
+}
+
+async function loadCategories(
+  fallbackError: string,
+  signal?: AbortSignal
+): Promise<CategoriesState> {
+  try {
+    const response = await fetch("/api/categories", { signal });
+    const data = await readJsonResponse<
+      {
+        categories?: CategoryItem[];
+        shortcuts?: ShortcutItem[];
+      } & Partial<ApiErrorResponse>
+    >(response, fallbackError);
+
+    if (isApiErrorResponse(data)) {
+      if (data.code === "TOKEN_EXPIRED") {
+        return { status: "error", message: "TOKEN_EXPIRED" };
+      }
+      return { status: "error", message: data.error };
+    }
+
+    return {
+      status: "success",
+      categories: Array.isArray(data.categories) ? data.categories : [],
+      shortcuts: Array.isArray(data.shortcuts) ? data.shortcuts : [],
+    };
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw error;
+    }
+    return { status: "error", message: fallbackError };
+  }
+}
 
 export default function Home() {
   return (
@@ -65,102 +129,71 @@ function SearchPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const dismissToast = useCallback(() => setToastMessage(null), []);
 
-  const handleSearch = useCallback(
-    async (query: string) => {
-      const trimmed = query.trim();
+  // Auto-search when the page loads with ?q= or when URL changes (back/forward)
+  useEffect(() => {
+    const trimmed = urlQuery.trim();
+    const controller = new AbortController();
+    let cancelled = false;
 
-      if (trimmed === "") {
-        setSearchState({ status: "idle" });
-        router.push("/");
+    async function syncSearchFromUrl() {
+      if (!trimmed) {
+        if (!cancelled) setSearchState({ status: "idle" });
         return;
       }
 
-      // Only push when the URL doesn't already carry this query —
-      // avoids a redundant navigation that can cause useSearchParams
-      // to transiently return stale/empty values during the transition.
-      const currentQ = new URLSearchParams(window.location.search).get("q") ?? "";
-      if (currentQ !== trimmed) {
-        router.push(`/?q=${encodeURIComponent(trimmed)}`);
-      }
       setSearchState({ status: "loading", query: trimmed });
 
       try {
-        const url = `/api/search?q=${encodeURIComponent(trimmed)}`;
-        const response = await fetch(url);
-        const data: SearchApiResponse | ApiErrorResponse = await response.json();
-
-        if ("error" in data) {
-          if ("code" in data && data.code === "TOKEN_EXPIRED") {
-            window.location.href = TOKEN_EXPIRED_REDIRECT;
-            return;
-          }
-          setSearchState({ status: "error", query: trimmed, message: data.error });
+        const result = await loadSearchResults(trimmed, t.searchError, controller.signal);
+        if (cancelled) return;
+        if (result.status === "error" && result.message === "TOKEN_EXPIRED") {
+          window.location.href = TOKEN_EXPIRED_REDIRECT;
           return;
         }
-
-        setSearchState({
-          status: "success",
-          query: trimmed,
-          products: data.products,
-          sections: data.sections,
-        });
-      } catch {
-        setSearchState({
-          status: "error",
-          query: trimmed,
-          message: t.searchError,
-        });
+        setSearchState(result);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
       }
-    },
-    [router, t.searchError]
-  );
-
-  // Auto-search when the page loads with ?q= or when URL changes (back/forward)
-  useEffect(() => {
-    if (urlQuery) {
-      handleSearch(urlQuery);
-    } else {
-      setSearchState({ status: "idle" });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [urlQuery]);
 
-  // Fetch categories when in idle state (no search query active)
+    void syncSearchFromUrl();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [t.searchError, urlQuery]);
+
+  // Fetch categories when idle — use a ref to prevent re-triggering on status changes
+  const categoriesFetchedRef = useRef(false);
   useEffect(() => {
     if (searchState.status !== "idle") return;
-    if (categoriesState.status !== "idle") return;
+    if (categoriesFetchedRef.current) return;
 
-    setCategoriesState({ status: "loading" });
+    categoriesFetchedRef.current = true;
+    const controller = new AbortController();
 
-    fetch("/api/categories")
-      .then((res) => res.json())
-      .then(
-        (
-          data: {
-            categories?: CategoryItem[];
-            shortcuts?: ShortcutItem[];
-          } & Partial<ApiErrorResponse>
-        ) => {
-          if ("error" in data && data.error) {
-            if (data.code === "TOKEN_EXPIRED") {
-              window.location.href = TOKEN_EXPIRED_REDIRECT;
-              return;
-            }
-            setCategoriesState({ status: "error", message: data.error });
-            return;
-          }
-          const categories = Array.isArray(data.categories) ? data.categories : [];
-          const shortcuts = Array.isArray(data.shortcuts) ? data.shortcuts : [];
-          setCategoriesState({ status: "success", categories, shortcuts });
+    async function fetchIdleCategories() {
+      setCategoriesState({ status: "loading" });
+
+      try {
+        const result = await loadCategories(t.categoriesLoadError, controller.signal);
+        if (result.status === "error" && result.message === "TOKEN_EXPIRED") {
+          window.location.href = TOKEN_EXPIRED_REDIRECT;
+          return;
         }
-      )
-      .catch(() => {
-        setCategoriesState({
-          status: "error",
-          message: t.categoriesLoadError,
-        });
-      });
-  }, [searchState.status, categoriesState.status, t.categoriesLoadError]);
+        setCategoriesState(result);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+      }
+    }
+
+    void fetchIdleCategories();
+
+    return () => {
+      controller.abort();
+    };
+  }, [searchState.status, t.categoriesLoadError]);
 
   const handleCategoryTap = useCallback(
     (category: CategoryItem) => {
@@ -185,10 +218,43 @@ function SearchPage() {
     [router]
   );
 
+  const handleSearch = useCallback(
+    async (query: string) => {
+      const trimmed = query.trim();
+      if (trimmed === "") {
+        setSearchState({ status: "idle" });
+        router.push("/");
+        return;
+      }
+      const currentQ = new URLSearchParams(window.location.search).get("q") ?? "";
+      if (currentQ !== trimmed) {
+        router.push(`/?q=${encodeURIComponent(trimmed)}`);
+      }
+      setSearchState({ status: "loading", query: trimmed });
+      try {
+        const response = await fetch(`/api/search?q=${encodeURIComponent(trimmed)}`);
+        const data: SearchApiResponse | ApiErrorResponse = await response.json();
+        if ("error" in data) {
+          if ("code" in data && data.code === "TOKEN_EXPIRED") {
+            window.location.href = TOKEN_EXPIRED_REDIRECT;
+            return;
+          }
+          setSearchState({ status: "error", query: trimmed, message: data.error });
+          return;
+        }
+        setSearchState({ status: "success", query: trimmed, products: data.products, sections: data.sections });
+      } catch {
+        setSearchState({ status: "error", query: trimmed, message: t.searchError });
+      }
+    },
+    [router, t.searchError]
+  );
+
   return (
     <CartProvider showToast={setToastMessage}>
       <div className="flex min-h-full flex-1 flex-col">
         <SharedHeader
+          onSearch={handleSearch}
           bottomBar={
             searchState.status === "success" && searchState.sections.length > 0 ? (
               <SectionNavBar sections={searchState.sections} />

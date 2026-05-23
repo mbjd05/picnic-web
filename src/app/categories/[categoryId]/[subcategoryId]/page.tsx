@@ -11,8 +11,9 @@ import { SectionNavBar } from "@/components/section-nav-bar";
 import { SharedHeader } from "@/components/shared-header";
 import { CartProvider } from "@/contexts/cart-context";
 import { usePageTitle } from "@/hooks/use-page-title";
+import { isApiErrorResponse, readJsonResponse } from "@/lib/client-fetch";
 import { TOKEN_EXPIRED_REDIRECT } from "@/lib/constants";
-import type { ApiErrorResponse, CategoryProductsApiResponse } from "@/lib/types";
+import type { CategoryProductsApiResponse } from "@/lib/types";
 
 export default function CategoryProductsPage() {
   const { categoryId, subcategoryId } = useParams<{
@@ -37,9 +38,11 @@ export default function CategoryProductsPage() {
     fetch(`/api/categories/${encodeURIComponent(subcategoryId)}/products`, {
       signal: controller.signal,
     })
-      .then((res) => res.json())
-      .then((data: CategoryProductsApiResponse & Partial<ApiErrorResponse>) => {
-        if ("error" in data && data.error) {
+      .then((res) =>
+        readJsonResponse<CategoryProductsApiResponse>(res, "Kan producten niet laden.")
+      )
+      .then((data) => {
+        if (isApiErrorResponse(data)) {
           if (data.code === "TOKEN_EXPIRED") {
             window.location.href = TOKEN_EXPIRED_REDIRECT;
             return;

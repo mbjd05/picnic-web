@@ -18,8 +18,10 @@ import {
 } from "react";
 import type { ReactNode } from "react";
 
-import { createMutationQueue } from "@/lib/mutation-queue";
+import { isApiErrorResponse, readJsonResponse } from "@/lib/client-fetch";
 import type { BundleProgress, BundleThreshold, CartData } from "@/lib/types";
+
+const CART_MUTATION_DEBOUNCE_MS = 220;
 
 // ─── Toast callback type ──────────────────────────────────────────────────────
 
@@ -82,17 +84,21 @@ function buildQuantitiesMap(cart: CartData): Map<string, number> {
   return map;
 }
 
-async function postCartMutation(productId: string, action: "add" | "remove"): Promise<CartData> {
+async function postCartMutation(
+  productId: string,
+  action: "add" | "remove",
+  count: number
+): Promise<CartData> {
   const response = await fetch("/api/cart", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ productId, action, count: 1 }),
+    body: JSON.stringify({ productId, action, count }),
   });
 
-  const data = await response.json();
+  const data = await readJsonResponse<CartData>(response, "Cart mutation failed");
 
-  if (!response.ok || "error" in data) {
-    throw new Error(data.error ?? "Cart mutation failed");
+  if (isApiErrorResponse(data)) {
+    throw new Error(data.error);
   }
 
   return data as CartData;
@@ -117,6 +123,17 @@ export function CartProvider({ children, showToast }: CartProviderProps) {
   const confirmedTotalPriceRef = useRef(0);
   const confirmedTotalCountRef = useRef(0);
   const showToastRef = useRef(showToast);
+  const pendingDeltasRef = useRef(new Map<string, number>());
+  const pendingTimersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const pendingRequestCountRef = useRef(0);
+
+  const hasPendingCartMutations = useCallback(
+    () =>
+      pendingDeltasRef.current.size > 0 ||
+      pendingTimersRef.current.size > 0 ||
+      pendingRequestCountRef.current > 0,
+    []
+  );
 
   // Keep the toast ref in sync without accessing during render.
   useEffect(() => {
@@ -150,30 +167,14 @@ export function CartProvider({ children, showToast }: CartProviderProps) {
     setTotalCount(confirmedTotalCountRef.current);
   }, []);
 
-  // Mutation queue — initialized lazily in an effect to avoid ref access during render.
-  const queueRef = useRef<ReturnType<typeof createMutationQueue<CartData>> | null>(null);
-
-  useEffect(() => {
-    queueRef.current = createMutationQueue<CartData>((productId, result, error) => {
-      if (error) {
-        rollbackProduct(productId);
-        showToastRef.current?.("Er ging iets mis. Probeer het opnieuw.");
-        return;
-      }
-      if (result) {
-        reconcileFromServer(result);
-      }
-    });
-  }, [rollbackProduct, reconcileFromServer]);
-
   // Initial cart fetch.
   useEffect(() => {
     const controller = new AbortController();
 
     fetch("/api/cart", { signal: controller.signal })
-      .then((res) => res.json())
-      .then((data: CartData) => {
-        if ("error" in data) {
+      .then((res) => readJsonResponse<CartData>(res, "Cart load failed"))
+      .then((data) => {
+        if (isApiErrorResponse(data)) {
           setIsLoading(false);
           return;
         }
@@ -190,6 +191,70 @@ export function CartProvider({ children, showToast }: CartProviderProps) {
     };
   }, [reconcileFromServer]);
 
+  const flushProductDelta = useCallback(
+    async (productId: string) => {
+      const delta = pendingDeltasRef.current.get(productId) ?? 0;
+      pendingDeltasRef.current.delete(productId);
+      pendingTimersRef.current.delete(productId);
+
+      if (delta === 0) return;
+
+      pendingRequestCountRef.current += 1;
+      let result: CartData | null = null;
+
+      try {
+        result = await postCartMutation(
+          productId,
+          delta > 0 ? "add" : "remove",
+          Math.abs(delta)
+        );
+        confirmedRef.current = buildQuantitiesMap(result);
+        confirmedTotalPriceRef.current = result.totalPrice;
+        confirmedTotalCountRef.current = result.totalCount;
+      } catch {
+        rollbackProduct(productId);
+        showToastRef.current?.("Er ging iets mis. Probeer het opnieuw.");
+      } finally {
+        pendingRequestCountRef.current -= 1;
+        if (result && !hasPendingCartMutations()) {
+          reconcileFromServer(result);
+        }
+      }
+    },
+    [hasPendingCartMutations, reconcileFromServer, rollbackProduct]
+  );
+
+  const enqueueDelta = useCallback(
+    (productId: string, delta: number) => {
+      const nextDelta = (pendingDeltasRef.current.get(productId) ?? 0) + delta;
+      pendingDeltasRef.current.set(productId, nextDelta);
+
+      const existingTimer = pendingTimersRef.current.get(productId);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+      }
+
+      const timer = setTimeout(() => {
+        void flushProductDelta(productId);
+      }, CART_MUTATION_DEBOUNCE_MS);
+
+      pendingTimersRef.current.set(productId, timer);
+    },
+    [flushProductDelta]
+  );
+
+  useEffect(() => {
+    const timers = pendingTimersRef.current;
+    const deltas = pendingDeltasRef.current;
+    return () => {
+      for (const timer of timers.values()) {
+        clearTimeout(timer);
+      }
+      timers.clear();
+      deltas.clear();
+    };
+  }, []);
+
   // ─── Actions ──────────────────────────────────────────────────────────
 
   const addProduct = useCallback((productId: string, maxCount: number) => {
@@ -204,8 +269,8 @@ export function CartProvider({ children, showToast }: CartProviderProps) {
     // Optimistic total bump (+1 item — actual price reconciled on response).
     setTotalCount((c) => c + 1);
 
-    queueRef.current?.enqueue(productId, () => postCartMutation(productId, "add"));
-  }, []);
+    enqueueDelta(productId, 1);
+  }, [enqueueDelta]);
 
   const removeProduct = useCallback((productId: string) => {
     setQuantities((prev) => {
@@ -223,8 +288,8 @@ export function CartProvider({ children, showToast }: CartProviderProps) {
 
     setTotalCount((c) => Math.max(0, c - 1));
 
-    queueRef.current?.enqueue(productId, () => postCartMutation(productId, "remove"));
-  }, []);
+    enqueueDelta(productId, -1);
+  }, [enqueueDelta]);
 
   const getQuantity = useCallback(
     (productId: string): number => quantities.get(productId) ?? 0,

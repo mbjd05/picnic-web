@@ -170,7 +170,7 @@ function extractUnavailableInfo(decorators: RawDecorator[]): UnavailableInfo {
   }
 
   const explanation = isObject(unavailableDec["explanation"])
-    ? asString(unavailableDec["explanation"]["short_explanation"], null as unknown as string)
+    ? asString(unavailableDec["explanation"]["short_explanation"]) || null
     : null;
 
   const replacements = asArray(unavailableDec["replacements"])

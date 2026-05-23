@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { type CountryCode, DEFAULT_COUNTRY_CODE } from "./types";
 
+const PICNIC_API_VERSION = "17";
+
 /**
  * picnic-api uses `export = class PicnicClient` (CJS module.exports).
  * We require() it to avoid ESM/CJS interop issues with Turbopack.
@@ -22,6 +24,7 @@ export function buildPicnicClient(
 ): PicnicClientInstance {
   return new PicnicClient({
     countryCode,
+    apiVersion: PICNIC_API_VERSION,
     authKey: authToken,
   });
 }
@@ -36,5 +39,6 @@ export function buildPicnicClientAnonymous(
 ): PicnicClientInstance {
   return new PicnicClient({
     countryCode,
+    apiVersion: PICNIC_API_VERSION,
   });
 }

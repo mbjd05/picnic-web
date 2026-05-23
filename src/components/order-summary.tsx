@@ -13,6 +13,7 @@ type OrderSummaryProps = {
   membershipSavings: number;
   fees: FeeEntry[];
   minimumOrderValue: number | null;
+  isUpdating?: boolean;
 };
 
 /**
@@ -28,6 +29,7 @@ export function OrderSummary({
   membershipSavings,
   fees,
   minimumOrderValue,
+  isUpdating = false,
 }: OrderSummaryProps) {
   const t = useTranslations();
 
@@ -45,8 +47,17 @@ export function OrderSummary({
   }
 
   return (
-    <div className="border-card-border bg-card-bg rounded-xl border p-4">
-      <h2 className="text-foreground mb-3 text-base font-semibold">{t.orderSummaryTitle}</h2>
+    <div
+      className={`border-card-border bg-card-bg rounded-xl border p-4 transition-opacity ${
+        isUpdating ? "opacity-70" : "opacity-100"
+      }`}
+      aria-busy={isUpdating}
+      aria-live="polite"
+    >
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="text-foreground text-base font-semibold">{t.orderSummaryTitle}</h2>
+        {isUpdating && <span className="text-xs text-gray-500">{t.orderSummaryUpdating}</span>}
+      </div>
 
       <div className="space-y-2 text-sm">
         {/* Item count row */}

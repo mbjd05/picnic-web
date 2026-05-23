@@ -49,7 +49,7 @@ export function ProductCard({ product, href }: ProductCardProps) {
   const cardContent = (
     <div
       className={`border-card-border bg-card-bg relative flex h-full flex-col rounded-lg border p-4 shadow-sm${
-        href ? "transition-shadow hover:shadow-md" : ""
+        href ? "transition-shadow group-hover:shadow-md" : ""
       }`}
     >
       {/* Product image */}
@@ -156,15 +156,14 @@ export function ProductCard({ product, href }: ProductCardProps) {
     </div>
   );
 
-  if (href) {
-    return (
-      <Link href={href} className="block">
-        {cardContent}
-      </Link>
-    );
-  }
+  if (!href) return cardContent;
 
-  return cardContent;
+  return (
+    <div className="group relative h-full">
+      {cardContent}
+      <Link href={href} className="absolute inset-0 z-10 rounded-lg" aria-label={product.name} />
+    </div>
+  );
 }
 
 // ─── Bundle price helper ──────────────────────────────────────────────────────
@@ -209,7 +208,7 @@ function CartActionOverlay({
 
   if (quantity === 0) {
     return (
-      <div className="absolute right-1 bottom-1 z-10" onClick={stopPropagation}>
+      <div className="absolute right-1 bottom-1 z-20" onClick={stopPropagation}>
         <button
           type="button"
           onClick={onAdd}
@@ -223,7 +222,7 @@ function CartActionOverlay({
   }
 
   return (
-    <div className="absolute right-1 bottom-1 z-10" onClick={stopPropagation}>
+    <div className="absolute right-1 bottom-1 z-20" onClick={stopPropagation}>
       <QuantityStepper
         quantity={quantity}
         maxCount={maxCount}

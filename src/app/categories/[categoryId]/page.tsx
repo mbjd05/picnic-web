@@ -12,8 +12,8 @@ import { CartProvider } from "@/contexts/cart-context";
 import { useTranslations } from "@/contexts/country-context";
 import { usePageTitle } from "@/hooks/use-page-title";
 import type { CategoryItem, SubcategoriesApiResponse } from "@/lib/category-types";
+import { isApiErrorResponse, readJsonResponse } from "@/lib/client-fetch";
 import { TOKEN_EXPIRED_REDIRECT } from "@/lib/constants";
-import type { ApiErrorResponse } from "@/lib/types";
 
 export default function CategorySubcategoriesPage() {
   const { categoryId } = useParams<{ categoryId: string }>();
@@ -35,9 +35,11 @@ export default function CategorySubcategoriesPage() {
     fetch(`/api/categories/${encodeURIComponent(categoryId)}/subcategories`, {
       signal: controller.signal,
     })
-      .then((res) => res.json())
-      .then((data: SubcategoriesApiResponse & Partial<ApiErrorResponse>) => {
-        if ("error" in data && data.error) {
+      .then((res) =>
+        readJsonResponse<SubcategoriesApiResponse>(res, "Kan subcategorieën niet laden.")
+      )
+      .then((data) => {
+        if (isApiErrorResponse(data)) {
           if (data.code === "TOKEN_EXPIRED") {
             window.location.href = TOKEN_EXPIRED_REDIRECT;
             return;
