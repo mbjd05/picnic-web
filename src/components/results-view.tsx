@@ -27,7 +27,8 @@ export function ResultsView({ query, products, sections }: ResultsViewProps) {
   return (
     <div>
       <p className="mb-4 text-sm text-gray-500">
-        {products.length} {products.length === 1 ? t.resultSingular : t.resultPlural} {t.resultFor} &ldquo;
+        {products.length} {products.length === 1 ? t.resultSingular : t.resultPlural} {t.resultFor}{" "}
+        &ldquo;
         {query}
         &rdquo;
       </p>

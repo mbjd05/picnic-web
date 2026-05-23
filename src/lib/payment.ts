@@ -61,6 +61,10 @@ export function getPaymentDisplayName(
   profile: PaymentProfile,
   paymentMethod: string
 ): string {
+  if (paymentMethod === "IDEAL") {
+    return "iDEAL | Wero";
+  }
+
   return getPaymentMethodDetails(profile, paymentMethod)?.display_name ?? paymentMethod;
 }
 
