@@ -15,6 +15,7 @@ import { CartProvider, useCart } from "@/contexts/cart-context";
 import { useCountryCode, useTranslations } from "@/contexts/country-context";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { formatEuroPrice } from "@/lib/format-price";
+import { getRecipeIngredientCount } from "@/lib/recipe-quantity";
 import { renderMarkdownBold } from "@/lib/render-markdown-bold";
 import { TOKEN_EXPIRED_REDIRECT } from "@/lib/constants";
 import type { ApiErrorResponse, RecipeDetail } from "@/lib/types";
@@ -133,7 +134,7 @@ function RecipeDetailInner({ recipeId }: { recipeId: string }) {
       .filter((ing) => checkedIds.has(ing.id))
       .map((ing) => ({
         id: ing.id,
-        count: Math.max(1, Math.ceil((ing.quantity * portions) / recipe.portions)),
+        count: getRecipeIngredientCount(ing, portions, recipe.portions),
       }));
     try {
       const res = await fetch(`/api/recipe/${encodeURIComponent(recipeId)}/add-to-cart`, {
@@ -201,7 +202,7 @@ function RecipeDetailInner({ recipeId }: { recipeId: string }) {
 
   const pricePortions = ingredientsRefreshing ? (confirmedPortions ?? portions) : portions;
   const totalCents = mainIngredients.reduce((sum, ing) => {
-    const qty = Math.max(1, Math.ceil((ing.quantity * pricePortions) / recipe.portions));
+    const qty = getRecipeIngredientCount(ing, pricePortions, recipe.portions);
     const bundleTier = ing.priceRanges?.filter((t) => t.quantity <= qty).at(-1);
     const unitPrice = bundleTier ? bundleTier.pricePerUnit : ing.displayPrice;
     return sum + unitPrice * qty;
@@ -319,7 +320,7 @@ function RecipeDetailInner({ recipeId }: { recipeId: string }) {
                     <RecipeIngredientRow
                       key={ing.id}
                       ingredient={ing}
-                      qty={Math.max(1, Math.ceil((ing.quantity * pricePortions) / recipe.portions))}
+                      qty={getRecipeIngredientCount(ing, pricePortions, recipe.portions)}
                       portions={pricePortions}
                       basePortion={recipe.portions}
                       checked={checkedIds.has(ing.id)}
@@ -342,7 +343,7 @@ function RecipeDetailInner({ recipeId }: { recipeId: string }) {
                     <RecipeIngredientRow
                       key={ing.id}
                       ingredient={ing}
-                      qty={Math.max(1, Math.ceil((ing.quantity * pricePortions) / recipe.portions))}
+                      qty={getRecipeIngredientCount(ing, pricePortions, recipe.portions)}
                       portions={pricePortions}
                       basePortion={recipe.portions}
                       checked={checkedIds.has(ing.id)}
