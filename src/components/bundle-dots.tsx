@@ -11,9 +11,11 @@ type BundleDotsProps = {
   totalDots: number;
   /** Number of dots that should be filled (solid). */
   filledDots: number;
+  /** Accessible explanation shown to screen readers and browser tooltips. */
+  label: string;
 };
 
-export function BundleDots({ totalDots, filledDots }: BundleDotsProps) {
+export function BundleDots({ totalDots, filledDots, label }: BundleDotsProps) {
   if (totalDots <= 0) return null;
 
   const dots: boolean[] = [];
@@ -22,7 +24,7 @@ export function BundleDots({ totalDots, filledDots }: BundleDotsProps) {
   }
 
   return (
-    <div className="flex items-center justify-center gap-1">
+    <div className="flex items-center justify-center gap-1" aria-label={label} title={label}>
       {dots.map((isFilled, index) => (
         <span
           key={index}

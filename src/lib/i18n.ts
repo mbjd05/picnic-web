@@ -147,6 +147,7 @@ const translations = {
     addToCartButton: "In mandje",
     inCartLabel: "in mandje",
     bundleFromLabel: "Vanaf",
+    bundleProgressLabel: "Bundelkorting vanaf {quantity} stuks",
     similarProductsTitle: "Vergelijkbare producten",
 
     // Category grid
@@ -367,6 +368,7 @@ const translations = {
     addToCartButton: "In den Warenkorb",
     inCartLabel: "im Warenkorb",
     bundleFromLabel: "Ab",
+    bundleProgressLabel: "Mengenrabatt ab {quantity} Stück",
     similarProductsTitle: "Ähnliche Produkte",
 
     // Category grid

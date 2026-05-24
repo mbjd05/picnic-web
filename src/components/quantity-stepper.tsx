@@ -35,13 +35,14 @@ type BundleDisplay = {
   dotsTotal: number;
   dotsFilled: number;
   savingsInCents: number;
+  nextThresholdQuantity: number;
 };
 
 function computeBundleDisplay(bundleProgress: BundleProgress, regularPrice: number): BundleDisplay {
   const { thresholds, currentQuantity } = bundleProgress;
 
   if (thresholds.length === 0) {
-    return { dotsTotal: 0, dotsFilled: 0, savingsInCents: 0 };
+    return { dotsTotal: 0, dotsFilled: 0, savingsInCents: 0, nextThresholdQuantity: 0 };
   }
 
   // Find the active threshold (highest tier where qty <= currentQuantity).
@@ -53,14 +54,17 @@ function computeBundleDisplay(bundleProgress: BundleProgress, regularPrice: numb
   let savingsInCents = 0;
   let dotsTotal: number;
   let dotsFilled: number;
+  let nextThresholdQuantity: number;
 
   if (activeThreshold) {
     savingsInCents = (regularPrice - activeThreshold.pricePerUnit) * currentQuantity;
     dotsTotal = nextUnmetThreshold ? nextUnmetThreshold.quantity : activeThreshold.quantity;
     dotsFilled = Math.min(currentQuantity, dotsTotal);
+    nextThresholdQuantity = dotsTotal;
   } else {
     dotsTotal = thresholds[0].quantity;
     dotsFilled = Math.min(currentQuantity, dotsTotal);
+    nextThresholdQuantity = thresholds[0].quantity;
   }
 
   // Ensure savings is never negative (e.g. if data is inconsistent).
@@ -68,7 +72,7 @@ function computeBundleDisplay(bundleProgress: BundleProgress, regularPrice: numb
     savingsInCents = 0;
   }
 
-  return { dotsTotal, dotsFilled, savingsInCents };
+  return { dotsTotal, dotsFilled, savingsInCents, nextThresholdQuantity };
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -148,7 +152,14 @@ export function QuantityStepper({
         <div className="flex min-w-[1.25rem] flex-col items-center">
           <span className="text-foreground text-center text-sm font-bold">{quantity}</span>
           {bundleDisplay && bundleDisplay.dotsTotal > 0 && (
-            <BundleDots totalDots={bundleDisplay.dotsTotal} filledDots={bundleDisplay.dotsFilled} />
+            <BundleDots
+              totalDots={bundleDisplay.dotsTotal}
+              filledDots={bundleDisplay.dotsFilled}
+              label={t.bundleProgressLabel.replace(
+                "{quantity}",
+                String(bundleDisplay.nextThresholdQuantity)
+              )}
+            />
           )}
         </div>
 

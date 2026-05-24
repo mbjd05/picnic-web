@@ -36,6 +36,8 @@ function RecipeDetailInner({ recipeId }: { recipeId: string }) {
   const [pageState, setPageState] = useState<PageState>({ status: "loading" });
   const [portions, setPortions] = useState(2);
   const [addState, setAddState] = useState<AddState>("idle");
+  const [isSaved, setIsSaved] = useState(false);
+  const [isSavingRecipe, setIsSavingRecipe] = useState(false);
   const [confirmedPortions, setConfirmedPortions] = useState<number | null>(null);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(() => new Set());
 
@@ -67,6 +69,20 @@ function RecipeDetailInner({ recipeId }: { recipeId: string }) {
       });
     return () => controller.abort();
   }, [recipeId, t.recipeLoadError]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/cookbook?category=__saved__", { signal: controller.signal })
+      .then((res) => res.json())
+      .then((data: { recipes?: { id: string }[] } & Partial<ApiErrorResponse>) => {
+        if ("error" in data && data.error) return;
+        setIsSaved(Boolean(data.recipes?.some((recipe) => recipe.id === recipeId)));
+      })
+      .catch((err: unknown) => {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+      });
+    return () => controller.abort();
+  }, [recipeId]);
 
   useEffect(() => {
     if (pageState.status !== "success") return;
@@ -134,6 +150,28 @@ function RecipeDetailInner({ recipeId }: { recipeId: string }) {
     }
   }, [pageState, addState, portions, recipeId, refresh, checkedIds]);
 
+  const handleToggleSaved = useCallback(async () => {
+    if (isSavingRecipe) return;
+
+    const nextSaved = !isSaved;
+    setIsSavingRecipe(true);
+    setIsSaved(nextSaved);
+
+    try {
+      const response = await fetch(`/api/recipe/${encodeURIComponent(recipeId)}/saved`, {
+        method: nextSaved ? "POST" : "DELETE",
+      });
+      const data = (await response.json()) as Partial<ApiErrorResponse>;
+      if (!response.ok || data.error) {
+        throw new Error(data.error ?? t.recipeSaveError);
+      }
+    } catch {
+      setIsSaved(!nextSaved);
+    } finally {
+      setIsSavingRecipe(false);
+    }
+  }, [isSaved, isSavingRecipe, recipeId, t.recipeSaveError]);
+
   if (pageState.status === "loading") {
     return (
       <div className="flex min-h-full flex-1 flex-col">
@@ -189,12 +227,24 @@ function RecipeDetailInner({ recipeId }: { recipeId: string }) {
         </Link>
 
         {/* Hero image */}
-        <div className="mb-8 overflow-hidden rounded-2xl bg-gray-50">
+        <div className="relative mb-8 overflow-hidden rounded-2xl bg-gray-50">
           {recipe.imageId ? (
             <RecipeHeroImage imageId={recipe.imageId} countryCode={countryCode} alt={recipe.name} />
           ) : (
             <div className="aspect-video w-full bg-gray-100" />
           )}
+          <button
+            type="button"
+            onClick={handleToggleSaved}
+            disabled={isSavingRecipe}
+            className={`absolute top-3 right-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/95 shadow-sm transition-colors hover:bg-white active:opacity-70 disabled:opacity-50 ${
+              isSaved ? "text-picnic-red" : "text-text-muted"
+            }`}
+            aria-label={isSaved ? t.unsaveRecipe : t.saveRecipe}
+            title={isSaved ? t.unsaveRecipe : t.saveRecipe}
+          >
+            <BookmarkIcon filled={isSaved} />
+          </button>
         </div>
 
         {/* Title */}
@@ -352,6 +402,20 @@ function RecipeDetailInner({ recipeId }: { recipeId: string }) {
         )}
       </main>
     </div>
+  );
+}
+
+function BookmarkIcon({ filled }: { filled: boolean }) {
+  return (
+    <svg viewBox="0 0 20 20" className="h-5 w-5" aria-hidden="true">
+      <path
+        d="M5.75 3.5h8.5v13l-4.25-2.7-4.25 2.7v-13Z"
+        fill={filled ? "currentColor" : "none"}
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
 
