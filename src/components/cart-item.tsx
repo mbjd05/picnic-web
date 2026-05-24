@@ -8,6 +8,7 @@ import Link from "next/link";
 import { Badge } from "@/components/badge";
 import { PriceDisplay } from "@/components/price-display";
 import { QuantityStepper } from "@/components/quantity-stepper";
+import { TrashIcon } from "@/components/trash-icon";
 import { UnavailableOverlay } from "@/components/unavailable-product";
 import { useCountryCode, useTranslations } from "@/contexts/country-context";
 import { buildImageUrl } from "@/lib/image-url";
@@ -101,24 +102,5 @@ export function CartItemCard({ item, onIncrement, onDecrement, onRemoveAll }: Ca
       {/* Unavailability explanation (US4) */}
       {item.isUnavailable && <UnavailableOverlay explanation={item.unavailableExplanation} />}
     </div>
-  );
-}
-
-function TrashIcon() {
-  return (
-    <svg
-      viewBox="0 0 20 20"
-      fill="none"
-      className="h-4 w-4"
-      aria-hidden="true"
-    >
-      <path
-        d="M7.25 4.75V4a1.25 1.25 0 0 1 1.25-1.25h3A1.25 1.25 0 0 1 12.75 4v.75M4.75 4.75h10.5M6.25 7.25l.45 8a1.25 1.25 0 0 0 1.25 1.18h4.1a1.25 1.25 0 0 0 1.25-1.18l.45-8M8.75 8.75v5M11.25 8.75v5"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
   );
 }
