@@ -133,6 +133,12 @@ async function runLoginMode() {
       return;
     }
 
+    console.log("");
+    console.log("Partial auth token for web-app 2FA testing:");
+    console.log(authKey);
+    console.log("");
+    console.log("Paste this into the web app's Auth token login mode to test token + 2FA.");
+
     try {
       await client.auth.generate2FACode("SMS");
       console.log("A 2FA verification code was requested.");
