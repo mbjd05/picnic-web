@@ -345,6 +345,18 @@ function parseAllergensFromMarkdowns(markdowns: string[]): AllergenInfo {
 function buildIngredientTileNameMap(rawPage: unknown): Map<string, string> {
   const result = new Map<string, string>();
 
+  function isIngredientNameCandidate(text: string): boolean {
+    if (/^[><%]/.test(text)) return false;
+    if (/^-?\d+%/.test(text)) return false;
+    if (/^\d+(?:[.,]\d+)?$/.test(text)) return false;
+    if (/€/.test(text)) return false;
+    if (/nodig|benötigt|benodigd|required/i.test(text)) return false;
+    if (/^\(?\d+(?:[.,]\d+)?\s+(g|gram|kg|ml|l|el|tl|stuk|stuks)\b/i.test(text)) return false;
+    if (/^(klein|middel|groot|small|medium|large|groß)$/i.test(text)) return false;
+    if (/jetzt|nu\s+tijdelijk/i.test(text)) return false;
+    return true;
+  }
+
   function getMarkdowns(obj: unknown, acc: string[]): void {
     if (!obj || typeof obj !== "object") return;
     if (Array.isArray(obj)) { obj.forEach((v) => getMarkdowns(v, acc)); return; }
@@ -372,16 +384,9 @@ function buildIngredientTileNameMap(rawPage: unknown): Map<string, string> {
         const markdowns: string[] = [];
         getMarkdowns(o.pml, markdowns);
         const clean = markdowns
-          .map((t) => t.replace(/#\([^)]+\)/g, "").replace(/\*\*/g, "").replace(/\xa0/g, " ").trim())
+          .map((t) => cleanMarkdown(t).replace(/\xa0/g, " ").trim())
           .filter(Boolean);
-        const name = clean.find(
-          (t) =>
-            !/^[><%]/.test(t) &&
-            !/^-?\d+%/.test(t) &&
-            !/^\d+[.,]\d+$/.test(t) &&
-            !/€/.test(t) &&
-            !/jetzt|nu\s+tijdelijk/i.test(t)
-        );
+        const name = clean.find(isIngredientNameCandidate);
         if (name && productId && !result.has(productId)) result.set(productId, name);
         return;
       }
