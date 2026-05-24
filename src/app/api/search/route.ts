@@ -86,7 +86,7 @@ export async function GET(
 
     const sections: SearchSection[] = [
       {
-        title: `${t.resultPlural} ${t.resultFor} "${query}"`,
+        title: `${t.allResultsFor} "${query}"`,
         products,
       },
       ...parsedSections,

@@ -16,6 +16,7 @@ const translations = {
     tryAnotherTerm: "Probeer een andere zoekterm",
     resultSingular: "resultaat",
     resultPlural: "resultaten",
+    allResultsFor: "Alle resultaten voor",
 
     // Login page
     loginTitle: "Inloggen",
@@ -237,6 +238,7 @@ const translations = {
     tryAnotherTerm: "Versuche einen anderen Suchbegriff",
     resultSingular: "Ergebnis",
     resultPlural: "Ergebnisse",
+    allResultsFor: "Alle Ergebnisse für",
 
     // Login page
     loginTitle: "Anmelden",
