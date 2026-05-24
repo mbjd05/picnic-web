@@ -25,7 +25,9 @@ function scaleNeededText(text: string, portions: number, basePortion: number): s
 
 function formatIngredientTitle(name: string, neededText: string | null): string {
   if (!neededText) return name;
-  const trimmedNeeded = neededText.replace(/^\((.*)\)$/, "$1");
+  const trimmedNeeded = neededText
+    .replace(/^\((.*)\)$/, "$1")
+    .replace(/\s+(nodig|benötigt|benodigd|required)$/i, "");
   return `${trimmedNeeded} ${name}`;
 }
 
