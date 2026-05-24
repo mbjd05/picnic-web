@@ -5,6 +5,7 @@ import { use, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
 import { AllergenBadges } from "@/components/allergen-badges";
+import { BookmarkIcon } from "@/components/bookmark-icon";
 import { NutritionTable } from "@/components/nutrition-table";
 import { RecipeHeroImage } from "@/components/recipe-hero-image";
 import { RecipeIngredientRow } from "@/components/recipe-ingredient-row";
@@ -403,20 +404,6 @@ function RecipeDetailInner({ recipeId }: { recipeId: string }) {
         )}
       </main>
     </div>
-  );
-}
-
-function BookmarkIcon({ filled }: { filled: boolean }) {
-  return (
-    <svg viewBox="0 0 20 20" className="h-5 w-5" aria-hidden="true">
-      <path
-        d="M5.75 3.5h8.5v13l-4.25-2.7-4.25 2.7v-13Z"
-        fill={filled ? "currentColor" : "none"}
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-    </svg>
   );
 }
 

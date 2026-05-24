@@ -5,6 +5,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
+import { BookmarkIcon } from "@/components/bookmark-icon";
 import { useCountryCode, useTranslations } from "@/contexts/country-context";
 import { buildRecipeImageUrl } from "@/lib/image-url";
 import type { RecipeItem } from "@/lib/types";
@@ -77,19 +78,5 @@ export function RecipeCard({
         </button>
       )}
     </div>
-  );
-}
-
-function BookmarkIcon({ filled }: { filled: boolean }) {
-  return (
-    <svg viewBox="0 0 20 20" className="h-5 w-5" aria-hidden="true">
-      <path
-        d="M5.75 3.5h8.5v13l-4.25-2.7-4.25 2.7v-13Z"
-        fill={filled ? "currentColor" : "none"}
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-    </svg>
   );
 }
