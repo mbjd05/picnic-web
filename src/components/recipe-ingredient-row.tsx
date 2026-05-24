@@ -23,6 +23,12 @@ function scaleNeededText(text: string, portions: number, basePortion: number): s
   return `(${scaledStr} ${m[2]})`;
 }
 
+function formatIngredientTitle(name: string, neededText: string | null): string {
+  if (!neededText) return name;
+  const trimmedNeeded = neededText.replace(/^\((.*)\)$/, "$1");
+  return `${trimmedNeeded} ${name}`;
+}
+
 type RecipeIngredientRowProps = {
   ingredient: RecipeIngredient;
   qty: number;
@@ -51,7 +57,7 @@ export function RecipeIngredientRow({
 
   const displayPkg = ingredient.recipePackageSize ?? ingredient.unitQuantity;
   const packageLabel = qty > 1 ? `${qty} × ${displayPkg}` : displayPkg;
-  const subtitle = scaledNeeded ? `${packageLabel} ${scaledNeeded}` : packageLabel;
+  const ingredientTitle = formatIngredientTitle(ingredient.name, scaledNeeded);
 
   const bundleTier = ingredient.priceRanges?.filter((t) => t.quantity <= qty).at(-1);
   const effectiveUnitPrice = bundleTier ? bundleTier.pricePerUnit : ingredient.displayPrice;
@@ -103,8 +109,8 @@ export function RecipeIngredientRow({
         />
       </div>
       <div className={`min-w-0 flex-1 transition-opacity ${checked ? "" : "opacity-40"}`}>
-        <p className="text-text-dark truncate text-sm font-medium">{ingredient.name}</p>
-        <p className="text-text-muted text-xs">{subtitle}</p>
+        <p className="text-text-dark line-clamp-2 text-sm font-medium">{ingredientTitle}</p>
+        <p className="text-text-muted text-xs">{packageLabel}</p>
       </div>
       <div className={`shrink-0 text-right transition-opacity ${checked ? "" : "opacity-40"}`}>
         <p className={`text-sm font-medium ${onSale ? "text-amber-600" : "text-text-dark"}`}>
