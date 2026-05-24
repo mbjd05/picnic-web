@@ -25,6 +25,7 @@ or upstream PRs.
 const mode = process.argv[2] ?? "login";
 const countryCode = process.env.PICNIC_COUNTRY_CODE ?? "NL";
 const apiVersion = process.env.PICNIC_API_VERSION ?? "17";
+const debug2FA = process.env.PICNIC_DEBUG_2FA === "1" || process.argv.includes("--debug-2fa");
 
 function createClient(authKey) {
   return new PicnicClient({
@@ -38,6 +39,54 @@ function getErrorMessage(error) {
   if (error instanceof Error) return error.message;
   if (typeof error === "string") return error;
   return JSON.stringify(error);
+}
+
+function getBaseUrl() {
+  return `https://storefront-prod.${countryCode.toLowerCase()}.picnicinternational.com/api/${apiVersion}`;
+}
+
+function makeDeviceId() {
+  return Math.random().toString(16).slice(2, 14).toUpperCase();
+}
+
+async function generate2FACodeWithDebug(authKey, channel = "SMS") {
+  const response = await fetch(`${getBaseUrl()}/user/2fa/generate`, {
+    method: "POST",
+    headers: {
+      "User-Agent": "okhttp/4.9.0",
+      "Content-Type": "application/json; charset=UTF-8",
+      "Accept-Language": countryCode === "DE" ? "de" : "nl",
+      "x-picnic-auth": authKey,
+      "x-picnic-agent": "30100;1.228.1-15480;",
+      "x-picnic-did": makeDeviceId(),
+    },
+    body: JSON.stringify({ channel }),
+  });
+
+  const body = await response.text();
+
+  if (debug2FA) {
+    console.log("");
+    console.log("Raw 2FA generate response:");
+    console.log(`HTTP ${response.status} ${response.statusText}`);
+    for (const header of [
+      "content-type",
+      "retry-after",
+      "x-ratelimit-limit",
+      "x-ratelimit-remaining",
+      "x-ratelimit-reset",
+    ]) {
+      const value = response.headers.get(header);
+      if (value) console.log(`${header}: ${value}`);
+    }
+    console.log(body || "<empty body>");
+  }
+
+  if (!response.ok) {
+    throw new Error(`2FA generate failed: ${response.status} ${response.statusText}${body ? ` - ${body}` : ""}`);
+  }
+
+  return body ? JSON.parse(body) : null;
 }
 
 function printToken(authKey) {
@@ -88,7 +137,7 @@ async function runTokenMode() {
 
   const client = createClient(token);
   try {
-    await client.auth.generate2FACode("SMS");
+    await generate2FACodeWithDebug(token, "SMS");
     console.log("2FA appears to be required. A verification code was requested.");
   } catch (error) {
     const message = getErrorMessage(error);
@@ -140,7 +189,7 @@ async function runLoginMode() {
     console.log("Paste this into the web app's Auth token login mode to test token + 2FA.");
 
     try {
-      await client.auth.generate2FACode("SMS");
+      await generate2FACodeWithDebug(authKey, "SMS");
       console.log("A 2FA verification code was requested.");
     } catch (error) {
       const message = getErrorMessage(error);
