@@ -28,11 +28,12 @@ export async function POST(request: NextRequest): Promise<NextResponse<AuthApiRe
   }
 
   try {
-    const client = buildPicnicClient(token.trim(), countryCode);
+    const trimmedToken = token.trim();
+    const client = buildPicnicClient(trimmedToken, countryCode);
     await client.catalog.getSuggestions("");
 
     const response = NextResponse.json<AuthApiResponse>({ success: true });
-    response.cookies.set(AUTH_COOKIE_NAME, token.trim(), {
+    response.cookies.set(AUTH_COOKIE_NAME, trimmedToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -49,6 +50,30 @@ export async function POST(request: NextRequest): Promise<NextResponse<AuthApiRe
 
     return response;
   } catch (error) {
+    const trimmedToken = token.trim();
+    const partialClient = buildPicnicClient(trimmedToken, countryCode);
+
+    try {
+      await partialClient.auth.generate2FACode("SMS");
+
+      const response = NextResponse.json<AuthApiResponse>({
+        success: false,
+        error: "2FA_REQUIRED",
+        partialToken: trimmedToken,
+      });
+      response.cookies.set(COUNTRY_COOKIE_NAME, countryCode, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: AUTH_COOKIE_MAX_AGE_SECONDS,
+      });
+
+      return response;
+    } catch {
+      // Fall through to the original token validation error handling.
+    }
+
     const isAuthError = isApiAuthError(error);
 
     if (isAuthError) {

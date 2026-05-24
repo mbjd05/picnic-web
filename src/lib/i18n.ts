@@ -37,6 +37,12 @@ const translations = {
     tokenPlaceholder: "Plak je token hier",
     hideToken: "Token verbergen",
     showToken: "Token tonen",
+    loginWithCredentials: "E-mail",
+    loginWithToken: "Auth token",
+    credentialsLoginHelp:
+      "Je wachtwoord wordt niet opgeslagen. Het wordt alleen server-side gebruikt om bij Picnic een auth token op te halen.",
+    tokenLoginHelp:
+      "Gebruik dit als je al een Picnic auth token hebt. Als het token nog 2FA nodig heeft, sturen we je door naar verificatie.",
     verifyButton: "Verifiëren",
     loginButton: "Inloggen",
     howToGetToken: "Hoe krijg ik een auth token?",
@@ -46,7 +52,7 @@ const translations = {
     copyAuthKeyAfter: "waarde en plak deze hierboven in.",
     whyAuthToken: "Waarom heb ik een auth token nodig?",
     whyAuthTokenBody:
-      "Om veiligheidsredenen tonen we geen standaard inlogformulier met e-mailadres en wachtwoord. Een auth token zorgt ervoor dat je inloggegevens nooit via deze website worden verstuurd. Het token kan op elk moment worden ingetrokken zonder je wachtwoord te wijzigen.",
+      "Deze app bewaart uiteindelijk alleen een Picnic auth token in een HTTP-only cookie. Bij inloggen met e-mailadres en wachtwoord worden je gegevens niet opgeslagen; ze worden alleen gebruikt om dat token bij Picnic op te halen.",
     isOfficialSite: "Is dit de officiële Picnic website?",
     isOfficialSiteBody:
       "Nee, dit is niet de officiële Picnic website. Dit is een onafhankelijk open-source project en is op geen enkele manier verbonden aan Picnic. Bekijk de broncode op",
@@ -259,6 +265,12 @@ const translations = {
     tokenPlaceholder: "Token hier einfügen",
     hideToken: "Token verbergen",
     showToken: "Token anzeigen",
+    loginWithCredentials: "E-Mail",
+    loginWithToken: "Auth-Token",
+    credentialsLoginHelp:
+      "Dein Passwort wird nicht gespeichert. Es wird nur serverseitig verwendet, um bei Picnic ein Auth-Token abzurufen.",
+    tokenLoginHelp:
+      "Nutze dies, wenn du bereits ein Picnic Auth-Token hast. Falls das Token noch 2FA benötigt, führen wir dich zur Verifizierung.",
     verifyButton: "Verifizieren",
     loginButton: "Anmelden",
     howToGetToken: "Wie bekomme ich einen Auth-Token?",
@@ -268,7 +280,7 @@ const translations = {
     copyAuthKeyAfter: "Wert und füge ihn oben ein.",
     whyAuthToken: "Warum brauche ich einen Auth-Token?",
     whyAuthTokenBody:
-      "Aus Sicherheitsgründen zeigen wir kein Standard-Anmeldeformular mit E-Mail-Adresse und Passwort. Ein Auth-Token stellt sicher, dass deine Anmeldedaten niemals über diese Website übertragen werden. Das Token kann jederzeit widerrufen werden, ohne dein Passwort zu ändern.",
+      "Diese App speichert am Ende nur ein Picnic Auth-Token in einem HTTP-only Cookie. Beim Anmelden mit E-Mail-Adresse und Passwort werden deine Daten nicht gespeichert; sie werden nur verwendet, um dieses Token bei Picnic abzurufen.",
     isOfficialSite: "Ist dies die offizielle Picnic-Website?",
     isOfficialSiteBody:
       "Nein, dies ist nicht die offizielle Picnic-Website. Dies ist ein unabhängiges Open-Source-Projekt und steht in keiner Verbindung zu Picnic. Sieh dir den Quellcode auf",
