@@ -304,6 +304,9 @@ function parseAllergensFromMarkdowns(markdowns: string[]): AllergenInfo {
   let afterIngredientHeader = false;
   let inMayContain = false;
 
+  const mayContainHeadingPattern =
+    /^(bevat mogelijk|kan bevatten|kann enthalten(?: sein)?|may contain)$/i;
+
   for (const raw of markdowns) {
     const clean = cleanMarkdown(raw).trim();
 
@@ -314,7 +317,7 @@ function parseAllergensFromMarkdowns(markdowns: string[]): AllergenInfo {
 
     if (/^(zutaten|ingrediënten|so wird|bereiding|schritt|stap)\b/i.test(clean)) break;
     if (/zutaten.*enthalten|ingrediënten.*bevatten/i.test(clean)) { afterIngredientHeader = true; continue; }
-    if (/kann enthalten|kan bevatten/i.test(clean)) { inMayContain = true; continue; }
+    if (mayContainHeadingPattern.test(clean)) { inMayContain = true; afterIngredientHeader = true; continue; }
     if (/keine allergene|geen allergenen|enthält keine|bevat geen/i.test(clean)) continue;
     if (!clean || clean.length > 40) continue;
 
