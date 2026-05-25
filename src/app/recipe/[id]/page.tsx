@@ -164,6 +164,10 @@ function RecipeDetailInner({ recipeId }: { recipeId: string }) {
         method: nextSaved ? "POST" : "DELETE",
       });
       const data = (await response.json()) as Partial<ApiErrorResponse>;
+      if (data.code === "TOKEN_EXPIRED") {
+        window.location.href = TOKEN_EXPIRED_REDIRECT;
+        return;
+      }
       if (!response.ok || data.error) {
         throw new Error(data.error ?? t.recipeSaveError);
       }
