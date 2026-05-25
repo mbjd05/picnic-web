@@ -73,30 +73,37 @@ export function CartItemCard({ item, onIncrement, onDecrement, onRemoveAll }: Ca
           </div>
         </Link>
 
-        {/* Quantity + price (hidden for unavailable items) */}
-        {!item.isUnavailable && onIncrement && onDecrement && onRemoveAll && (
-          <div className="flex shrink-0 flex-col items-end justify-center gap-1">
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={onRemoveAll}
-                className="text-text-muted hover:text-picnic-red flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 transition-colors hover:bg-red-50 active:opacity-70"
-                aria-label={`${t.removeItemAriaLabel}: ${item.name}`}
-                title={t.removeItemAriaLabel}
-              >
-                <TrashIcon />
-              </button>
-              <QuantityStepper
-                variant="cart"
-                quantity={item.quantity}
-                maxCount={item.maxCount}
-                onIncrement={onIncrement}
-                onDecrement={onDecrement}
-              />
-            </div>
-            <PriceDisplay displayPrice={item.displayPrice} originalPrice={item.originalPrice} />
-          </div>
-        )}
+        {/* Quantity + price */}
+        <div className="flex shrink-0 flex-col items-end justify-center gap-1">
+          {!item.isUnavailable && onIncrement && onDecrement && onRemoveAll ? (
+            <>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={onRemoveAll}
+                  className="text-text-muted hover:text-picnic-red flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 transition-colors hover:bg-red-50 active:opacity-70"
+                  aria-label={`${t.removeItemAriaLabel}: ${item.name}`}
+                  title={t.removeItemAriaLabel}
+                >
+                  <TrashIcon />
+                </button>
+                <QuantityStepper
+                  variant="cart"
+                  quantity={item.quantity}
+                  maxCount={item.maxCount}
+                  onIncrement={onIncrement}
+                  onDecrement={onDecrement}
+                />
+              </div>
+              <PriceDisplay displayPrice={item.displayPrice} originalPrice={item.originalPrice} />
+            </>
+          ) : (
+            <>
+              <span className="text-text-muted text-xs font-semibold">{item.quantity}x</span>
+              <PriceDisplay displayPrice={item.displayPrice} originalPrice={item.originalPrice} />
+            </>
+          )}
+        </div>
       </div>
 
       {/* Unavailability explanation (US4) */}
