@@ -46,7 +46,7 @@ export async function GET(
     const orderedFallbackProducts = extractProducts(rawSellingUnits);
 
     let parsedSections: SearchSection[] = [];
-    let enrichedProductsById = new Map(
+    const enrichedProductsById = new Map(
       orderedFallbackProducts.map((product) => [product.id, product])
     );
 
@@ -70,10 +70,11 @@ export async function GET(
       const { products: parsedProducts, sections } = parseFusionSearchSections(rawPage);
 
       parsedSections = sections;
-      enrichedProductsById = new Map([
-        ...orderedFallbackProducts.map((product) => [product.id, product] as const),
-        ...parsedProducts.map((product) => [product.id, product] as const),
-      ]);
+      for (const product of parsedProducts) {
+        if (!enrichedProductsById.has(product.id)) {
+          enrichedProductsById.set(product.id, product);
+        }
+      }
     } catch (metadataError) {
       const message =
         metadataError instanceof Error ? metadataError.message : "Unknown metadata parse error";
