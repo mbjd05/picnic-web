@@ -3,12 +3,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { readAuthToken, readCountryCode } from "@/lib/auth";
 import { mapPaymentRouteError, removePaymentOption } from "@/lib/picnic-payment";
 import { buildPicnicClient } from "@/lib/picnic-client";
+import { rejectCrossOriginUnsafeRequest } from "@/lib/request-security";
 import type { ApiErrorResponse, PaymentProfile } from "@/lib/types";
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ paymentOptionId: string }> }
 ): Promise<NextResponse<PaymentProfile | ApiErrorResponse>> {
+  const forbidden = rejectCrossOriginUnsafeRequest(request);
+  if (forbidden) return forbidden;
+
   const token = readAuthToken(request);
 
   if (!token) {

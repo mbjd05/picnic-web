@@ -6,6 +6,7 @@ import type { DeliverySlotPickerData } from "@/lib/delivery-slot-types";
 import { parseCartResponse } from "@/lib/parse-cart";
 import { parseDeliverySlotsPicker } from "@/lib/parse-delivery-slots";
 import { buildPicnicClient } from "@/lib/picnic-client";
+import { rejectCrossOriginUnsafeRequest } from "@/lib/request-security";
 import type { ApiErrorResponse, CartData } from "@/lib/types";
 
 // ─── sendRequest cast type ───────────────────────────────────────────────────
@@ -81,6 +82,9 @@ export async function GET(
 export async function POST(
   request: NextRequest
 ): Promise<NextResponse<CartData | ApiErrorResponse>> {
+  const forbidden = rejectCrossOriginUnsafeRequest(request);
+  if (forbidden) return forbidden;
+
   const token = readAuthToken(request);
 
   if (!token) {

@@ -31,10 +31,11 @@ export const config = {
      * Match all request paths EXCEPT:
      * - /login (the login page itself)
      * - /api/auth/:path* (login/logout API routes)
+     * - /cart/payment-return (external payment provider redirect target)
      * - /_next/:path* (Next.js internals: static files, HMR, etc.)
      * - /favicon.ico (browser icon request)
      * - /icon (App Router file-based icon, e.g. /icon.png)
      */
-    "/((?!login|api/auth|_next|favicon\\.ico|icon).*)",
+    "/((?!login|api/auth|cart/payment-return|_next|favicon\\.ico|icon).*)",
   ],
 };

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isApiAuthError } from "@/lib/api-error";
 import { readAuthToken, readCountryCode } from "@/lib/auth";
 import { buildPicnicClient } from "@/lib/picnic-client";
+import { rejectCrossOriginUnsafeRequest } from "@/lib/request-security";
 import type { ApiErrorResponse } from "@/lib/types";
 
 const RECIPE_ID_RE = /^[0-9a-f]{24}$/;
@@ -26,6 +27,9 @@ async function updateSavedState(
   params: Promise<{ id: string }>,
   shouldSave: boolean
 ): Promise<NextResponse<{ saved: boolean } | ApiErrorResponse>> {
+  const forbidden = rejectCrossOriginUnsafeRequest(request);
+  if (forbidden) return forbidden;
+
   const token = readAuthToken(request);
 
   if (!token) {
