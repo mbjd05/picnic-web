@@ -16,7 +16,7 @@ The current Next app is the visual source of truth. Ported UI should preserve th
 - [x] Chunk 1: Scaffold the target apps and extract first reusable API services.
 - [x] Chunk 2: Port the first read-only API routes to Hono.
 - [x] Chunk 3: Port auth/session routes to Hono.
-- [ ] Chunk 4: Port product/category detail API routes to Hono.
+- [x] Chunk 4: Port product/category detail API routes to Hono.
 - [ ] Chunk 5: Port cart and delivery-slot API routes to Hono.
 - [ ] Chunk 6: Port recipe detail, saved recipe, and recipe add-to-cart API routes to Hono.
 - [ ] Chunk 7: Port payment profile and checkout API routes to Hono.
@@ -98,29 +98,27 @@ Validated:
 - `npm run build:api`
 - `npm run build`
 
+### Chunk 4: Product And Category Detail API Routes
+
+Commit: `3abe6ba Port product browsing routes to Hono`
+
+Implemented:
+
+- Extracted framework-neutral services for product detail, suggestions, subcategories, category products, arbitrary product pages, and image proxying.
+- Added Hono routes for `GET /api/product/:id`, `GET /api/suggestions`, `GET /api/image`, `GET /api/pages/products`, `GET /api/categories/:categoryId/subcategories`, and `GET /api/categories/:categoryId/products`.
+- Kept the existing Next routes as thin adapters over the shared services.
+- Preserved product parsing, category page section parsing, search suggestions, Picnic image proxy headers, and auth error semantics.
+- Preserved the existing missing-`pageId` response ordering for `/api/pages/products`.
+
+Validated:
+
+- `npm run lint`
+- `npx tsc --noEmit --pretty false`
+- `npm run build:web`
+- `npm run build:api`
+- `npm run build`
+
 ## Remaining Chunks
-
-### Chunk 4: Port Product And Category Detail API Routes To Hono
-
-Goal:
-
-Move the remaining read-only grocery browsing API routes needed for search/category/product screens.
-
-Scope:
-
-- Port `GET /api/product/[id]`.
-- Port `GET /api/image`.
-- Port `GET /api/suggestions`.
-- Port `GET /api/pages/products`.
-- Port `GET /api/categories/[categoryId]/subcategories`.
-- Port `GET /api/categories/[categoryId]/products`.
-- Extract services where route handlers still contain logic.
-- Preserve current search/category section behavior, product badges, bundle pricing, image proxy behavior, and auth error semantics.
-
-Validation:
-
-- Typecheck, lint, Next build, Worker dry-run build.
-- Compare representative responses between Next and Hono for product detail, category products, subcategories, and suggestions.
 
 ### Chunk 5: Port Cart And Delivery-Slot API Routes To Hono
 
