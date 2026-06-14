@@ -1,24 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import {
+  AUTH_COOKIE_MAX_AGE_SECONDS,
+  AUTH_COOKIE_NAME,
   COUNTRY_COOKIE_NAME,
-  type CountryCode,
-  DEFAULT_COUNTRY_CODE,
-  SUPPORTED_COUNTRY_CODES,
-} from "./types";
-
-// ─── Auth Constants ──────────────────────────────────────────────────────────
-
-/** Cookie name for the Picnic auth token. */
-export const AUTH_COOKIE_NAME = "picnic_auth_token";
-
-/** Cookie max-age in seconds (30 days). */
-export const AUTH_COOKIE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
-
-/** Path to the login page. */
-export const LOGIN_PATH = "/login";
+  LOGIN_PATH,
+  parseAuthToken,
+  parseCountryCookie,
+} from "./session-cookies";
+import type { CountryCode } from "./types";
 
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
+
+export { AUTH_COOKIE_MAX_AGE_SECONDS, AUTH_COOKIE_NAME, COUNTRY_COOKIE_NAME, LOGIN_PATH };
 
 // ─── Cookie Utilities ────────────────────────────────────────────────────────
 
@@ -27,11 +21,7 @@ const IS_PRODUCTION = process.env.NODE_ENV === "production";
  * Returns null if the cookie is missing or empty.
  */
 export function readAuthToken(request: NextRequest): string | null {
-  const value = request.cookies.get(AUTH_COOKIE_NAME)?.value;
-  if (!value || value.trim() === "") {
-    return null;
-  }
-  return value;
+  return parseAuthToken(request.cookies.get(AUTH_COOKIE_NAME)?.value);
 }
 
 /**
@@ -39,11 +29,7 @@ export function readAuthToken(request: NextRequest): string | null {
  * Falls back to DEFAULT_COUNTRY_CODE if the cookie is missing or invalid.
  */
 export function readCountryCode(request: NextRequest): CountryCode {
-  const value = request.cookies.get(COUNTRY_COOKIE_NAME)?.value?.toUpperCase();
-  if (value && (SUPPORTED_COUNTRY_CODES as readonly string[]).includes(value)) {
-    return value as CountryCode;
-  }
-  return DEFAULT_COUNTRY_CODE;
+  return parseCountryCookie(request.cookies.get(COUNTRY_COOKIE_NAME)?.value);
 }
 
 export function setAuthCookie(response: NextResponse, authToken: string): void {
