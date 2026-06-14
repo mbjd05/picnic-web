@@ -20,6 +20,8 @@
 # production
 /build
 /dist
+/apps/web/dist
+/apps/api/.wrangler
 
 # misc
 .DS_Store

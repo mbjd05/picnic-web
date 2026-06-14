@@ -1,21 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { isApiTokenExpiredError } from "@/lib/api-error";
+import { getCookbookService } from "@/lib/api-services/cookbook";
 import { readAuthToken, readCountryCode } from "@/lib/auth";
-import { parseCookbookPage } from "@/lib/parse-cookbook";
-import { buildPicnicClient } from "@/lib/picnic-client";
-import {
-  discoverRecipeCategories,
-  fetchRecipeCategoryPage,
-  isRecipeCategoryId,
-} from "@/lib/recipe-categories";
 import type { ApiErrorResponse, CookbookApiResponse } from "@/lib/types";
-
-const SAVED_PAGE_ID = "saved-deep-dive-page-content";
-
-type SendRequestClient = {
-  sendRequest: (method: string, path: string, body: unknown, fusion: boolean) => Promise<unknown>;
-};
 
 export async function GET(
   request: NextRequest
@@ -31,49 +18,6 @@ export async function GET(
 
   const countryCode = readCountryCode(request);
   const categoryId = request.nextUrl.searchParams.get("category");
-
-  try {
-    const client = buildPicnicClient(token, countryCode);
-
-    if (categoryId === "__saved__") {
-      const rawPage = await (client as unknown as SendRequestClient).sendRequest(
-        "GET",
-        `/pages/${SAVED_PAGE_ID}`,
-        null,
-        true
-      );
-      const recipes = parseCookbookPage(rawPage);
-      return NextResponse.json({ categories: [], recipes });
-    }
-
-    if (categoryId) {
-      if (!isRecipeCategoryId(categoryId)) {
-        return NextResponse.json({ error: "Invalid category ID" }, { status: 400 });
-      }
-      const rawPage = await fetchRecipeCategoryPage(client, categoryId);
-      const recipes = parseCookbookPage(rawPage);
-      return NextResponse.json({ categories: [], recipes });
-    }
-
-    // Default: editorial homepage + dynamically discovered browse categories.
-    const rawPage = await client.recipe.getRecipesPage();
-    const recipes = parseCookbookPage(rawPage);
-    const categories = await discoverRecipeCategories(client, rawPage, countryCode);
-    return NextResponse.json({ categories, recipes });
-  } catch (error) {
-    if (isApiTokenExpiredError(error)) {
-      return NextResponse.json(
-        { error: "Your token has expired", code: "TOKEN_EXPIRED" as const },
-        { status: 401 }
-      );
-    }
-
-    const message = error instanceof Error ? error.message : "Unknown error occurred";
-    console.error("[/api/cookbook] Failed:", message);
-
-    return NextResponse.json(
-      { error: "Failed to load recipes. Please try again later." },
-      { status: 502 }
-    );
-  }
+  const result = await getCookbookService(token, countryCode, categoryId);
+  return NextResponse.json(result.body, { status: result.status });
 }

@@ -4,29 +4,40 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:api": "wrangler dev --config apps/api/wrangler.jsonc",
+    "dev:web": "vite --config apps/web/vite.config.ts",
     "build": "next build",
+    "build:api": "wrangler deploy --dry-run --config apps/api/wrangler.jsonc",
+    "build:web": "vite build --config apps/web/vite.config.ts",
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.101.0",
+    "@tanstack/react-router": "^1.170.15",
+    "hono": "^4.12.25",
     "next": "16.2.1",
     "picnic-api": "^4.5.0",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260613.1",
     "@tailwindcss/postcss": "^4",
     "@trivago/prettier-plugin-sort-imports": "^6.0.2",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.0.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
     "prettier": "^3.8.3",
     "prettier-plugin-tailwindcss": "^0.8.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vite": "^8.0.16",
+    "wrangler": "^4.100.0"
   }
 }
