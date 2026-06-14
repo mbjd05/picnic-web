@@ -4,6 +4,7 @@ import { isApiAuthError } from "@/lib/api-error";
 import { readAuthToken, readCountryCode } from "@/lib/auth";
 import { buildPicnicClient } from "@/lib/picnic-client";
 import type { PicnicClientInstance } from "@/lib/picnic-client";
+import { rejectCrossOriginUnsafeRequest } from "@/lib/request-security";
 
 const RECIPE_ID_RE = /^[0-9a-f]{24}$/;
 
@@ -22,6 +23,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse<{ success: true } | { error: string }>> {
+  const forbidden = rejectCrossOriginUnsafeRequest(request);
+  if (forbidden) return forbidden;
+
   const token = readAuthToken(request);
   if (!token) {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });

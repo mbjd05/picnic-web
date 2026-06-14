@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { isApiAuthError } from "@/lib/api-error";
-import { AUTH_COOKIE_MAX_AGE_SECONDS, AUTH_COOKIE_NAME, readCountryCode } from "@/lib/auth";
+import { applyNoStore, readCountryCode, setAuthCookie, setCountryCookie } from "@/lib/auth";
 import { buildPicnicClient } from "@/lib/picnic-client";
+import { isCrossOriginUnsafeRequest } from "@/lib/request-security";
 import type { AuthApiResponse } from "@/lib/types";
-import { COUNTRY_COOKIE_NAME, type CountryCode, SUPPORTED_COUNTRY_CODES } from "@/lib/types";
+import { type CountryCode, SUPPORTED_COUNTRY_CODES } from "@/lib/types";
 
 /**
  * POST /api/auth/login
@@ -14,6 +15,10 @@ import { COUNTRY_COOKIE_NAME, type CountryCode, SUPPORTED_COUNTRY_CODES } from "
  * On failure, returns { success: false, error: <code> }.
  */
 export async function POST(request: NextRequest): Promise<NextResponse<AuthApiResponse>> {
+  if (isCrossOriginUnsafeRequest(request)) {
+    return authJson({ success: false, error: "Invalid request origin" }, 403);
+  }
+
   const body = await request.json().catch(() => null);
   const token: string | undefined = body?.token;
   // Prefer the country from the request body (set by the login page selector);
@@ -24,7 +29,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<AuthApiRe
     : readCountryCode(request);
 
   if (!token || token.trim() === "") {
-    return NextResponse.json({ success: false, error: "TOKEN_INVALID" });
+    return authJson({ success: false, error: "TOKEN_INVALID" });
   }
 
   try {
@@ -33,22 +38,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<AuthApiRe
     await client.catalog.getSuggestions("");
 
     const response = NextResponse.json<AuthApiResponse>({ success: true });
-    response.cookies.set(AUTH_COOKIE_NAME, trimmedToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: AUTH_COOKIE_MAX_AGE_SECONDS,
-    });
-    response.cookies.set(COUNTRY_COOKIE_NAME, countryCode, {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: AUTH_COOKIE_MAX_AGE_SECONDS,
-    });
+    setAuthCookie(response, trimmedToken);
+    setCountryCookie(response, countryCode);
 
-    return response;
+    return applyNoStore(response);
   } catch (error) {
     const trimmedToken = token.trim();
     const partialClient = buildPicnicClient(trimmedToken, countryCode);
@@ -61,15 +54,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<AuthApiRe
         error: "2FA_REQUIRED",
         partialToken: trimmedToken,
       });
-      response.cookies.set(COUNTRY_COOKIE_NAME, countryCode, {
-        httpOnly: false,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: AUTH_COOKIE_MAX_AGE_SECONDS,
-      });
+      setCountryCookie(response, countryCode);
 
-      return response;
+      return applyNoStore(response);
     } catch {
       // Fall through to the original token validation error handling.
     }
@@ -77,9 +64,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<AuthApiRe
     const isAuthError = isApiAuthError(error);
 
     if (isAuthError) {
-      return NextResponse.json({ success: false, error: "TOKEN_INVALID" });
+      return authJson({ success: false, error: "TOKEN_INVALID" });
     }
 
-    return NextResponse.json({ success: false, error: "API_UNREACHABLE" });
+    return authJson({ success: false, error: "API_UNREACHABLE" });
   }
+}
+
+function authJson(body: AuthApiResponse, status = 200): NextResponse<AuthApiResponse> {
+  return applyNoStore(NextResponse.json<AuthApiResponse>(body, { status }));
 }

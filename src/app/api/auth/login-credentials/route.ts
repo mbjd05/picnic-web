@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { isApiAuthError } from "@/lib/api-error";
-import { AUTH_COOKIE_MAX_AGE_SECONDS, AUTH_COOKIE_NAME, readCountryCode } from "@/lib/auth";
+import { applyNoStore, readCountryCode, setAuthCookie, setCountryCookie } from "@/lib/auth";
 import { buildPicnicClient, buildPicnicClientAnonymous } from "@/lib/picnic-client";
+import { isCrossOriginUnsafeRequest } from "@/lib/request-security";
 import type { AuthApiResponse } from "@/lib/types";
-import { COUNTRY_COOKIE_NAME, type CountryCode, SUPPORTED_COUNTRY_CODES } from "@/lib/types";
+import { type CountryCode, SUPPORTED_COUNTRY_CODES } from "@/lib/types";
 
 /**
  * POST /api/auth/login-credentials
@@ -14,6 +15,10 @@ import { COUNTRY_COOKIE_NAME, type CountryCode, SUPPORTED_COUNTRY_CODES } from "
  * If 2FA is not required, validates the token and sets the auth cookie.
  */
 export async function POST(request: NextRequest): Promise<NextResponse<AuthApiResponse>> {
+  if (isCrossOriginUnsafeRequest(request)) {
+    return authJson({ success: false, error: "Invalid request origin" }, 403);
+  }
+
   const body = await request.json().catch(() => null);
   const email: string | undefined = body?.email;
   const password: string | undefined = body?.password;
@@ -23,19 +28,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<AuthApiRe
     : readCountryCode(request);
 
   if (!email || email.trim() === "" || !password || password.trim() === "") {
-    return NextResponse.json({
+    return authJson({
       success: false,
       error: "CREDENTIALS_INVALID",
     });
   }
-
-  const cookieOptions = {
-    httpOnly: false,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax" as const,
-    path: "/",
-    maxAge: AUTH_COOKIE_MAX_AGE_SECONDS,
-  };
 
   try {
     const client = buildPicnicClientAnonymous(countryCode);
@@ -43,7 +40,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<AuthApiRe
 
     const authKey = result.authKey || client.authKey;
     if (!authKey) {
-      return NextResponse.json({
+      return authJson({
         success: false,
         error: "CREDENTIALS_INVALID",
       });
@@ -56,7 +53,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<AuthApiRe
         await client.auth.generate2FACode("SMS");
       } catch (error) {
         if (!canContinueAfter2FAGenerationError(error)) {
-          return NextResponse.json({ success: false, error: "API_UNREACHABLE" });
+          return authJson({ success: false, error: "API_UNREACHABLE" });
         }
       }
       // Store the country cookie now so verify-2fa can read it.
@@ -65,8 +62,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<AuthApiRe
         error: "2FA_REQUIRED" as const,
         partialToken: authKey,
       });
-      response.cookies.set(COUNTRY_COOKIE_NAME, countryCode, cookieOptions);
-      return response;
+      setCountryCookie(response, countryCode);
+      return applyNoStore(response);
     }
 
     // No 2FA required — validate the token before storing it.
@@ -74,26 +71,24 @@ export async function POST(request: NextRequest): Promise<NextResponse<AuthApiRe
     await validatedClient.catalog.getSuggestions("");
 
     const response = NextResponse.json<AuthApiResponse>({ success: true });
-    response.cookies.set(AUTH_COOKIE_NAME, authKey, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: AUTH_COOKIE_MAX_AGE_SECONDS,
-    });
-    response.cookies.set(COUNTRY_COOKIE_NAME, countryCode, cookieOptions);
+    setAuthCookie(response, authKey);
+    setCountryCookie(response, countryCode);
 
-    return response;
+    return applyNoStore(response);
   } catch (error) {
     if (isApiAuthError(error)) {
-      return NextResponse.json({
+      return authJson({
         success: false,
         error: "CREDENTIALS_INVALID",
       });
     }
 
-    return NextResponse.json({ success: false, error: "API_UNREACHABLE" });
+    return authJson({ success: false, error: "API_UNREACHABLE" });
   }
+}
+
+function authJson(body: AuthApiResponse, status = 200): NextResponse<AuthApiResponse> {
+  return applyNoStore(NextResponse.json<AuthApiResponse>(body, { status }));
 }
 
 function canContinueAfter2FAGenerationError(error: unknown): boolean {

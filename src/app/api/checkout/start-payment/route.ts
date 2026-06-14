@@ -3,11 +3,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { readAuthToken, readCountryCode } from "@/lib/auth";
 import { mapPaymentRouteError, startCheckoutPayment } from "@/lib/picnic-payment";
 import { buildPicnicClient } from "@/lib/picnic-client";
+import { rejectCrossOriginUnsafeRequest } from "@/lib/request-security";
 import type { ApiErrorResponse, CheckoutPaymentResponse } from "@/lib/types";
 
 export async function POST(
   request: NextRequest
 ): Promise<NextResponse<CheckoutPaymentResponse | ApiErrorResponse>> {
+  const forbidden = rejectCrossOriginUnsafeRequest(request);
+  if (forbidden) return forbidden;
+
   const token = readAuthToken(request);
 
   if (!token) {

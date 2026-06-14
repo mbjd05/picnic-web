@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { isApiAuthError } from "@/lib/api-error";
+import { isApiTokenExpiredError } from "@/lib/api-error";
 import { readAuthToken, readCountryCode } from "@/lib/auth";
 import { parseCookbookPage } from "@/lib/parse-cookbook";
 import { buildPicnicClient } from "@/lib/picnic-client";
@@ -40,7 +40,7 @@ export async function GET(
     const recipes = parseCookbookPage(rawPage);
     return NextResponse.json({ categories: [], recipes });
   } catch (error) {
-    if (isApiAuthError(error)) {
+    if (isApiTokenExpiredError(error)) {
       return NextResponse.json(
         { error: "Your token has expired", code: "TOKEN_EXPIRED" as const },
         { status: 401 }

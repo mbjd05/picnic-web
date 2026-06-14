@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { is2FAError } from "@/lib/api-error";
-import { AUTH_COOKIE_MAX_AGE_SECONDS, AUTH_COOKIE_NAME, readCountryCode } from "@/lib/auth";
+import { applyNoStore, readCountryCode, setAuthCookie } from "@/lib/auth";
 import { buildPicnicClient } from "@/lib/picnic-client";
+import { isCrossOriginUnsafeRequest } from "@/lib/request-security";
 import type { AuthApiResponse } from "@/lib/types";
 
 /**
@@ -13,13 +14,17 @@ import type { AuthApiResponse } from "@/lib/types";
  * On success, sets the auth cookie with the fully-authenticated token.
  */
 export async function POST(request: NextRequest): Promise<NextResponse<AuthApiResponse>> {
+  if (isCrossOriginUnsafeRequest(request)) {
+    return authJson({ success: false, error: "Invalid request origin" }, 403);
+  }
+
   const body = await request.json().catch(() => null);
   const partialToken: string | undefined = body?.partialToken;
   const code: string | undefined = body?.code;
   const countryCode = readCountryCode(request);
 
   if (!partialToken || !code || code.trim() === "") {
-    return NextResponse.json({
+    return authJson({
       success: false,
       error: "2FA_INVALID",
     });
@@ -33,7 +38,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<AuthApiRe
 
     const authKey = result.authKey || client.authKey;
     if (!authKey) {
-      return NextResponse.json({
+      return authJson({
         success: false,
         error: "2FA_INVALID",
       });
@@ -44,23 +49,21 @@ export async function POST(request: NextRequest): Promise<NextResponse<AuthApiRe
     await validatedClient.catalog.getSuggestions("");
 
     const response = NextResponse.json<AuthApiResponse>({ success: true });
-    response.cookies.set(AUTH_COOKIE_NAME, authKey, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: AUTH_COOKIE_MAX_AGE_SECONDS,
-    });
+    setAuthCookie(response, authKey);
 
-    return response;
+    return applyNoStore(response);
   } catch (error) {
     if (is2FAError(error)) {
-      return NextResponse.json({
+      return authJson({
         success: false,
         error: "2FA_INVALID",
       });
     }
 
-    return NextResponse.json({ success: false, error: "API_UNREACHABLE" });
+    return authJson({ success: false, error: "API_UNREACHABLE" });
   }
+}
+
+function authJson(body: AuthApiResponse, status = 200): NextResponse<AuthApiResponse> {
+  return applyNoStore(NextResponse.json<AuthApiResponse>(body, { status }));
 }

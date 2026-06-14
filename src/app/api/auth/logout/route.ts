@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-import { AUTH_COOKIE_NAME } from "@/lib/auth";
+import { applyNoStore, clearAuthCookie } from "@/lib/auth";
+import { isCrossOriginUnsafeRequest } from "@/lib/request-security";
 import type { AuthApiResponse } from "@/lib/types";
 
 /**
@@ -8,15 +9,17 @@ import type { AuthApiResponse } from "@/lib/types";
  *
  * Clears the auth cookie and returns success.
  */
-export async function POST(): Promise<NextResponse<AuthApiResponse>> {
-  const response = NextResponse.json<AuthApiResponse>({ success: true });
-  response.cookies.set(AUTH_COOKIE_NAME, "", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 0,
-  });
+export async function POST(request: NextRequest): Promise<NextResponse<AuthApiResponse>> {
+  if (isCrossOriginUnsafeRequest(request)) {
+    return authJson({ success: false, error: "Invalid request origin" }, 403);
+  }
 
-  return response;
+  const response = NextResponse.json<AuthApiResponse>({ success: true });
+  clearAuthCookie(response);
+
+  return applyNoStore(response);
+}
+
+function authJson(body: AuthApiResponse, status = 200): NextResponse<AuthApiResponse> {
+  return applyNoStore(NextResponse.json<AuthApiResponse>(body, { status }));
 }

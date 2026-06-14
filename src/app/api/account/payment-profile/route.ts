@@ -7,6 +7,7 @@ import {
   readPaymentProfile,
 } from "@/lib/picnic-payment";
 import { buildPicnicClient } from "@/lib/picnic-client";
+import { rejectCrossOriginUnsafeRequest } from "@/lib/request-security";
 import type { ApiErrorResponse, PaymentOptionRequest, PaymentProfile } from "@/lib/types";
 
 export async function GET(
@@ -38,6 +39,9 @@ export async function GET(
 export async function POST(
   request: NextRequest
 ): Promise<NextResponse<PaymentProfile | ApiErrorResponse>> {
+  const forbidden = rejectCrossOriginUnsafeRequest(request);
+  if (forbidden) return forbidden;
+
   const token = readAuthToken(request);
 
   if (!token) {

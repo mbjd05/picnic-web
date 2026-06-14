@@ -4,6 +4,7 @@ import { isApiAuthError } from "@/lib/api-error";
 import { readAuthToken, readCountryCode } from "@/lib/auth";
 import { parseCartResponse } from "@/lib/parse-cart";
 import { buildPicnicClient } from "@/lib/picnic-client";
+import { rejectCrossOriginUnsafeRequest } from "@/lib/request-security";
 import type { ApiErrorResponse, CartData, CartMutationRequest } from "@/lib/types";
 
 /**
@@ -83,6 +84,9 @@ export async function GET(
 export async function POST(
   request: NextRequest
 ): Promise<NextResponse<CartData | ApiErrorResponse>> {
+  const forbidden = rejectCrossOriginUnsafeRequest(request);
+  if (forbidden) return forbidden;
+
   const token = readAuthToken(request);
 
   if (!token) {

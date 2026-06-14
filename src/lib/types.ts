@@ -504,6 +504,7 @@ export type RecipeItem = {
 export type RecipeCategory = {
   id: string;
   name: string;
+  section?: string;
   count?: number;
 };
 

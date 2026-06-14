@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 import {
   COUNTRY_COOKIE_NAME,
@@ -17,6 +17,8 @@ export const AUTH_COOKIE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 
 /** Path to the login page. */
 export const LOGIN_PATH = "/login";
+
+const IS_PRODUCTION = process.env.NODE_ENV === "production";
 
 // ─── Cookie Utilities ────────────────────────────────────────────────────────
 
@@ -42,4 +44,41 @@ export function readCountryCode(request: NextRequest): CountryCode {
     return value as CountryCode;
   }
   return DEFAULT_COUNTRY_CODE;
+}
+
+export function setAuthCookie(response: NextResponse, authToken: string): void {
+  response.cookies.set(AUTH_COOKIE_NAME, authToken, {
+    httpOnly: true,
+    secure: IS_PRODUCTION,
+    sameSite: "strict",
+    path: "/",
+    maxAge: AUTH_COOKIE_MAX_AGE_SECONDS,
+  });
+}
+
+export function clearAuthCookie(response: NextResponse): void {
+  response.cookies.set(AUTH_COOKIE_NAME, "", {
+    httpOnly: true,
+    secure: IS_PRODUCTION,
+    sameSite: "strict",
+    path: "/",
+    maxAge: 0,
+  });
+}
+
+export function setCountryCookie(response: NextResponse, countryCode: CountryCode): void {
+  response.cookies.set(COUNTRY_COOKIE_NAME, countryCode, {
+    httpOnly: false,
+    secure: IS_PRODUCTION,
+    sameSite: "lax",
+    path: "/",
+    maxAge: AUTH_COOKIE_MAX_AGE_SECONDS,
+  });
+}
+
+export function applyNoStore<T>(response: NextResponse<T>): NextResponse<T> {
+  response.headers.set("Cache-Control", "no-store");
+  response.headers.set("Pragma", "no-cache");
+  response.headers.set("Expires", "0");
+  return response;
 }
