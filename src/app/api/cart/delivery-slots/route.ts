@@ -1,24 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { isApiAuthError } from "@/lib/api-error";
+import { getDeliverySlotsService, setDeliverySlotService } from "@/lib/api-services/cart";
 import { readAuthToken, readCountryCode } from "@/lib/auth";
 import type { DeliverySlotPickerData } from "@/lib/delivery-slot-types";
-import { parseCartResponse } from "@/lib/parse-cart";
-import { parseDeliverySlotsPicker } from "@/lib/parse-delivery-slots";
-import { buildPicnicClient } from "@/lib/picnic-client";
 import { rejectCrossOriginUnsafeRequest } from "@/lib/request-security";
 import type { ApiErrorResponse, CartData } from "@/lib/types";
-
-// ─── sendRequest cast type ───────────────────────────────────────────────────
-
-type SendRequestClient = {
-  sendRequest: (
-    method: string,
-    path: string,
-    body: Record<string, unknown> | null,
-    includeFusion: boolean
-  ) => Promise<unknown>;
-};
 
 // ─── GET /api/cart/delivery-slots ────────────────────────────────────────────
 
@@ -39,38 +25,8 @@ export async function GET(
   }
 
   const countryCode = readCountryCode(request);
-
-  try {
-    const client = buildPicnicClient(token, countryCode);
-
-    const rawResult = await (client as unknown as SendRequestClient).sendRequest(
-      "GET",
-      "/cart/delivery_slots",
-      null,
-      false
-    );
-
-    const pickerData = parseDeliverySlotsPicker(rawResult);
-
-    return NextResponse.json(pickerData);
-  } catch (error) {
-    if (isApiAuthError(error)) {
-      return NextResponse.json(
-        { error: "Your token has expired", code: "TOKEN_EXPIRED" as const },
-        { status: 401 }
-      );
-    }
-
-    const message = error instanceof Error ? error.message : "Unknown error occurred";
-    console.error("[/api/cart/delivery-slots] Failed to fetch slots:", message);
-
-    return NextResponse.json(
-      {
-        error: "Failed to fetch delivery slots. Please try again later.",
-      },
-      { status: 502 }
-    );
-  }
+  const result = await getDeliverySlotsService(token, countryCode);
+  return NextResponse.json(result.body, { status: result.status });
 }
 
 // ─── POST /api/cart/delivery-slots ───────────────────────────────────────────
@@ -96,48 +52,13 @@ export async function POST(
 
   const countryCode = readCountryCode(request);
 
-  let body: { slotId?: string };
+  let body: unknown;
   try {
-    body = (await request.json()) as { slotId?: string };
+    body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  if (!body.slotId || typeof body.slotId !== "string") {
-    return NextResponse.json({ error: "Missing required field: slotId" }, { status: 400 });
-  }
-
-  try {
-    const client = buildPicnicClient(token, countryCode);
-
-    const rawCart = await (client as unknown as SendRequestClient).sendRequest(
-      "POST",
-      "/cart/set_delivery_slot",
-      {
-        slot_id: body.slotId,
-      },
-      false
-    );
-
-    const cartData = parseCartResponse(rawCart);
-
-    return NextResponse.json(cartData);
-  } catch (error) {
-    if (isApiAuthError(error)) {
-      return NextResponse.json(
-        { error: "Your token has expired", code: "TOKEN_EXPIRED" as const },
-        { status: 401 }
-      );
-    }
-
-    const message = error instanceof Error ? error.message : "Unknown error occurred";
-    console.error("[/api/cart/delivery-slots] Failed to set slot:", message);
-
-    return NextResponse.json(
-      {
-        error: "Failed to set delivery slot. Please try again.",
-      },
-      { status: 502 }
-    );
-  }
+  const result = await setDeliverySlotService(token, countryCode, body);
+  return NextResponse.json(result.body, { status: result.status });
 }
