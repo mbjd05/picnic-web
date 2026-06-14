@@ -17,7 +17,7 @@ The current Next app is the visual source of truth. Ported UI should preserve th
 - [x] Chunk 2: Port the first read-only API routes to Hono.
 - [x] Chunk 3: Port auth/session routes to Hono.
 - [x] Chunk 4: Port product/category detail API routes to Hono.
-- [ ] Chunk 5: Port cart and delivery-slot API routes to Hono.
+- [x] Chunk 5: Port cart and delivery-slot API routes to Hono.
 - [ ] Chunk 6: Port recipe detail, saved recipe, and recipe add-to-cart API routes to Hono.
 - [ ] Chunk 7: Port payment profile and checkout API routes to Hono.
 - [ ] Chunk 8: Add Worker API security, headers, and response helpers.
@@ -118,28 +118,27 @@ Validated:
 - `npm run build:api`
 - `npm run build`
 
+### Chunk 5: Cart And Delivery-Slot API Routes
+
+Commit: `73661ce Port cart routes to Hono`
+
+Implemented:
+
+- Extracted framework-neutral cart services for cart reads, cart mutations, delivery-slot listing, and delivery-slot selection.
+- Added Hono routes for `GET /api/cart`, `POST /api/cart`, `GET /api/cart/delivery-slots`, and `POST /api/cart/delivery-slots`.
+- Kept the existing Next cart routes as thin adapters over the shared services.
+- Preserved cart parsing, decorator override handling, bundle discount data, unavailable item handling, delivery slot parsing, and selected-slot cart reconciliation.
+- Preserved same-origin checks on cart and delivery-slot POST routes.
+
+Validated:
+
+- `npm run lint`
+- `npx tsc --noEmit --pretty false`
+- `npm run build:web`
+- `npm run build:api`
+- `npm run build`
+
 ## Remaining Chunks
-
-### Chunk 5: Port Cart And Delivery-Slot API Routes To Hono
-
-Goal:
-
-Move cart read/mutation and delivery slot routes into Hono, with careful preservation of cart mutation behavior.
-
-Scope:
-
-- Port `GET /api/cart`.
-- Port `POST /api/cart`.
-- Port `GET /api/cart/delivery-slots`.
-- Port delivery slot mutation route behavior.
-- Preserve quantity stepping, remove-one, remove-all, bundle progress, unavailable item handling, credit/fee summaries, and delivery banner data.
-- Add same-origin checks for unsafe methods.
-
-Validation:
-
-- Typecheck, lint, Next build, Worker dry-run build.
-- Manual add/remove/remove-all smoke tests from search/listing and cart.
-- Manual cart refresh and delivery slot selection smoke tests.
 
 ### Chunk 6: Port Recipe API Routes To Hono
 
@@ -465,7 +464,3 @@ npm run build
 ```
 
 After the Next app is retired, replace `npm run build` with the final Worker/web build commands only.
-
-## Current Next Chunk Recommendation
-
-Chunk 3 should be next. Auth is the right dependency to move before deeper UI work because every meaningful Vite route needs the Worker to own session creation, session clearing, 2FA continuation, and secure cookie behavior.
