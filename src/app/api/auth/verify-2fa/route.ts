@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { is2FAError } from "@/lib/api-error";
+import { verify2FAService } from "@/lib/api-services/auth";
 import { applyNoStore, readCountryCode, setAuthCookie } from "@/lib/auth";
-import { buildPicnicClient } from "@/lib/picnic-client";
 import { isCrossOriginUnsafeRequest } from "@/lib/request-security";
 import type { AuthApiResponse } from "@/lib/types";
 
@@ -22,46 +21,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<AuthApiRe
   const partialToken: string | undefined = body?.partialToken;
   const code: string | undefined = body?.code;
   const countryCode = readCountryCode(request);
+  const result = await verify2FAService(partialToken, code, countryCode);
 
-  if (!partialToken || !code || code.trim() === "") {
-    return authJson({
-      success: false,
-      error: "2FA_INVALID",
-    });
+  const response = NextResponse.json<AuthApiResponse>(result.body, { status: result.status });
+  if (result.authToken) {
+    setAuthCookie(response, result.authToken);
   }
-
-  try {
-    // Build a client with the pre-2FA partial token so it is sent
-    // in the x-picnic-auth header during verification.
-    const client = buildPicnicClient(partialToken, countryCode);
-    const result = await client.auth.verify2FACode(code.trim());
-
-    const authKey = result.authKey || client.authKey;
-    if (!authKey) {
-      return authJson({
-        success: false,
-        error: "2FA_INVALID",
-      });
-    }
-
-    // Validate the fully-authenticated token before storing it.
-    const validatedClient = buildPicnicClient(authKey, countryCode);
-    await validatedClient.catalog.getSuggestions("");
-
-    const response = NextResponse.json<AuthApiResponse>({ success: true });
-    setAuthCookie(response, authKey);
-
-    return applyNoStore(response);
-  } catch (error) {
-    if (is2FAError(error)) {
-      return authJson({
-        success: false,
-        error: "2FA_INVALID",
-      });
-    }
-
-    return authJson({ success: false, error: "API_UNREACHABLE" });
-  }
+  return applyNoStore(response);
 }
 
 function authJson(body: AuthApiResponse, status = 200): NextResponse<AuthApiResponse> {
