@@ -1,25 +1,18 @@
 import crypto from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 
-import { isApiAuthError } from "@/lib/api-error";
+import { isApiTokenExpiredError } from "@/lib/api-error";
 import { readAuthToken, readCountryCode } from "@/lib/auth";
 import { parseCookbookPage } from "@/lib/parse-cookbook";
 import { buildPicnicClient } from "@/lib/picnic-client";
-import { getRecipeCategories } from "@/lib/recipe-categories";
-import type { PicnicClientInstance } from "@/lib/picnic-client";
 
 // Server-side cache per country, expires after 5 minutes.
 const cache = new Map<string, { counts: Record<string, number>; expiresAt: number }>();
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
-async function fetchCount(client: PicnicClientInstance, categoryId: string): Promise<number> {
-  try {
-    const rawPage = await client.app.getPage(categoryId);
-    return parseCookbookPage(rawPage).length;
-  } catch {
-    return 0;
-  }
-}
+type SendRequestClient = {
+  sendRequest: (method: string, path: string, body: unknown, fusion: boolean) => Promise<unknown>;
+};
 
 export async function GET(
   request: NextRequest
@@ -38,23 +31,22 @@ export async function GET(
 
   try {
     const client = buildPicnicClient(token, countryCode);
-    const categories = getRecipeCategories(countryCode);
-
-    const [featuredCount, savedCount, ...categoryEntries] = await Promise.all([
-      fetchCount(client, "meals-page-root"),
-      fetchCount(client, "saved-deep-dive-page-content"),
-      ...categories.map(async (cat) => [cat.id, await fetchCount(client, cat.id)] as const),
-    ]);
+    const rawFeaturedPage = await client.recipe.getRecipesPage();
+    const rawSavedPage = await (client as unknown as SendRequestClient).sendRequest(
+      "GET",
+      "/pages/saved-deep-dive-page-content",
+      null,
+      true
+    );
 
     const counts = {
-      __featured__: featuredCount,
-      __saved__: savedCount,
-      ...Object.fromEntries(categoryEntries),
+      __featured__: parseCookbookPage(rawFeaturedPage).length,
+      __saved__: parseCookbookPage(rawSavedPage).length,
     };
     cache.set(cacheKey, { counts, expiresAt: Date.now() + CACHE_TTL_MS });
     return NextResponse.json(counts);
   } catch (error) {
-    if (isApiAuthError(error)) {
+    if (isApiTokenExpiredError(error)) {
       return NextResponse.json({ error: "Your token has expired" }, { status: 401 });
     }
     return NextResponse.json({ error: "Failed to load counts" }, { status: 502 });

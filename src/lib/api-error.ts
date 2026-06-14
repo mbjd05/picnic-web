@@ -25,6 +25,25 @@ export function isApiAuthError(error: unknown): boolean {
 }
 
 /**
+ * Returns true only for errors that are strong evidence that the current token
+ * is unusable. Generic 403s can also be upstream throttling/anti-abuse, so
+ * routes that would redirect the user to login should prefer this narrower
+ * check over `isApiAuthError`.
+ */
+export function isApiTokenExpiredError(error: unknown): boolean {
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    return (
+      message.includes("401") ||
+      message.includes("unauthorized") ||
+      message.includes("token") ||
+      message.includes("login failed")
+    );
+  }
+  return false;
+}
+
+/**
  * Returns true if the error indicates a 2FA-related failure — a superset of
  * the standard auth error patterns plus 2FA-specific messages.
  */

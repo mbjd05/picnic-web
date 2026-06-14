@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { isApiAuthError } from "@/lib/api-error";
+import { isApiTokenExpiredError } from "@/lib/api-error";
 import { readAuthToken, readCountryCode } from "@/lib/auth";
 import { parseCookbookPage } from "@/lib/parse-cookbook";
 import { buildPicnicClient } from "@/lib/picnic-client";
-import { getRecipeCategories } from "@/lib/recipe-categories";
+import {
+  discoverRecipeCategories,
+  fetchRecipeCategoryPage,
+  isRecipeCategoryId,
+} from "@/lib/recipe-categories";
 import type { ApiErrorResponse, CookbookApiResponse } from "@/lib/types";
 
-// DE uses short slug IDs (recipe-cattree-*); NL uses UUID-based content pages.
-const CATEGORY_ID_RE =
-  /^recipe-cattree-[\w-]+$|^meals-category-page-content\?category_id=[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const SAVED_PAGE_ID = "saved-deep-dive-page-content";
 
 type SendRequestClient = {
@@ -46,21 +47,21 @@ export async function GET(
     }
 
     if (categoryId) {
-      if (!CATEGORY_ID_RE.test(categoryId)) {
+      if (!isRecipeCategoryId(categoryId)) {
         return NextResponse.json({ error: "Invalid category ID" }, { status: 400 });
       }
-      const rawPage = await client.app.getPage(categoryId);
+      const rawPage = await fetchRecipeCategoryPage(client, categoryId);
       const recipes = parseCookbookPage(rawPage);
       return NextResponse.json({ categories: [], recipes });
     }
 
-    // Default: editorial homepage + full hardcoded category list
+    // Default: editorial homepage + dynamically discovered browse categories.
     const rawPage = await client.recipe.getRecipesPage();
     const recipes = parseCookbookPage(rawPage);
-    const categories = getRecipeCategories(countryCode);
+    const categories = await discoverRecipeCategories(client, rawPage, countryCode);
     return NextResponse.json({ categories, recipes });
   } catch (error) {
-    if (isApiAuthError(error)) {
+    if (isApiTokenExpiredError(error)) {
       return NextResponse.json(
         { error: "Your token has expired", code: "TOKEN_EXPIRED" as const },
         { status: 401 }
