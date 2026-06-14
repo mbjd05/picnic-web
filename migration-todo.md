@@ -9,6 +9,8 @@ apps/api  Hono Worker + Picnic API proxy + auth cookies + payment routes
 
 Each chunk is sized to be implemented and validated in one focused response. Keep this file updated whenever a chunk is completed, split, reordered, or intentionally deferred.
 
+The current Next app is the visual source of truth. Ported UI should preserve the existing layout, spacing, typography scale, colors, component states, labels, and interaction affordances as closely as practical. This migration should not redesign screens or introduce a new visual language unless a targeted visual change is explicitly requested.
+
 ## Progress
 
 - [x] Chunk 1: Scaffold the target apps and extract first reusable API services.
@@ -217,6 +219,7 @@ Scope:
 - Add Tailwind setup for `apps/web`.
 - Port global styles needed by existing UI.
 - Add shared layout shell, header, navigation, loading, and error surfaces.
+- Match the current app's visual baseline instead of inventing a new shell design.
 - Add a typed `fetchJson` API client.
 - Add auth-expired handling and redirect behavior.
 - Set up TanStack Router route structure matching current URLs.
@@ -259,6 +262,7 @@ Scope:
 - Port category grid, shortcuts, category products, subcategory navigation, section nav badges, result counts, and URL state.
 - Preserve `Alle resultaten voor "<term>"` header behavior and grey result count text.
 - Preserve cart controls on product cards.
+- Preserve current visual layout, spacing, sticky/nav behavior, and product card presentation.
 
 Validation:
 
@@ -378,6 +382,7 @@ Scope:
 
 - Review specs in `specs/` against migrated behavior.
 - Check product search, URL state, nav badges, auth gate, product detail, cart, PLP actions, cart actions, category search, subcategories, shortcuts, bundle UI, cookbook, recipe, login, and payment.
+- Compare migrated screens visually against the current Next app and treat unintended visual drift as a regression.
 - Do not edit spec files unless explicitly requested.
 - Document intentional divergences in this file or a review note.
 

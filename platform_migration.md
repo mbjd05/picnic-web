@@ -36,6 +36,7 @@ Keep the backend as a thin proxy. Do not move Picnic API calls fully into the br
 ## Core Principles
 
 - Preserve behavior before optimizing structure.
+- Preserve the current UI visually as much as practical. This migration is a platform/runtime change, not a redesign.
 - Extract reusable logic before moving frameworks.
 - Keep Cloudflare Worker CPU work small: route, validate, call Picnic, parse, return.
 - Use client caching for interactive browsing state.
@@ -107,19 +108,11 @@ The web app should call API endpoints through a small typed fetch wrapper.
 Example query keys:
 
 ```ts
-["categories"]
-["category", categoryId]
-["subcategory", categoryId, subcategoryId]
-["search", query]
-["product", productId]
-["cart"]
-["delivery-slots"]
-["cookbook"]
-["cookbook-category", categoryId]
-["recipe", recipeId]
-["saved-recipes"]
-["payment-profile"]
-["checkout-status", transactionId]
+["categories"][("category", categoryId)][("subcategory", categoryId, subcategoryId)][
+  ("search", query)
+][("product", productId)]["cart"]["delivery-slots"]["cookbook"][("cookbook-category", categoryId)][
+  ("recipe", recipeId)
+]["saved-recipes"]["payment-profile"][("checkout-status", transactionId)];
 ```
 
 ### API Worker
@@ -232,6 +225,8 @@ Use TanStack Query for all server data. Avoid hand-written `loading/error/succes
 
 Use route-level code splitting. Keep expensive screens such as cookbook/recipe/payment out of the initial bundle if practical.
 
+During UI porting, treat the current app as the visual source of truth. Preserve layout, spacing, typography scale, colors, component states, labels, and interaction affordances unless a small adjustment is required by the new platform or to fix an existing bug. Do not introduce a new visual language as part of the migration.
+
 Exit criteria:
 
 - Feature parity with the existing Next app.
@@ -339,6 +334,7 @@ Do not expose Picnic payment auth details to browser code beyond narrow app-spec
 ## Non-Goals
 
 - No redesign.
+- No visual reinterpretation of existing screens during the migration.
 - No new product features during migration.
 - No SSR reimplementation.
 - No database unless a later feature explicitly requires one.
