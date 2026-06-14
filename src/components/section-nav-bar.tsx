@@ -23,13 +23,23 @@ export function SectionNavBar({ sections }: SectionNavBarProps) {
     const el = badgeRefs.current.get(activeSectionIndex);
     const container = scrollContainerRef.current;
     if (el && container) {
-      // Calculate scroll position to center the badge within the container,
-      // without using scrollIntoView which would also scroll the page vertically.
-      const elLeft = el.offsetLeft;
-      const elWidth = el.offsetWidth;
-      const containerWidth = container.offsetWidth;
-      const targetScroll = elLeft - containerWidth / 2 + elWidth / 2;
-      container.scrollTo({ left: targetScroll, behavior: "smooth" });
+      const elRect = el.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      const padding = 16;
+      const isFullyVisible =
+        elRect.left >= containerRect.left + padding &&
+        elRect.right <= containerRect.right - padding;
+
+      if (!isFullyVisible) {
+        const targetScroll =
+          container.scrollLeft +
+          elRect.left -
+          containerRect.left -
+          containerRect.width / 2 +
+          elRect.width / 2;
+
+        container.scrollTo({ left: targetScroll, behavior: "auto" });
+      }
     }
   }, [activeSectionIndex]);
 

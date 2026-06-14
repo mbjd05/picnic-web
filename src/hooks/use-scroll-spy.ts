@@ -4,9 +4,12 @@ import { useEffect, useState } from "react";
 
 import { buildSectionId } from "@/lib/types";
 
+const STICKY_HEADER_OFFSET_PX = 144;
+const VIEWPORT_FOCUS_RATIO = 0.45;
+
 /**
- * Observes section elements via IntersectionObserver and returns the index
- * of the section nearest the top of the viewport.
+ * Returns the index of the section currently occupying the central reading
+ * area below the sticky header.
  *
  * @param sectionCount - Number of sections to observe.
  * @returns The zero-based index of the currently active section.
@@ -17,49 +20,61 @@ export function useScrollSpy(sectionCount: number): number {
   useEffect(() => {
     if (sectionCount === 0) return;
 
-    // Collect all section elements that exist in the DOM.
-    const elements: Element[] = [];
+    const elements: HTMLElement[] = [];
     for (let i = 0; i < sectionCount; i++) {
       const el = document.getElementById(buildSectionId(i));
-      if (el) elements.push(el);
+      if (el instanceof HTMLElement) elements.push(el);
     }
 
     if (elements.length === 0) return;
 
-    // rootMargin: negative top margin accounts for sticky header + badge bar
-    // height (~112px). This shifts the effective "top" of the viewport down,
-    // so a section is only considered intersecting once it clears the sticky
-    // elements. Bottom margin of -60% means only the top ~40% of the viewport
-    // is used for detection.
-    const observer = new IntersectionObserver(
-      (entries) => {
-        // Find the topmost visible section by picking the entry with the
-        // smallest positive boundingClientRect.top among intersecting entries.
-        let topEntry: IntersectionObserverEntry | null = null;
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-          if (topEntry === null || entry.boundingClientRect.top < topEntry.boundingClientRect.top) {
-            topEntry = entry;
-          }
+    let frameId: number | null = null;
+
+    function updateActiveSection() {
+      frameId = null;
+
+      const focusY = Math.max(
+        STICKY_HEADER_OFFSET_PX,
+        Math.round(window.innerHeight * VIEWPORT_FOCUS_RATIO)
+      );
+
+      let bestIndex = 0;
+      let bestDistance = Number.POSITIVE_INFINITY;
+
+      for (let index = 0; index < elements.length; index++) {
+        const rect = elements[index].getBoundingClientRect();
+
+        if (rect.top <= focusY && rect.bottom > focusY) {
+          bestIndex = index;
+          bestDistance = 0;
+          break;
         }
 
-        if (topEntry) {
-          const idx = elements.indexOf(topEntry.target);
-          if (idx !== -1) setActiveSectionIndex(idx);
+        const distance = Math.min(Math.abs(rect.top - focusY), Math.abs(rect.bottom - focusY));
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          bestIndex = index;
         }
-      },
-      {
-        rootMargin: "-144px 0px -60% 0px",
-        threshold: 0,
       }
-    );
 
-    for (const el of elements) {
-      observer.observe(el);
+      setActiveSectionIndex((current) => (current === bestIndex ? current : bestIndex));
     }
 
+    function scheduleUpdate() {
+      if (frameId !== null) return;
+      frameId = window.requestAnimationFrame(updateActiveSection);
+    }
+
+    updateActiveSection();
+    window.addEventListener("scroll", scheduleUpdate, { passive: true });
+    window.addEventListener("resize", scheduleUpdate);
+
     return () => {
-      observer.disconnect();
+      if (frameId !== null) {
+        window.cancelAnimationFrame(frameId);
+      }
+      window.removeEventListener("scroll", scheduleUpdate);
+      window.removeEventListener("resize", scheduleUpdate);
     };
   }, [sectionCount]);
 
