@@ -11,6 +11,14 @@ import {
 } from "@/lib/api-services/auth";
 import { getCategoriesService } from "@/lib/api-services/categories";
 import { getCookbookService, searchCookbookService } from "@/lib/api-services/cookbook";
+import { fetchImageService } from "@/lib/api-services/images";
+import {
+  getArbitraryProductsPageService,
+  getCategoryProductsService,
+  getProductDetailService,
+  getSubcategoriesService,
+  getSuggestionsService,
+} from "@/lib/api-services/products";
 import { searchProductsService } from "@/lib/api-services/search";
 import {
   AUTH_COOKIE_MAX_AGE_SECONDS,
@@ -191,6 +199,78 @@ app.get("/api/search", async (c) => {
 
   const query = c.req.query("q")?.trim() ?? "";
   const result = await searchProductsService(token, countryCode, query);
+  return c.json(result.body, jsonStatus(result.status));
+});
+
+app.get("/api/suggestions", async (c) => {
+  const { token, countryCode } = readSession(c);
+  if (!token) {
+    return authRequiredResponse(c);
+  }
+
+  const query = c.req.query("q")?.trim() ?? "";
+  const result = await getSuggestionsService(token, countryCode, query);
+  return c.json(result.body, jsonStatus(result.status));
+});
+
+app.get("/api/product/:id", async (c) => {
+  const { token, countryCode } = readSession(c);
+  if (!token) {
+    return authRequiredResponse(c);
+  }
+
+  const result = await getProductDetailService(token, countryCode, c.req.param("id"));
+  return c.json(result.body, jsonStatus(result.status));
+});
+
+app.get("/api/image", async (c) => {
+  const { token, countryCode } = readSession(c);
+  const result = await fetchImageService(c.req.query("url") ?? null, token, countryCode);
+
+  if (result.ok) {
+    return new Response(result.body, {
+      headers: {
+        "Content-Type": result.contentType,
+        "Cache-Control": result.cacheControl,
+      },
+    });
+  }
+
+  return new Response(result.body, { status: result.status });
+});
+
+app.get("/api/pages/products", async (c) => {
+  const pageId = c.req.query("pageId") ?? null;
+  if (!pageId) {
+    return c.json({ error: "Missing pageId parameter" }, 400);
+  }
+
+  const { token, countryCode } = readSession(c);
+  if (!token) {
+    return authRequiredResponse(c);
+  }
+
+  const result = await getArbitraryProductsPageService(token, countryCode, pageId);
+  return c.json(result.body, jsonStatus(result.status));
+});
+
+app.get("/api/categories/:categoryId/subcategories", async (c) => {
+  const { token, countryCode } = readSession(c);
+  if (!token) {
+    return authRequiredResponse(c);
+  }
+
+  const result = await getSubcategoriesService(token, countryCode, c.req.param("categoryId"));
+  return c.json(result.body, jsonStatus(result.status));
+});
+
+app.get("/api/categories/:categoryId/products", async (c) => {
+  const { token, countryCode } = readSession(c);
+  if (!token) {
+    return authRequiredResponse(c);
+  }
+
+  const result = await getCategoryProductsService(token, countryCode, c.req.param("categoryId"));
   return c.json(result.body, jsonStatus(result.status));
 });
 
