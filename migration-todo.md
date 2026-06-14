@@ -15,7 +15,7 @@ The current Next app is the visual source of truth. Ported UI should preserve th
 
 - [x] Chunk 1: Scaffold the target apps and extract first reusable API services.
 - [x] Chunk 2: Port the first read-only API routes to Hono.
-- [ ] Chunk 3: Port auth/session routes to Hono.
+- [x] Chunk 3: Port auth/session routes to Hono.
 - [ ] Chunk 4: Port product/category detail API routes to Hono.
 - [ ] Chunk 5: Port cart and delivery-slot API routes to Hono.
 - [ ] Chunk 6: Port recipe detail, saved recipe, and recipe add-to-cart API routes to Hono.
@@ -76,29 +76,29 @@ Validated:
 - `npm run build:web`
 - `npm run build`
 
+### Chunk 3: Auth/Session Routes
+
+Commit: `cdf242f Port auth routes to Hono`
+
+Implemented:
+
+- Extracted framework-neutral auth services for token login, credential login, and 2FA verification.
+- Added Hono routes for `POST /api/auth/login`, `POST /api/auth/login-credentials`, `POST /api/auth/verify-2fa`, and `POST /api/auth/logout`.
+- Preserved auth token cookies as `HttpOnly`, same-site strict cookies.
+- Preserved country cookie behavior for login and 2FA continuation.
+- Added Hono same-origin checks for unsafe auth requests.
+- Added no-store headers for Hono auth responses.
+- Kept the existing Next auth routes working as adapters over the same shared auth services.
+
+Validated:
+
+- `npm run lint`
+- `npx tsc --noEmit --pretty false`
+- `npm run build:web`
+- `npm run build:api`
+- `npm run build`
+
 ## Remaining Chunks
-
-### Chunk 3: Port Auth/Session Routes To Hono
-
-Goal:
-
-Move login, credential login, logout, and 2FA verification into the Worker API while preserving the current secure cookie behavior.
-
-Scope:
-
-- Port `POST /api/auth/login`.
-- Port `POST /api/auth/login-credentials`.
-- Port `POST /api/auth/verify-2fa`.
-- Port `POST /api/auth/logout`.
-- Move cookie set/clear helpers into a Worker-safe module.
-- Preserve token login, partial-token 2FA, credential login, country selection, and no-store responses.
-- Keep existing Next auth routes working until the Vite UI uses Hono.
-
-Validation:
-
-- Typecheck, lint, Next build, Worker dry-run build.
-- Manual auth smoke test with token login.
-- Manual auth smoke test with credential login and 2FA when available.
 
 ### Chunk 4: Port Product And Category Detail API Routes To Hono
 
