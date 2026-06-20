@@ -158,7 +158,7 @@ Validated:
 - `npm run build:web`
 - `npm run build:api`
 - `npm run build`
-- Authenticated manual recipe mutation smoke tests remain scheduled for Chunk 19 because no test session is available in the shell environment.
+- Authenticated recipe save/restore and selected-ingredient cart mutation checks now run in `npm run smoke:api:auth`; full recipe add-to-cart UI testing remains scheduled for Chunk 14/19.
 
 ### Chunk 7: Payment And Checkout API Routes
 
@@ -180,7 +180,7 @@ Validated:
 - `npm run build:web`
 - `npm run build:api`
 - `npm run build`
-- Authenticated payment and checkout smoke tests remain scheduled for Chunk 19 because no test session is available in the shell environment.
+- Authenticated payment-profile reads now run in `npm run smoke:api:auth`; payment-option mutations and checkout remain scheduled for Chunk 19.
 
 ### Chunk 8: Worker Security And Response Helpers
 
@@ -195,6 +195,7 @@ Implemented:
 - Preserved the distinct auth endpoint error shape for rejected cross-origin requests.
 - Narrowed established-session expiry detection so generic upstream 403 failures no longer force a login redirect.
 - Kept Worker error logs useful without including tokens, credentials, request bodies, or user input.
+- Added an authenticated Worker smoke harness with dynamic fixture discovery, guarded cart/recipe/delivery-slot mutations, and exact state restoration.
 
 Validated:
 
@@ -202,6 +203,7 @@ Validated:
 - Local Worker response checks for public health headers, private no-store headers, and auth/non-auth cross-origin rejection bodies.
 - Confirmed the Worker dry-run includes the static `_headers` file.
 - Confirmed no Worker/service log statement emits tokens, passwords, email addresses, credentials, or request bodies.
+- `npm run smoke:api:auth`: 43 checks passed against the local Worker, including cart, saved recipe, recipe ingredient, and delivery-slot restoration; interactive credential/2FA login remains an explicit optional check via `--credentials`.
 
 ## Remaining Chunks
 
