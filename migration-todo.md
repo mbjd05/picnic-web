@@ -19,7 +19,7 @@ The current Next app is the visual source of truth. Ported UI should preserve th
 - [x] Chunk 4: Port product/category detail API routes to Hono.
 - [x] Chunk 5: Port cart and delivery-slot API routes to Hono.
 - [x] Chunk 6: Port recipe detail, saved recipe, and recipe add-to-cart API routes to Hono.
-- [ ] Chunk 7: Port payment profile and checkout API routes to Hono.
+- [x] Chunk 7: Port payment profile and checkout API routes to Hono.
 - [ ] Chunk 8: Add Worker API security, headers, and response helpers.
 - [ ] Chunk 9: Establish the Vite web app shell, styling baseline, and API client.
 - [ ] Chunk 10: Port login UI and session handling.
@@ -160,30 +160,29 @@ Validated:
 - `npm run build`
 - Authenticated manual recipe mutation smoke tests remain scheduled for Chunk 19 because no test session is available in the shell environment.
 
+### Chunk 7: Payment And Checkout API Routes
+
+Commit: `5c11346 Port payment routes to Hono`
+
+Implemented:
+
+- Removed the Next dependency from shared Picnic payment helpers and made payment error mapping framework-neutral.
+- Extracted shared services for payment profile reads, preferred payment option creation/removal, checkout start, checkout cancellation, and checkout status.
+- Added Hono routes for `GET/POST /api/account/payment-profile`, `POST /api/account/payment-profile/payment-options`, `DELETE /api/account/payment-profile/payment-options/:paymentOptionId`, `POST /api/checkout/start-payment`, `POST /api/checkout/cancel`, and `GET /api/checkout/status/:transactionId`.
+- Kept the existing Next payment routes as thin adapters over the shared services.
+- Preserved iDEAL | Wero restrictions and naming, bank validation, preferred option verification, payment return URL handling, checkout error codes, and inactive transaction handling.
+- Preserved same-origin checks on every payment and checkout mutation.
+
+Validated:
+
+- `npm run lint`
+- `npx tsc --noEmit --pretty false`
+- `npm run build:web`
+- `npm run build:api`
+- `npm run build`
+- Authenticated payment and checkout smoke tests remain scheduled for Chunk 19 because no test session is available in the shell environment.
+
 ## Remaining Chunks
-
-### Chunk 7: Port Payment And Checkout API Routes To Hono
-
-Goal:
-
-Move payment profile and checkout routes into Hono without weakening security or changing response shape.
-
-Scope:
-
-- Port `GET/PATCH /api/account/payment-profile`.
-- Port `GET/POST /api/account/payment-profile/payment-options`.
-- Port payment option deletion/update route.
-- Port `POST /api/checkout/start-payment`.
-- Port `POST /api/checkout/cancel`.
-- Port `GET /api/checkout/status/[transactionId]`.
-- Preserve iDEAL/WERO naming, preferred payment option handling, direct order payment support, status polling, cancellation behavior, and error codes.
-- Keep payment logic server-side.
-
-Validation:
-
-- Typecheck, lint, Next build, Worker dry-run build.
-- Manual payment profile smoke test.
-- Manual checkout start/status/cancel smoke test in a non-destructive flow where possible.
 
 ### Chunk 8: Worker Security And Response Helpers
 
