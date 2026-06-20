@@ -52,7 +52,7 @@ export function SectionNavBar({ sections }: SectionNavBarProps) {
     >
       <div
         ref={scrollContainerRef}
-        className="mx-auto flex max-w-7xl gap-2 overflow-x-auto px-6 py-2"
+        className="section-nav-scrollbar mx-auto flex max-w-7xl gap-2 overflow-x-auto px-6 py-2"
       >
         {sections.map((section, index) => (
           <SectionBadge
