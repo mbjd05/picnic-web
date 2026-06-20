@@ -25,6 +25,12 @@ import {
   getSubcategoriesService,
   getSuggestionsService,
 } from "@/lib/api-services/products";
+import {
+  addRecipeToCartService,
+  getCookbookCountsService,
+  getRecipeDetailService,
+  updateSavedRecipeService,
+} from "@/lib/api-services/recipes";
 import { searchProductsService } from "@/lib/api-services/search";
 import {
   AUTH_COOKIE_MAX_AGE_SECONDS,
@@ -338,6 +344,16 @@ app.post("/api/cart/delivery-slots", async (c) => {
   return c.json(result.body, jsonStatus(result.status));
 });
 
+app.get("/api/cookbook/counts", async (c) => {
+  const { token, countryCode } = readSession(c);
+  if (!token) {
+    return authRequiredResponse(c);
+  }
+
+  const result = await getCookbookCountsService(token, countryCode);
+  return c.json(result.body, jsonStatus(result.status));
+});
+
 app.get("/api/cookbook", async (c) => {
   const { token, countryCode } = readSession(c);
   if (!token) {
@@ -356,6 +372,68 @@ app.get("/api/cookbook/search", async (c) => {
 
   const query = c.req.query("q")?.trim() ?? "";
   const result = await searchCookbookService(token, countryCode, query);
+  return c.json(result.body, jsonStatus(result.status));
+});
+
+app.post("/api/recipe/:id/saved", async (c) => {
+  if (isCrossOriginUnsafeRequest(c)) {
+    return c.json({ error: "Invalid request origin" }, 403);
+  }
+
+  const { token, countryCode } = readSession(c);
+  if (!token) {
+    return authRequiredResponse(c);
+  }
+
+  const result = await updateSavedRecipeService(token, countryCode, c.req.param("id"), true);
+  return c.json(result.body, jsonStatus(result.status));
+});
+
+app.delete("/api/recipe/:id/saved", async (c) => {
+  if (isCrossOriginUnsafeRequest(c)) {
+    return c.json({ error: "Invalid request origin" }, 403);
+  }
+
+  const { token, countryCode } = readSession(c);
+  if (!token) {
+    return authRequiredResponse(c);
+  }
+
+  const result = await updateSavedRecipeService(token, countryCode, c.req.param("id"), false);
+  return c.json(result.body, jsonStatus(result.status));
+});
+
+app.post("/api/recipe/:id/add-to-cart", async (c) => {
+  if (isCrossOriginUnsafeRequest(c)) {
+    return c.json({ error: "Invalid request origin" }, 403);
+  }
+
+  const { token, countryCode } = readSession(c);
+  if (!token) {
+    return authRequiredResponse(c);
+  }
+
+  const body = await c.req.json().catch(() => null);
+  if (body === null) {
+    return c.json({ error: "Invalid request body" }, 400);
+  }
+
+  const result = await addRecipeToCartService(token, countryCode, c.req.param("id"), body);
+  return c.json(result.body, jsonStatus(result.status));
+});
+
+app.get("/api/recipe/:id", async (c) => {
+  const { token, countryCode } = readSession(c);
+  if (!token) {
+    return authRequiredResponse(c);
+  }
+
+  const result = await getRecipeDetailService(
+    token,
+    countryCode,
+    c.req.param("id"),
+    c.req.query("portions") ?? null
+  );
   return c.json(result.body, jsonStatus(result.status));
 });
 
