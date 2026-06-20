@@ -79,3 +79,29 @@ button,
 summary {
   cursor: pointer;
 }
+
+.section-nav-scrollbar {
+  scrollbar-color: transparent transparent;
+}
+
+.section-nav-scrollbar:hover,
+.section-nav-scrollbar:focus-within {
+  scrollbar-color: var(--picnic-gray-300) transparent;
+}
+
+.section-nav-scrollbar::-webkit-scrollbar {
+  height: 8px;
+}
+
+.section-nav-scrollbar::-webkit-scrollbar-track,
+.section-nav-scrollbar::-webkit-scrollbar-thumb {
+  background-color: transparent;
+}
+
+.section-nav-scrollbar:hover::-webkit-scrollbar-thumb,
+.section-nav-scrollbar:focus-within::-webkit-scrollbar-thumb {
+  background-color: var(--picnic-gray-300);
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-clip: content-box;
+}
