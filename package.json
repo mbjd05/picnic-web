@@ -10,7 +10,9 @@
     "build:api": "wrangler deploy --dry-run --config apps/api/wrangler.jsonc",
     "build:web": "vite build --config apps/web/vite.config.ts",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "eslint --cache --cache-location .eslintcache",
+    "typecheck": "tsc --noEmit --pretty false",
+    "validate": "npm run lint && npm run typecheck && npm run build:web && npm run build:api && npm run build",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

@@ -456,8 +456,14 @@ Validation:
 Use the smallest relevant set while developing, then run the full baseline before committing a chunk:
 
 ```powershell
+npm run validate
+```
+
+`validate` runs these steps sequentially:
+
+```powershell
 npm run lint
-npx tsc --noEmit --pretty false
+npm run typecheck
 npm run build:web
 npm run build:api
 npm run build
