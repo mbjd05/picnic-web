@@ -19,6 +19,14 @@ import { getCategoriesService } from "@/lib/api-services/categories";
 import { getCookbookService, searchCookbookService } from "@/lib/api-services/cookbook";
 import { fetchImageService } from "@/lib/api-services/images";
 import {
+  cancelCheckoutService,
+  createPaymentOptionService,
+  getCheckoutStatusService,
+  getPaymentProfileService,
+  removePaymentOptionService,
+  startCheckoutPaymentService,
+} from "@/lib/api-services/payments";
+import {
   getArbitraryProductsPageService,
   getCategoryProductsService,
   getProductDetailService,
@@ -193,6 +201,72 @@ app.post("/api/auth/logout", (c) => {
   return authJson(c, { success: true });
 });
 
+app.get("/api/account/payment-profile", async (c) => {
+  const { token, countryCode } = readSession(c);
+  if (!token) {
+    return authRequiredResponse(c);
+  }
+
+  const result = await getPaymentProfileService(token, countryCode);
+  return c.json(result.body, jsonStatus(result.status));
+});
+
+app.post("/api/account/payment-profile", async (c) => {
+  if (isCrossOriginUnsafeRequest(c)) {
+    return c.json({ error: "Invalid request origin" }, 403);
+  }
+
+  const { token, countryCode } = readSession(c);
+  if (!token) {
+    return authRequiredResponse(c);
+  }
+
+  const body = await c.req.json().catch(() => null);
+  if (body === null) {
+    return c.json({ error: "Invalid JSON body" }, 400);
+  }
+
+  const result = await createPaymentOptionService(token, countryCode, body);
+  return c.json(result.body, jsonStatus(result.status));
+});
+
+app.post("/api/account/payment-profile/payment-options", async (c) => {
+  if (isCrossOriginUnsafeRequest(c)) {
+    return c.json({ error: "Invalid request origin" }, 403);
+  }
+
+  const { token, countryCode } = readSession(c);
+  if (!token) {
+    return authRequiredResponse(c);
+  }
+
+  const body = await c.req.json().catch(() => null);
+  if (body === null) {
+    return c.json({ error: "Invalid JSON body" }, 400);
+  }
+
+  const result = await createPaymentOptionService(token, countryCode, body);
+  return c.json(result.body, jsonStatus(result.status));
+});
+
+app.delete("/api/account/payment-profile/payment-options/:paymentOptionId", async (c) => {
+  if (isCrossOriginUnsafeRequest(c)) {
+    return c.json({ error: "Invalid request origin" }, 403);
+  }
+
+  const { token, countryCode } = readSession(c);
+  if (!token) {
+    return authRequiredResponse(c);
+  }
+
+  const result = await removePaymentOptionService(
+    token,
+    countryCode,
+    c.req.param("paymentOptionId")
+  );
+  return c.json(result.body, jsonStatus(result.status));
+});
+
 app.get("/api/categories", async (c) => {
   const { token, countryCode } = readSession(c);
   if (!token) {
@@ -341,6 +415,50 @@ app.post("/api/cart/delivery-slots", async (c) => {
   }
 
   const result = await setDeliverySlotService(token, countryCode, body);
+  return c.json(result.body, jsonStatus(result.status));
+});
+
+app.post("/api/checkout/start-payment", async (c) => {
+  if (isCrossOriginUnsafeRequest(c)) {
+    return c.json({ error: "Invalid request origin" }, 403);
+  }
+
+  const { token, countryCode } = readSession(c);
+  if (!token) {
+    return authRequiredResponse(c);
+  }
+
+  const appReturnUrl = new URL("/cart/payment-return", c.req.url).toString();
+  const result = await startCheckoutPaymentService(token, countryCode, appReturnUrl);
+  return c.json(result.body, jsonStatus(result.status));
+});
+
+app.post("/api/checkout/cancel", async (c) => {
+  if (isCrossOriginUnsafeRequest(c)) {
+    return c.json({ error: "Invalid request origin" }, 403);
+  }
+
+  const { token, countryCode } = readSession(c);
+  if (!token) {
+    return authRequiredResponse(c);
+  }
+
+  const body = await c.req.json().catch(() => null);
+  if (body === null) {
+    return c.json({ error: "Invalid JSON body" }, 400);
+  }
+
+  const result = await cancelCheckoutService(token, countryCode, body);
+  return c.json(result.body, jsonStatus(result.status));
+});
+
+app.get("/api/checkout/status/:transactionId", async (c) => {
+  const { token, countryCode } = readSession(c);
+  if (!token) {
+    return authRequiredResponse(c);
+  }
+
+  const result = await getCheckoutStatusService(token, countryCode, c.req.param("transactionId"));
   return c.json(result.body, jsonStatus(result.status));
 });
 

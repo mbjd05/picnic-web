@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { startCheckoutPaymentService } from "@/lib/api-services/payments";
 import { readAuthToken, readCountryCode } from "@/lib/auth";
-import { mapPaymentRouteError, startCheckoutPayment } from "@/lib/picnic-payment";
-import { buildPicnicClient } from "@/lib/picnic-client";
 import { rejectCrossOriginUnsafeRequest } from "@/lib/request-security";
 import type { ApiErrorResponse, CheckoutPaymentResponse } from "@/lib/types";
 
@@ -13,7 +12,6 @@ export async function POST(
   if (forbidden) return forbidden;
 
   const token = readAuthToken(request);
-
   if (!token) {
     return NextResponse.json(
       { error: "Your token has expired", code: "TOKEN_EXPIRED" },
@@ -21,14 +19,7 @@ export async function POST(
     );
   }
 
-  try {
-    const client = buildPicnicClient(token, readCountryCode(request));
-    const appReturnUrl = new URL("/cart/payment-return", request.nextUrl.origin).toString();
-    const result = await startCheckoutPayment(client, appReturnUrl);
-
-    return NextResponse.json(result);
-  } catch (error) {
-    return mapPaymentRouteError(error, "[/api/checkout/start-payment] Failed to start payment");
-  }
+  const appReturnUrl = new URL("/cart/payment-return", request.nextUrl.origin).toString();
+  const result = await startCheckoutPaymentService(token, readCountryCode(request), appReturnUrl);
+  return NextResponse.json(result.body, { status: result.status });
 }
-

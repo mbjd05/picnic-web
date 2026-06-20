@@ -1,5 +1,3 @@
-import { NextResponse } from "next/server";
-
 import { isApiAuthError } from "@/lib/api-error";
 import {
   getAvailablePaymentMethod,
@@ -7,11 +5,7 @@ import {
   isEmptyJsonResponseError,
 } from "@/lib/payment";
 import type { PicnicClientInstance } from "@/lib/picnic-client";
-import type {
-  ApiErrorResponse,
-  CheckoutPaymentResponse,
-  PaymentProfile,
-} from "@/lib/types";
+import type { ApiErrorResponse, CheckoutPaymentResponse, PaymentProfile } from "@/lib/types";
 
 type SendRequestClient = {
   sendRequest: (
@@ -44,17 +38,10 @@ export function sendPicnicRequest(
   body: Record<string, unknown> | null,
   includeFusion: boolean
 ): Promise<unknown> {
-  return (client as unknown as SendRequestClient).sendRequest(
-    method,
-    path,
-    body,
-    includeFusion
-  );
+  return (client as unknown as SendRequestClient).sendRequest(method, path, body, includeFusion);
 }
 
-export async function readPaymentProfile(
-  client: PicnicClientInstance
-): Promise<PaymentProfile> {
+export async function readPaymentProfile(client: PicnicClientInstance): Promise<PaymentProfile> {
   return (await sendPicnicRequest(client, "GET", "/payment-profile", null, true)) as PaymentProfile;
 }
 
@@ -160,11 +147,7 @@ export async function removePaymentOption(
   );
 
   if (!existsBefore) {
-    throw new PaymentFlowError(
-      "PAYMENT_OPTION_NOT_FOUND",
-      "Betaaloptie bestaat niet.",
-      404
-    );
+    throw new PaymentFlowError("PAYMENT_OPTION_NOT_FOUND", "Betaaloptie bestaat niet.", 404);
   }
 
   try {
@@ -182,16 +165,10 @@ export async function removePaymentOption(
   }
 
   const after = await readPaymentProfile(client);
-  const stillExists = after.stored_payment_options?.some(
-    (option) => option.id === paymentOptionId
-  );
+  const stillExists = after.stored_payment_options?.some((option) => option.id === paymentOptionId);
 
   if (stillExists) {
-    throw new PaymentFlowError(
-      "CHECKOUT_PAYMENT_FAILED",
-      "Betaaloptie is niet verwijderd.",
-      502
-    );
+    throw new PaymentFlowError("CHECKOUT_PAYMENT_FAILED", "Betaaloptie is niet verwijderd.", 502);
   }
 
   return after;
@@ -235,8 +212,7 @@ export async function startCheckoutPayment(
     true
   )) as CheckoutInitiateResponse;
 
-  const redirectUrl =
-    payment.action?.redirect_url ?? payment.issuer_authentication_url ?? null;
+  const redirectUrl = payment.action?.redirect_url ?? payment.issuer_authentication_url ?? null;
 
   if (!payment.transaction_id || !redirectUrl) {
     throw new PaymentFlowError(
@@ -265,74 +241,73 @@ export class PaymentFlowError extends Error {
   }
 }
 
-export function mapPaymentRouteError(
+export function mapPaymentError(
   error: unknown,
   logPrefix: string,
   fallbackMessage = "Betaling kon niet worden gestart. Probeer het later opnieuw."
-): NextResponse<ApiErrorResponse> {
+): { body: ApiErrorResponse; status: number } {
   if (isApiAuthError(error)) {
-    return NextResponse.json(
-      { error: "Your token has expired", code: "TOKEN_EXPIRED" },
-      { status: 401 }
-    );
+    return {
+      body: { error: "Your token has expired", code: "TOKEN_EXPIRED" },
+      status: 401,
+    };
   }
 
   if (error instanceof PaymentFlowError) {
-    return NextResponse.json(
-      { error: error.message, code: error.code },
-      { status: error.status }
-    );
+    return {
+      body: { error: error.message, code: error.code },
+      status: error.status,
+    };
   }
 
   const message = getErrorMessage(error);
   console.error(`${logPrefix}:`, message);
 
   if (message.includes("has no preferred option")) {
-    return NextResponse.json(
-      {
-        error:
-          "Er is nog geen voorkeursbetaalmethode ingesteld. Kies eerst een betaalmethode.",
+    return {
+      body: {
+        error: "Er is nog geen voorkeursbetaalmethode ingesteld. Kies eerst een betaalmethode.",
         code: "NO_PREFERRED_PAYMENT_OPTION",
       },
-      { status: 400 }
-    );
+      status: 400,
+    };
   }
 
   if (message.includes("Your shopping cart is out of date")) {
-    return NextResponse.json(
-      {
+    return {
+      body: {
         error: "Je winkelwagen is niet meer actueel. Ververs de winkelwagen en probeer opnieuw.",
         code: "CART_OUT_OF_DATE",
       },
-      { status: 409 }
-    );
+      status: 409,
+    };
   }
 
   if (message.includes("beschikbaar vanaf")) {
-    return NextResponse.json(
-      {
+    return {
+      body: {
         error: "Dit bezorgmoment is beschikbaar vanaf de minimale bestelwaarde.",
         code: "MINIMUM_ORDER_VALUE",
       },
-      { status: 400 }
-    );
+      status: 400,
+    };
   }
 
   if (message.includes("payment") || message.includes("Payment")) {
-    return NextResponse.json(
-      {
+    return {
+      body: {
         error: fallbackMessage,
         code: "CHECKOUT_PAYMENT_FAILED",
       },
-      { status: 400 }
-    );
+      status: 400,
+    };
   }
 
-  return NextResponse.json(
-    {
+  return {
+    body: {
       error: fallbackMessage,
       code: "CHECKOUT_PAYMENT_FAILED",
     },
-    { status: 502 }
-  );
+    status: 502,
+  };
 }
