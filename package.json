@@ -9,6 +9,7 @@
     "build": "next build",
     "build:api": "wrangler deploy --dry-run --config apps/api/wrangler.jsonc",
     "build:web": "vite build --config apps/web/vite.config.ts",
+    "smoke:api:auth": "node ./src/scripts/worker-auth-smoke.mjs",
     "start": "next start",
     "lint": "eslint --cache --cache-location .eslintcache",
     "typecheck": "tsc --noEmit --pretty false",

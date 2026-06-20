@@ -37,6 +37,7 @@ import {
   updateSavedRecipeService,
 } from "@/lib/api-services/recipes";
 import { searchProductsService } from "@/lib/api-services/search";
+
 import {
   authJson,
   authRequiredResponse,
@@ -210,15 +211,16 @@ app.get("/api/image", async (c) => {
   const result = await fetchImageService(c.req.query("url") ?? null, token, countryCode);
 
   if (result.ok) {
-    return new Response(result.body, {
-      headers: {
-        "Content-Type": result.contentType,
-        "Cache-Control": result.cacheControl,
-      },
+    return c.body(result.body, 200, {
+      "Content-Type": result.contentType,
+      "Cache-Control": result.cacheControl,
     });
   }
 
-  return new Response(result.body, { status: result.status });
+  if (result.body === null) {
+    return c.body(null, jsonStatus(result.status));
+  }
+  return c.body(result.body, jsonStatus(result.status));
 });
 
 app.get("/api/pages/products", async (c) => {
