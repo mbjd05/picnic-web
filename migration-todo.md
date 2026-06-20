@@ -21,7 +21,7 @@ The current Next app is the visual source of truth. Ported UI should preserve th
 - [x] Chunk 6: Port recipe detail, saved recipe, and recipe add-to-cart API routes to Hono.
 - [x] Chunk 7: Port payment profile and checkout API routes to Hono.
 - [x] Chunk 8: Add Worker API security, headers, and response helpers.
-- [ ] Chunk 9: Establish the Vite web app shell, styling baseline, and API client.
+- [x] Chunk 9: Establish the Vite web app shell, styling baseline, and API client.
 - [ ] Chunk 10: Port login UI and session handling.
 - [ ] Chunk 11: Port home, search, categories, and product listing UI.
 - [ ] Chunk 12: Port product detail UI.
@@ -205,28 +205,26 @@ Validated:
 - Confirmed no Worker/service log statement emits tokens, passwords, email addresses, credentials, or request bodies.
 - `npm run smoke:api:auth`: 43 checks passed against the local Worker, including cart, saved recipe, recipe ingredient, and delivery-slot restoration; interactive credential/2FA login remains an explicit optional check via `--credentials`.
 
-## Remaining Chunks
-
 ### Chunk 9: Vite Web App Shell And API Client
 
-Goal:
+Commit: `52d3077 Establish Vite application shell`
 
-Turn the placeholder Vite app into the real app shell foundation.
+Implemented:
 
-Scope:
+- Added the Tailwind Vite integration and ported the current Picnic design tokens and global styling baseline.
+- Added responsive authenticated and standalone shells with the existing header navigation, search, country switcher, cart summary, logout, loading, error, and not-found surfaces.
+- Added a typed JSON client with structured errors, same-origin credentials, and centralized expired-session redirects that preserve the requested return URL.
+- Added pathless TanStack Router layouts and route definitions for every current user-facing URL.
+- Added Vite API proxying for local development and limited Worker-first routing to `/api/*`, allowing Cloudflare assets to provide SPA fallback without unnecessary Worker execution.
 
-- Add Tailwind setup for `apps/web`.
-- Port global styles needed by existing UI.
-- Add shared layout shell, header, navigation, loading, and error surfaces.
-- Match the current app's visual baseline instead of inventing a new shell design.
-- Add a typed `fetchJson` API client.
-- Add auth-expired handling and redirect behavior.
-- Set up TanStack Router route structure matching current URLs.
+Validated:
 
-Validation:
+- `npm run validate`
+- Direct Worker requests to `/login`, `/cart`, and a nested category URL all returned the SPA shell with static security headers.
+- Authenticated headless Chromium checks confirmed client-side navigation, all expected header links, no desktop/mobile page overflow, and a usable 390px header layout.
+- Desktop, mobile, and standalone-login screenshots were inspected for blank output, overlap, and framing.
 
-- Typecheck, lint, `build:web`, Worker dry-run build.
-- Browser smoke test for direct URL fallback and basic navigation.
+## Remaining Chunks
 
 ### Chunk 10: Port Login UI
 
