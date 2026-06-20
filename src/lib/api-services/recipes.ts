@@ -1,4 +1,4 @@
-import { isApiAuthError, isApiTokenExpiredError } from "@/lib/api-error";
+import { isApiTokenExpiredError } from "@/lib/api-error";
 import { parseCookbookPage } from "@/lib/parse-cookbook";
 import { extractProductNutritionRows, extractProductTileData } from "@/lib/parse-fusion-product";
 import { parseRecipeDetail } from "@/lib/parse-recipe-detail";
@@ -51,7 +51,7 @@ export async function getRecipeDetailService(
 
     return { body: { ...detail, ingredients } };
   } catch (error) {
-    if (isApiAuthError(error)) {
+    if (isApiTokenExpiredError(error)) {
       return { body: { error: "Your token has expired" }, status: 401 };
     }
 
@@ -81,7 +81,7 @@ export async function updateSavedRecipeService(
     await invalidateCookbookCounts(authToken, countryCode);
     return { body: { saved: shouldSave } };
   } catch (error) {
-    if (isApiAuthError(error)) {
+    if (isApiTokenExpiredError(error)) {
       return {
         body: { error: "Your token has expired", code: "TOKEN_EXPIRED" as const },
         status: 401,
@@ -140,7 +140,7 @@ export async function addRecipeToCartService(
 
     return { body: { success: true } };
   } catch (error) {
-    if (isApiAuthError(error)) {
+    if (isApiTokenExpiredError(error)) {
       return { body: { error: "Your token has expired" }, status: 401 };
     }
 

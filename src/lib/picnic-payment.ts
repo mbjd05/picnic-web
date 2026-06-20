@@ -1,4 +1,4 @@
-import { isApiAuthError } from "@/lib/api-error";
+import { isApiTokenExpiredError } from "@/lib/api-error";
 import {
   getAvailablePaymentMethod,
   getErrorMessage,
@@ -246,7 +246,7 @@ export function mapPaymentError(
   logPrefix: string,
   fallbackMessage = "Betaling kon niet worden gestart. Probeer het later opnieuw."
 ): { body: ApiErrorResponse; status: number } {
-  if (isApiAuthError(error)) {
+  if (isApiTokenExpiredError(error)) {
     return {
       body: { error: "Your token has expired", code: "TOKEN_EXPIRED" },
       status: 401,

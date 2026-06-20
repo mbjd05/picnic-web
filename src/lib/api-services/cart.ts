@@ -1,4 +1,4 @@
-import { isApiAuthError } from "@/lib/api-error";
+import { isApiTokenExpiredError } from "@/lib/api-error";
 import type { DeliverySlotPickerData } from "@/lib/delivery-slot-types";
 import { parseCartResponse } from "@/lib/parse-cart";
 import { parseDeliverySlotsPicker } from "@/lib/parse-delivery-slots";
@@ -37,7 +37,7 @@ export async function getCartService(
 
     return { body: parseCartResponse(rawCart) };
   } catch (error) {
-    if (isApiAuthError(error)) {
+    if (isApiTokenExpiredError(error)) {
       return {
         body: { error: "Your token has expired", code: "TOKEN_EXPIRED" as const },
         status: 401,
@@ -80,7 +80,7 @@ export async function mutateCartService(
 
     return { body: parseCartResponse(rawCart) };
   } catch (error) {
-    if (isApiAuthError(error)) {
+    if (isApiTokenExpiredError(error)) {
       return {
         body: { error: "Your token has expired", code: "TOKEN_EXPIRED" as const },
         status: 401,
@@ -112,7 +112,7 @@ export async function getDeliverySlotsService(
 
     return { body: parseDeliverySlotsPicker(rawResult) };
   } catch (error) {
-    if (isApiAuthError(error)) {
+    if (isApiTokenExpiredError(error)) {
       return {
         body: { error: "Your token has expired", code: "TOKEN_EXPIRED" as const },
         status: 401,
@@ -152,7 +152,7 @@ export async function setDeliverySlotService(
 
     return { body: parseCartResponse(rawCart) };
   } catch (error) {
-    if (isApiAuthError(error)) {
+    if (isApiTokenExpiredError(error)) {
       return {
         body: { error: "Your token has expired", code: "TOKEN_EXPIRED" as const },
         status: 401,

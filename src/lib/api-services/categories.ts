@@ -1,4 +1,4 @@
-import { isApiAuthError } from "@/lib/api-error";
+import { isApiTokenExpiredError } from "@/lib/api-error";
 import type { CategoriesApiResponse } from "@/lib/category-types";
 import { parseCategoryPage } from "@/lib/parse-categories";
 import { parseShortcutsPage } from "@/lib/parse-shortcuts";
@@ -29,7 +29,7 @@ export async function getCategoriesService(
       },
     };
   } catch (error) {
-    if (isApiAuthError(error)) {
+    if (isApiTokenExpiredError(error)) {
       return {
         body: { error: "Your token has expired", code: "TOKEN_EXPIRED" as const },
         status: 401,

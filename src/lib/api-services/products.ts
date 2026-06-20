@@ -1,4 +1,4 @@
-import { isApiAuthError } from "@/lib/api-error";
+import { isApiTokenExpiredError } from "@/lib/api-error";
 import type { SubcategoriesApiResponse } from "@/lib/category-types";
 import { parseProductDetailPage } from "@/lib/parse-fusion-product";
 import { parseCategoryPageSections } from "@/lib/parse-fusion-search";
@@ -52,7 +52,7 @@ export async function getProductDetailService(
 
     return { body: productDetail };
   } catch (error) {
-    if (isApiAuthError(error)) {
+    if (isApiTokenExpiredError(error)) {
       return {
         body: { error: "Your token has expired", code: "TOKEN_EXPIRED" as const },
         status: 401,
@@ -91,7 +91,7 @@ export async function getSuggestionsService(
 
     return { body: { suggestions, query } };
   } catch (error) {
-    if (isApiAuthError(error)) {
+    if (isApiTokenExpiredError(error)) {
       return {
         body: { error: "Your token has expired", code: "TOKEN_EXPIRED" as const },
         status: 401,
@@ -121,7 +121,7 @@ export async function getSubcategoriesService(
 
     return { body: { title, subcategories } };
   } catch (error) {
-    if (isApiAuthError(error)) {
+    if (isApiTokenExpiredError(error)) {
       return {
         body: { error: "Your token has expired", code: "TOKEN_EXPIRED" as const },
         status: 401,
@@ -176,7 +176,7 @@ async function getProductsPageService(
 
     return { body: { title, products, sections } };
   } catch (error) {
-    if (isApiAuthError(error)) {
+    if (isApiTokenExpiredError(error)) {
       return {
         body: { error: "Your token has expired", code: "TOKEN_EXPIRED" as const },
         status: 401,

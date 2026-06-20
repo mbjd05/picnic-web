@@ -1,4 +1,4 @@
-import { isApiAuthError } from "@/lib/api-error";
+import { isApiTokenExpiredError } from "@/lib/api-error";
 import { extractProducts } from "@/lib/extract-products";
 import { getTranslations } from "@/lib/i18n";
 import { parseFusionSearchSections } from "@/lib/parse-fusion-search";
@@ -80,7 +80,7 @@ export async function searchProductsService(
       },
     };
   } catch (error) {
-    if (isApiAuthError(error)) {
+    if (isApiTokenExpiredError(error)) {
       return {
         body: { error: "Your token has expired", code: "TOKEN_EXPIRED" as const },
         status: 401,
