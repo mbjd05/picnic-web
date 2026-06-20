@@ -20,7 +20,7 @@ The current Next app is the visual source of truth. Ported UI should preserve th
 - [x] Chunk 5: Port cart and delivery-slot API routes to Hono.
 - [x] Chunk 6: Port recipe detail, saved recipe, and recipe add-to-cart API routes to Hono.
 - [x] Chunk 7: Port payment profile and checkout API routes to Hono.
-- [ ] Chunk 8: Add Worker API security, headers, and response helpers.
+- [x] Chunk 8: Add Worker API security, headers, and response helpers.
 - [ ] Chunk 9: Establish the Vite web app shell, styling baseline, and API client.
 - [ ] Chunk 10: Port login UI and session handling.
 - [ ] Chunk 11: Port home, search, categories, and product listing UI.
@@ -182,28 +182,28 @@ Validated:
 - `npm run build`
 - Authenticated payment and checkout smoke tests remain scheduled for Chunk 19 because no test session is available in the shell environment.
 
-## Remaining Chunks
-
 ### Chunk 8: Worker Security And Response Helpers
 
-Goal:
+Commit: `feaa020 Harden Worker API responses`
 
-Make the Hono API consistent, auditable, and production-ready before the UI starts depending on it.
+Implemented:
 
-Scope:
+- Added shared Hono helpers for status handling, auth-required responses, private-response cache prevention, and unhandled upstream failures.
+- Centralized security middleware for all `/api/*` routes, including same-origin enforcement for every unsafe method.
+- Applied `Cache-Control: no-store`, `Pragma: no-cache`, and `Expires: 0` to private API responses while preserving health and image caching behavior.
+- Added response hardening headers to Worker API responses and Cloudflare-served Vite assets.
+- Preserved the distinct auth endpoint error shape for rejected cross-origin requests.
+- Narrowed established-session expiry detection so generic upstream 403 failures no longer force a login redirect.
+- Kept Worker error logs useful without including tokens, credentials, request bodies, or user input.
 
-- Add shared Hono response helpers for JSON status, auth-required, no-store, and upstream errors.
-- Apply `Cache-Control: no-store` to all private API responses.
-- Add same-origin checks for all unsafe authenticated methods.
-- Add clear auth-expired vs generic upstream failure handling.
-- Add security headers for Worker-served app responses where appropriate.
-- Keep logging useful without exposing tokens or credentials.
+Validated:
 
-Validation:
+- `npm run validate`
+- Local Worker response checks for public health headers, private no-store headers, and auth/non-auth cross-origin rejection bodies.
+- Confirmed the Worker dry-run includes the static `_headers` file.
+- Confirmed no Worker/service log statement emits tokens, passwords, email addresses, credentials, or request bodies.
 
-- Typecheck, lint, Next build, Worker dry-run build.
-- Inspect representative response headers.
-- Confirm no token/credential data is logged.
+## Remaining Chunks
 
 ### Chunk 9: Vite Web App Shell And API Client
 
