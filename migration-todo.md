@@ -18,7 +18,7 @@ The current Next app is the visual source of truth. Ported UI should preserve th
 - [x] Chunk 3: Port auth/session routes to Hono.
 - [x] Chunk 4: Port product/category detail API routes to Hono.
 - [x] Chunk 5: Port cart and delivery-slot API routes to Hono.
-- [ ] Chunk 6: Port recipe detail, saved recipe, and recipe add-to-cart API routes to Hono.
+- [x] Chunk 6: Port recipe detail, saved recipe, and recipe add-to-cart API routes to Hono.
 - [ ] Chunk 7: Port payment profile and checkout API routes to Hono.
 - [ ] Chunk 8: Add Worker API security, headers, and response helpers.
 - [ ] Chunk 9: Establish the Vite web app shell, styling baseline, and API client.
@@ -138,28 +138,29 @@ Validated:
 - `npm run build:api`
 - `npm run build`
 
+### Chunk 6: Recipe API Routes
+
+Commit: `e74f90e Port recipe routes to Hono`
+
+Implemented:
+
+- Extracted framework-neutral services for recipe detail, ingredient enrichment, save/unsave, recipe add-to-cart, and cookbook counts.
+- Added Hono routes for `GET /api/recipe/:id`, `POST/DELETE /api/recipe/:id/saved`, `POST /api/recipe/:id/add-to-cart`, and `GET /api/cookbook/counts`.
+- Kept the existing Next recipe routes as thin adapters over the shared services.
+- Preserved the NL/DE recipe endpoint fallback, portion handling, ingredient names and product enrichment, allergen/parser output, and sequential selected-ingredient cart mutations.
+- Preserved token-scoped five-minute cookbook count caching and invalidated it immediately after save/unsave.
+- Preserved same-origin checks on recipe mutations.
+
+Validated:
+
+- `npm run lint`
+- `npx tsc --noEmit --pretty false`
+- `npm run build:web`
+- `npm run build:api`
+- `npm run build`
+- Authenticated manual recipe mutation smoke tests remain scheduled for Chunk 19 because no test session is available in the shell environment.
+
 ## Remaining Chunks
-
-### Chunk 6: Port Recipe API Routes To Hono
-
-Goal:
-
-Move recipe detail and recipe mutation routes into Hono.
-
-Scope:
-
-- Port `GET /api/recipe/[id]`.
-- Port `GET/POST/DELETE /api/recipe/[id]/saved` or current equivalent methods.
-- Port `POST /api/recipe/[id]/add-to-cart`.
-- Port `GET /api/cookbook/counts`.
-- Preserve ingredient product names, portion scaling, quantity correction, allergen grouping, saved recipes, and recipe add-to-cart behavior.
-
-Validation:
-
-- Typecheck, lint, Next build, Worker dry-run build.
-- Manual recipe detail smoke test.
-- Manual save/unsave smoke test.
-- Manual add recipe ingredients to cart smoke test.
 
 ### Chunk 7: Port Payment And Checkout API Routes To Hono
 
