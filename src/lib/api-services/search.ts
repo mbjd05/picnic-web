@@ -32,7 +32,20 @@ export async function searchProductsService(
     const client = buildPicnicClient(authToken, countryCode);
     const t = getTranslations(countryCode);
 
-    const rawSellingUnits = (await client.catalog.search(query)) as RawSellingUnits;
+    const metadataPromise = (client as unknown as SearchMetadataClient)
+      .sendRequest(
+        "GET",
+        `/pages/search-page-results?search_term=${encodeURIComponent(query)}`,
+        null,
+        true
+      )
+      .then((value) => ({ ok: true as const, value }))
+      .catch((error: unknown) => ({ ok: false as const, error }));
+
+    const [rawSellingUnits, metadataResult] = await Promise.all([
+      client.catalog.search(query) as Promise<RawSellingUnits>,
+      metadataPromise,
+    ]);
     const orderedFallbackProducts = extractProducts(rawSellingUnits);
 
     let parsedSections: SearchSection[] = [];
@@ -41,14 +54,11 @@ export async function searchProductsService(
     );
 
     try {
-      const rawPage = await (client as unknown as SearchMetadataClient).sendRequest(
-        "GET",
-        `/pages/search-page-results?search_term=${encodeURIComponent(query)}`,
-        null,
-        true
-      );
+      if (!metadataResult.ok) throw metadataResult.error;
 
-      const { products: parsedProducts, sections } = parseFusionSearchSections(rawPage);
+      const { products: parsedProducts, sections } = parseFusionSearchSections(
+        metadataResult.value
+      );
 
       parsedSections = sections;
       for (const product of parsedProducts) {

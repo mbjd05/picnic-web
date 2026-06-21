@@ -8,7 +8,7 @@ import { PriceDisplay } from "@/components/price-display";
 import type { CategoryItem, ShortcutItem } from "@/lib/category-types";
 import { getTranslations } from "@/lib/i18n";
 import { buildImageUrl } from "@/lib/image-url";
-import type { BundleProgress, Product, SearchSection } from "@/lib/types";
+import type { BundleProgress, BundleThreshold, Product, SearchSection } from "@/lib/types";
 import { buildSectionId } from "@/lib/types";
 
 import { useCart } from "./cart-context";
@@ -163,10 +163,6 @@ export function ProductCard({ product }: { product: Product }) {
   const progress = cart.getBundleProgress(product.id);
   const bundlePrice = activeBundlePrice(progress, quantity);
 
-  useEffect(() => {
-    if (product.priceRanges) cart.registerBundleData(product.id, product.priceRanges);
-  }, [cart, product.id, product.priceRanges]);
-
   return (
     <div className="group relative h-full">
       <article className="border-card-border bg-card-bg relative flex h-full flex-col rounded-lg border p-4 shadow-sm transition-shadow group-hover:shadow-md">
@@ -253,6 +249,19 @@ export function ProductGrid({
   products?: Product[];
   sections?: SearchSection[];
 }) {
+  const { registerBundleDataBatch } = useCart();
+
+  useEffect(() => {
+    const bundleProducts = sections?.length
+      ? sections.flatMap((section) => section.products)
+      : (products ?? []);
+    const entries = new Map<string, BundleThreshold[]>();
+    for (const product of bundleProducts) {
+      if (product.priceRanges?.length) entries.set(product.id, product.priceRanges);
+    }
+    registerBundleDataBatch([...entries]);
+  }, [products, registerBundleDataBatch, sections]);
+
   if (sections?.length) {
     return (
       <div className="space-y-8">

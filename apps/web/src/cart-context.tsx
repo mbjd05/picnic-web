@@ -24,7 +24,7 @@ type CartContextValue = {
   removeProduct: (productId: string) => void;
   getQuantity: (productId: string) => number;
   getBundleProgress: (productId: string) => BundleProgress | null;
-  registerBundleData: (productId: string, thresholds: BundleThreshold[]) => void;
+  registerBundleDataBatch: (entries: ReadonlyArray<readonly [string, BundleThreshold[]]>) => void;
   refresh: () => void;
 };
 
@@ -171,15 +171,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
     },
     [bundleData, quantities]
   );
-  const registerBundleData = useCallback((productId: string, thresholds: BundleThreshold[]) => {
-    if (thresholds.length === 0) return;
-    setBundleData((current) => {
-      if (current.has(productId)) return current;
-      const next = new Map(current);
-      next.set(productId, thresholds);
-      return next;
-    });
-  }, []);
+  const registerBundleDataBatch = useCallback(
+    (entries: ReadonlyArray<readonly [string, BundleThreshold[]]>) => {
+      if (entries.length === 0) return;
+      setBundleData((current) => {
+        let next: Map<string, BundleThreshold[]> | null = null;
+        for (const [productId, thresholds] of entries) {
+          if (thresholds.length === 0 || current.has(productId) || next?.has(productId)) continue;
+          next ??= new Map(current);
+          next.set(productId, thresholds);
+        }
+        return next ?? current;
+      });
+    },
+    []
+  );
 
   const value = useMemo(
     () => ({
@@ -191,7 +197,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       removeProduct,
       getQuantity,
       getBundleProgress,
-      registerBundleData,
+      registerBundleDataBatch,
       refresh,
     }),
     [
@@ -203,7 +209,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       removeProduct,
       getQuantity,
       getBundleProgress,
-      registerBundleData,
+      registerBundleDataBatch,
       refresh,
     ]
   );
