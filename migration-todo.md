@@ -22,7 +22,7 @@ The current Next app is the visual source of truth. Ported UI should preserve th
 - [x] Chunk 7: Port payment profile and checkout API routes to Hono.
 - [x] Chunk 8: Add Worker API security, headers, and response helpers.
 - [x] Chunk 9: Establish the Vite web app shell, styling baseline, and API client.
-- [ ] Chunk 10: Port login UI and session handling.
+- [x] Chunk 10: Port login UI and session handling.
 - [ ] Chunk 11: Port home, search, categories, and product listing UI.
 - [ ] Chunk 12: Port product detail UI.
 - [ ] Chunk 13: Port cart UI.
@@ -224,27 +224,28 @@ Validated:
 - Authenticated headless Chromium checks confirmed client-side navigation, all expected header links, no desktop/mobile page overflow, and a usable 390px header layout.
 - Desktop, mobile, and standalone-login screenshots were inspected for blank output, overlap, and framing.
 
-## Remaining Chunks
-
 ### Chunk 10: Port Login UI
 
-Goal:
+Completed in `089a371` (`Port login UI to Vite`).
 
-Make the Vite app capable of authenticating against the Hono API.
+Implemented:
 
-Scope:
+- Ported the existing localized login experience to Vite and TanStack Router without redesigning it.
+- Preserved credential and auth-token modes, country selection, password/token visibility controls, expired-session messaging, safe return redirects, and the in-memory 2FA verification step.
+- Routed all authentication calls through the Hono Worker and retained full-page navigation after success so the authenticated shell starts after cookies are accepted.
+- Kept full and partial tokens out of browser-visible storage; the partial 2FA token exists only in component state and the full token is stored by Hono in an HTTP-only cookie.
+- Corrected the Vite development proxy origin so unsafe same-origin API mutations pass the Worker's strict origin validation during local development.
+- Preserved specific localized errors for invalid tokens, credentials, and 2FA codes on non-success HTTP responses.
 
-- Port login page UI.
-- Preserve token login, credential login, password visibility toggle, country selection, 2FA verification, and normal-person wording.
-- Use Hono auth endpoints only.
-- Confirm cookies are set as expected.
+Validated:
 
-Validation:
+- `npm run validate`
+- Headless Chromium verified expired-session messaging, NL/DE localization, password and token visibility toggles, and successful auth-token login through the Vite UI.
+- Successful login followed the requested `/cookbook` redirect, mounted the authenticated header, and issued `picnic_auth_token` with `HttpOnly` and `SameSite=Strict`.
+- A direct Hono login request independently confirmed the environment token was valid while diagnosing the development-proxy origin mismatch.
+- Credential validation and the 2FA UI/endpoint contract are implemented; a live credential/2FA completion was not repeated because test credentials and a newly delivered verification code were not available for this chunk.
 
-- Typecheck, lint, `build:web`, Worker dry-run build.
-- Manual token login smoke test.
-- Manual credential login smoke test where possible.
-- Manual 2FA flow using the existing auth probe if SMS/email delivery is available.
+## Remaining Chunks
 
 ### Chunk 11: Port Home, Search, Categories, And Product Listing UI
 
