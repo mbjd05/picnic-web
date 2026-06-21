@@ -23,7 +23,7 @@ The current Next app is the visual source of truth. Ported UI should preserve th
 - [x] Chunk 8: Add Worker API security, headers, and response helpers.
 - [x] Chunk 9: Establish the Vite web app shell, styling baseline, and API client.
 - [x] Chunk 10: Port login UI and session handling.
-- [ ] Chunk 11: Port home, search, categories, and product listing UI.
+- [x] Chunk 11: Port home, search, categories, and product listing UI.
 - [ ] Chunk 12: Port product detail UI.
 - [ ] Chunk 13: Port cart UI.
 - [ ] Chunk 14: Port cookbook and recipe UI.
@@ -245,27 +245,31 @@ Validated:
 - A direct Hono login request independently confirmed the environment token was valid while diagnosing the development-proxy origin mismatch.
 - Credential validation and the 2FA UI/endpoint contract are implemented; a live credential/2FA completion was not repeated because test credentials and a newly delivered verification code were not available for this chunk.
 
-## Remaining Chunks
-
 ### Chunk 11: Port Home, Search, Categories, And Product Listing UI
 
-Goal:
+Completed in `7da8686` (`Port product browsing UI to Vite`).
 
-Port the main grocery browsing workflow to Vite.
+Implemented:
 
-Scope:
+- Ported home category/shortcut browsing, arbitrary shortcut pages, category navigation, subcategory product listings, global search, and search suggestions to Vite and TanStack Router.
+- Preserved search query URL state, the grey result count, and the `Alle resultaten voor "<term>"` section heading.
+- Added a Vite-shell header extension so section navigation remains part of the sticky header on search, shortcut, and category-product pages.
+- Ported section scroll-spy behavior and automatic horizontal pill scrolling so the active section remains visible.
+- Ported the existing product-card presentation, bio prefixes, highlights, flags, badges, unavailable state, bundle progress, and pricing.
+- Added shell-level optimistic cart state so product-card controls and the header cart badge share one initial cart request and one mutation queue.
+- Kept global search and suggestions available from every authenticated route and synchronized the field with TanStack Router URL state.
 
-- Port home/search page.
-- Port search suggestions.
-- Port category grid, shortcuts, category products, subcategory navigation, section nav badges, result counts, and URL state.
-- Preserve `Alle resultaten voor "<term>"` header behavior and grey result count text.
-- Preserve cart controls on product cards.
-- Preserve current visual layout, spacing, sticky/nav behavior, and product card presentation.
+Validated:
 
-Validation:
+- `npm run validate`
+- Authenticated Chromium loaded 33 home rows across `Snel naar` and `Alle categorieën`, and followed `Alle acties` to `/pages?pageId=promo-page-root` with 160 rendered product cards.
+- Searching for `banaan` returned seven suggestions, preserved `/?q=banaan` and the visible input value, showed `86 resultaten voor “banaan”`, and rendered `Alle resultaten voor "banaan"` plus `Bekijk ook` in both content and section navigation.
+- Category navigation reached `/categories/21724/CustomCatNLFruitLvl2Pos1` with 23 products and a sticky section bar.
+- A real product add/remove cycle completed through Hono and restored the original cart state.
+- On the 23-section `Alle acties` page, jumping to the final section selected `Voorraadkast` and automatically kept its active pill fully visible.
+- Desktop search and 390x844 category-product screenshots were inspected; the mobile page had no horizontal overflow.
 
-- Typecheck, lint, `build:web`, Worker dry-run build.
-- Manual smoke test for global search, category search, URL state, suggestions, and PLP cart buttons.
+## Remaining Chunks
 
 ### Chunk 12: Port Product Detail UI
 
