@@ -118,6 +118,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
     retry: false,
   });
   const suggestions = suggestionsQuery.data?.suggestions ?? [];
+  const canShowSuggestions = query.trim().length >= MIN_SUGGESTION_LENGTH;
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -200,7 +201,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
               role="combobox"
               aria-autocomplete="list"
               aria-controls="product-search-suggestions"
-              aria-expanded={showSuggestions && suggestions.length > 0}
+              aria-expanded={showSuggestions && canShowSuggestions && suggestions.length > 0}
               aria-activedescendant={
                 activeSuggestionIndex >= 0
                   ? `product-search-suggestion-${activeSuggestionIndex}`
@@ -215,7 +216,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
             >
               <SearchIcon />
             </button>
-            {showSuggestions && suggestions.length ? (
+            {showSuggestions && canShowSuggestions && suggestions.length ? (
               <ul
                 id="product-search-suggestions"
                 role="listbox"

@@ -420,13 +420,19 @@ export function BackButton({ onClick }: { onClick: () => void }) {
 
 export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
   const [active, setActive] = useState(0);
+  const navRef = useRef<HTMLElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const badgeRefs = useRef(new Map<number, HTMLButtonElement>());
+  const manualSectionRef = useRef<number | null>(null);
 
   useEffect(() => {
     let frame: number | null = null;
     const update = () => {
       frame = null;
+      if (manualSectionRef.current !== null) {
+        setActive(manualSectionRef.current);
+        return;
+      }
       const focusY = Math.max(STICKY_HEADER_OFFSET_PX, window.innerHeight * VIEWPORT_FOCUS_RATIO);
       if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2) {
         setActive(sections.length - 1);
@@ -463,6 +469,31 @@ export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
   }, [sections]);
 
   useEffect(() => {
+    const clearManualSelection = () => {
+      manualSectionRef.current = null;
+    };
+    const clearFromPointer = (event: PointerEvent) => {
+      if (!navRef.current?.contains(event.target as Node)) clearManualSelection();
+    };
+    const clearFromKeyboard = (event: KeyboardEvent) => {
+      if (["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "].includes(event.key)) {
+        clearManualSelection();
+      }
+    };
+
+    window.addEventListener("wheel", clearManualSelection, { passive: true });
+    window.addEventListener("touchstart", clearManualSelection, { passive: true });
+    window.addEventListener("pointerdown", clearFromPointer);
+    window.addEventListener("keydown", clearFromKeyboard);
+    return () => {
+      window.removeEventListener("wheel", clearManualSelection);
+      window.removeEventListener("touchstart", clearManualSelection);
+      window.removeEventListener("pointerdown", clearFromPointer);
+      window.removeEventListener("keydown", clearFromKeyboard);
+    };
+  }, []);
+
+  useEffect(() => {
     const badge = badgeRefs.current.get(active);
     const container = containerRef.current;
     if (!badge || !container) return;
@@ -484,16 +515,14 @@ export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
     const section = document.getElementById(buildSectionId(index));
     if (!section) return;
 
-    const root = document.documentElement;
-    const previousScrollBehavior = root.style.scrollBehavior;
-    root.style.scrollBehavior = "auto";
-    section.scrollIntoView({ block: "start" });
-    root.style.scrollBehavior = previousScrollBehavior;
+    manualSectionRef.current = index;
     setActive(index);
+    section.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   return (
     <nav
+      ref={navRef}
       aria-label="Section navigation"
       className="border-card-border border-t bg-white/95 backdrop-blur-sm"
     >
