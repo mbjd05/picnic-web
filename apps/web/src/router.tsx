@@ -3,6 +3,12 @@ import { Outlet, createRootRoute, createRoute, createRouter } from "@tanstack/re
 
 import { AuthenticatedShell, StandaloneShell } from "./app-shell";
 import { LoadingSurface } from "./app-surfaces";
+import {
+  CategoryPage,
+  HomePage,
+  ShortcutProductsPage,
+  SubcategoryProductsPage,
+} from "./browsing-pages";
 import { CountryProvider } from "./country-context";
 import { ApiClientError } from "./lib/api-client";
 import { LoginPage } from "./login-page";
@@ -59,13 +65,17 @@ const homeRoute = createRoute({
   validateSearch: (search: Record<string, unknown>) => ({
     q: typeof search.q === "string" && search.q.trim() ? search.q : undefined,
   }),
-  component: pendingPage(),
+  component: HomePage,
 });
 
 const pagesRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/pages",
-  component: pendingPage("Producten"),
+  validateSearch: (search: Record<string, unknown>) => ({
+    pageId: typeof search.pageId === "string" ? search.pageId : undefined,
+    title: typeof search.title === "string" ? search.title : undefined,
+  }),
+  component: ShortcutProductsPage,
 });
 const cartRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
@@ -80,12 +90,12 @@ const paymentReturnRoute = createRoute({
 const categoryRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/categories/$categoryId",
-  component: pendingPage("Categorie"),
+  component: CategoryPage,
 });
 const subcategoryRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/categories/$categoryId/$subcategoryId",
-  component: pendingPage("Categorie"),
+  component: SubcategoryProductsPage,
 });
 const cookbookRoute = createRoute({
   getParentRoute: () => authenticatedRoute,

@@ -1,14 +1,31 @@
-import { type FormEvent, useEffect, useState } from "react";
+import {
+  type FormEvent,
+  type ReactNode,
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import { useQuery } from "@tanstack/react-query";
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
+import { createPortal } from "react-dom";
 
 import { getTranslations } from "@/lib/i18n";
-import type { AuthApiResponse, CartData } from "@/lib/types";
-import { SUPPORTED_COUNTRY_CODES } from "@/lib/types";
+import type { AuthApiResponse, SuggestionsApiResponse } from "@/lib/types";
+import { DEBOUNCE_DELAY_MS, MIN_SUGGESTION_LENGTH, SUPPORTED_COUNTRY_CODES } from "@/lib/types";
 
+import { CartProvider, useCart } from "./cart-context";
 import { CountryProvider, useCountryCode, useSwitchCountry } from "./country-context";
 import { fetchJson } from "./lib/api-client";
+
+const HeaderBottomBarContext = createContext<HTMLElement | null>(null);
+
+export function HeaderBottomBar({ children }: { children: ReactNode }) {
+  const host = useContext(HeaderBottomBarContext);
+  return host ? createPortal(children, host) : null;
+}
 
 function SearchIcon() {
   return (
@@ -54,7 +71,7 @@ function formatCartPrice(cents: number): string {
   return (cents / 100).toFixed(2);
 }
 
-function AppHeader() {
+function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement | null) => void }) {
   const countryCode = useCountryCode();
   const switchCountry = useSwitchCountry();
   const t = getTranslations(countryCode);
@@ -63,14 +80,35 @@ function AppHeader() {
   const [query, setQuery] = useState(
     () => new URLSearchParams(window.location.search).get("q") ?? ""
   );
+  const [debouncedQuery, setDebouncedQuery] = useState(query);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchRef = useRef<HTMLFormElement>(null);
+  const cart = useCart();
 
   useEffect(() => {
-    setQuery(new URLSearchParams(window.location.search).get("q") ?? "");
-  }, [location.href]);
+    setQuery(new URLSearchParams(location.searchStr).get("q") ?? "");
+  }, [location.searchStr]);
 
-  const cartQuery = useQuery({
-    queryKey: ["cart", "summary"],
-    queryFn: () => fetchJson<CartData>("/api/cart"),
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(query.trim()), DEBOUNCE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  useEffect(() => {
+    function closeSuggestions(event: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener("mousedown", closeSuggestions);
+    return () => document.removeEventListener("mousedown", closeSuggestions);
+  }, []);
+
+  const suggestionsQuery = useQuery({
+    queryKey: ["suggestions", debouncedQuery, countryCode],
+    queryFn: () =>
+      fetchJson<SuggestionsApiResponse>(`/api/suggestions?q=${encodeURIComponent(debouncedQuery)}`),
+    enabled: debouncedQuery.length >= MIN_SUGGESTION_LENGTH,
     retry: false,
   });
 
@@ -78,7 +116,14 @@ function AppHeader() {
     event.preventDefault();
     const trimmed = query.trim();
     if (!trimmed) return;
+    setShowSuggestions(false);
     void navigate({ to: "/", search: { q: trimmed } });
+  }
+
+  function selectSuggestion(suggestion: string) {
+    setQuery(suggestion);
+    setShowSuggestions(false);
+    void navigate({ to: "/", search: { q: suggestion } });
   }
 
   async function handleSignOut() {
@@ -89,7 +134,7 @@ function AppHeader() {
     }
   }
 
-  const showCartBadge = cartQuery.data && cartQuery.data.totalCount > 0;
+  const showCartBadge = cart.totalCount > 0;
 
   return (
     <header className="border-card-border sticky top-0 z-50 border-b bg-white/95 backdrop-blur-sm">
@@ -104,6 +149,7 @@ function AppHeader() {
         </Link>
 
         <form
+          ref={searchRef}
           role="search"
           onSubmit={handleSearch}
           className="order-3 w-full md:order-none md:flex-1"
@@ -112,7 +158,11 @@ function AppHeader() {
             <input
               type="search"
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setShowSuggestions(true);
+              }}
+              onFocus={() => setShowSuggestions(true)}
               placeholder={t.searchPlaceholder}
               aria-label={t.searchAriaLabel}
               className="border-input-border text-foreground focus:border-input-focus focus:ring-input-focus/20 w-full rounded-full border bg-white px-4 py-2 pr-12 text-sm shadow-sm transition-shadow outline-none placeholder:text-gray-400 focus:ring-2"
@@ -124,6 +174,24 @@ function AppHeader() {
             >
               <SearchIcon />
             </button>
+            {showSuggestions && suggestionsQuery.data?.suggestions.length ? (
+              <ul
+                role="listbox"
+                className="border-card-border bg-card-bg absolute top-full left-0 z-50 mt-1 w-full overflow-hidden rounded-lg border shadow-lg"
+              >
+                {suggestionsQuery.data.suggestions.map((suggestion) => (
+                  <li key={suggestion.id} role="option" aria-selected={false}>
+                    <button
+                      type="button"
+                      onClick={() => selectSuggestion(suggestion.suggestion)}
+                      className="text-foreground w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                    >
+                      {suggestion.suggestion}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </div>
         </form>
 
@@ -173,23 +241,29 @@ function AppHeader() {
             <CartIcon />
             {showCartBadge ? (
               <span className="bg-picnic-red ml-1 rounded-full px-2 py-0.5 text-xs font-semibold text-white">
-                {formatCartPrice(cartQuery.data.totalPrice)}
+                {formatCartPrice(cart.totalPrice)}
               </span>
             ) : null}
           </Link>
         </nav>
       </div>
+      <div ref={setBottomBarHost} />
     </header>
   );
 }
 
 export function AuthenticatedShell() {
+  const [bottomBarHost, setBottomBarHost] = useState<HTMLElement | null>(null);
   return (
     <CountryProvider>
-      <div className="flex min-h-screen flex-col">
-        <AppHeader />
-        <Outlet />
-      </div>
+      <CartProvider>
+        <HeaderBottomBarContext.Provider value={bottomBarHost}>
+          <div className="flex min-h-screen flex-col">
+            <AppHeader setBottomBarHost={setBottomBarHost} />
+            <Outlet />
+          </div>
+        </HeaderBottomBarContext.Provider>
+      </CartProvider>
     </CountryProvider>
   );
 }
