@@ -85,6 +85,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
   const [debouncedQuery, setDebouncedQuery] = useState(query);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
+  const [suggestionSession, setSuggestionSession] = useState(0);
   const searchRef = useRef<HTMLFormElement>(null);
   const cart = useCart();
 
@@ -109,11 +110,20 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
   }, []);
 
   const suggestionsQuery = useQuery({
-    queryKey: ["suggestions", debouncedQuery, countryCode],
+    queryKey: ["suggestions", suggestionSession, debouncedQuery, countryCode],
     queryFn: () =>
       fetchJson<SuggestionsApiResponse>(`/api/suggestions?q=${encodeURIComponent(debouncedQuery)}`),
     enabled: debouncedQuery.length >= MIN_SUGGESTION_LENGTH,
-    placeholderData: (previousData) => previousData,
+    placeholderData: (previousData, previousQuery) => {
+      const previousKey = previousQuery?.queryKey;
+      const previousSession = previousKey?.[1];
+      const previousTerm = previousKey?.[2];
+      return previousSession === suggestionSession &&
+        typeof previousTerm === "string" &&
+        debouncedQuery.startsWith(previousTerm)
+        ? previousData
+        : undefined;
+    },
     staleTime: 60_000,
     retry: false,
   });
@@ -190,7 +200,11 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
               type="search"
               value={query}
               onChange={(event) => {
-                setQuery(event.target.value);
+                const nextQuery = event.target.value;
+                if (query.trim() && !nextQuery.trim()) {
+                  setSuggestionSession((session) => session + 1);
+                }
+                setQuery(nextQuery);
                 setShowSuggestions(true);
                 setActiveSuggestionIndex(-1);
               }}
