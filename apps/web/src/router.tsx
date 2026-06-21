@@ -5,6 +5,7 @@ import { AuthenticatedShell, StandaloneShell } from "./app-shell";
 import { LoadingSurface } from "./app-surfaces";
 import { CountryProvider } from "./country-context";
 import { ApiClientError } from "./lib/api-client";
+import { LoginPage } from "./login-page";
 import { AppShellError, RootNotFound } from "./router-surfaces";
 
 export const queryClient = new QueryClient({
@@ -45,7 +46,11 @@ function pendingPage(title?: string) {
 const loginRoute = createRoute({
   getParentRoute: () => standaloneRoute,
   path: "/login",
-  component: pendingPage("Inloggen"),
+  validateSearch: (search: Record<string, unknown>) => ({
+    expired: search.expired === true || search.expired === "true" ? (true as const) : undefined,
+    redirect: typeof search.redirect === "string" ? search.redirect : undefined,
+  }),
+  component: LoginPage,
 });
 
 const homeRoute = createRoute({

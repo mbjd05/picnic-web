@@ -17,7 +17,15 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      "/api": "http://localhost:8787",
+      "/api": {
+        target: "http://localhost:8787",
+        changeOrigin: true,
+        configure(proxy) {
+          proxy.on("proxyReq", (proxyRequest) => {
+            proxyRequest.setHeader("origin", "http://localhost:8787");
+          });
+        },
+      },
     },
   },
 });
