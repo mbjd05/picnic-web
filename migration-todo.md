@@ -255,6 +255,7 @@ Implemented:
 - Preserved search query URL state, the grey result count, and the `Alle resultaten voor "<term>"` section heading.
 - Added a Vite-shell header extension so section navigation remains part of the sticky header on search, shortcut, and category-product pages.
 - Ported section scroll-spy behavior and automatic horizontal pill scrolling so the active section remains visible.
+- Follow-up `ed51ad8` replaced hash-based section links with history-neutral buttons, fixed final-section alignment, and added faster non-flashing suggestions with full arrow-key and Enter selection.
 - Ported the existing product-card presentation, bio prefixes, highlights, flags, badges, unavailable state, bundle progress, and pricing.
 - Added shell-level optimistic cart state so product-card controls and the header cart badge share one initial cart request and one mutation queue.
 - Kept global search and suggestions available from every authenticated route and synchronized the field with TanStack Router URL state.
@@ -266,7 +267,8 @@ Validated:
 - Searching for `banaan` returned seven suggestions, preserved `/?q=banaan` and the visible input value, showed `86 resultaten voor “banaan”`, and rendered `Alle resultaten voor "banaan"` plus `Bekijk ook` in both content and section navigation.
 - Category navigation reached `/categories/21724/CustomCatNLFruitLvl2Pos1` with 23 products and a sticky section bar.
 - A real product add/remove cycle completed through Hono and restored the original cart state.
-- On the 23-section `Alle acties` page, jumping to the final section selected `Voorraadkast` and automatically kept its active pill fully visible.
+- On the 23-section `Alle acties` page, scroll-spy automatically kept the active pill fully visible in the horizontal strip.
+- Follow-up browser validation confirmed the last pill lands at the sticky offset and becomes active, section clicks do not alter the hash or history length, Back returns to `/`, suggestions remain visible during refresh, and Arrow Down/Up/Enter select and submit the expected result.
 - Desktop search and 390x844 category-product screenshots were inspected; the mobile page had no horizontal overflow.
 
 ## Remaining Chunks
