@@ -421,13 +421,17 @@ export function BackButton({ onClick }: { onClick: () => void }) {
 export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
   const [active, setActive] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
-  const badgeRefs = useRef(new Map<number, HTMLAnchorElement>());
+  const badgeRefs = useRef(new Map<number, HTMLButtonElement>());
 
   useEffect(() => {
     let frame: number | null = null;
     const update = () => {
       frame = null;
       const focusY = Math.max(STICKY_HEADER_OFFSET_PX, window.innerHeight * VIEWPORT_FOCUS_RATIO);
+      if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2) {
+        setActive(sections.length - 1);
+        return;
+      }
       let best = 0;
       let distance = Number.POSITIVE_INFINITY;
       sections.forEach((_, index) => {
@@ -476,6 +480,18 @@ export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
     }
   }, [active]);
 
+  function selectSection(index: number) {
+    const section = document.getElementById(buildSectionId(index));
+    if (!section) return;
+
+    const root = document.documentElement;
+    const previousScrollBehavior = root.style.scrollBehavior;
+    root.style.scrollBehavior = "auto";
+    section.scrollIntoView({ block: "start" });
+    root.style.scrollBehavior = previousScrollBehavior;
+    setActive(index);
+  }
+
   return (
     <nav
       aria-label="Section navigation"
@@ -486,18 +502,19 @@ export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
         className="section-nav-scrollbar mx-auto flex max-w-7xl gap-2 overflow-x-auto px-6 py-2"
       >
         {sections.map((section, index) => (
-          <a
+          <button
             key={`${section.title}-${index}`}
+            type="button"
             ref={(node) => {
               if (node) badgeRefs.current.set(index, node);
               else badgeRefs.current.delete(index);
             }}
-            href={`#${buildSectionId(index)}`}
+            onClick={() => selectSection(index)}
             aria-current={active === index ? "true" : undefined}
-            className={`shrink-0 rounded-full px-3 py-1 text-sm font-medium whitespace-nowrap no-underline ${active === index ? "bg-picnic-red text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+            className={`shrink-0 rounded-full px-3 py-1 text-sm font-medium whitespace-nowrap ${active === index ? "bg-picnic-red text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
           >
             {section.title}
-          </a>
+          </button>
         ))}
       </div>
     </nav>

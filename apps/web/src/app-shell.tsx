@@ -1,5 +1,6 @@
 import {
   type FormEvent,
+  type KeyboardEvent,
   type ReactNode,
   createContext,
   useContext,
@@ -14,13 +15,14 @@ import { createPortal } from "react-dom";
 
 import { getTranslations } from "@/lib/i18n";
 import type { AuthApiResponse, SuggestionsApiResponse } from "@/lib/types";
-import { DEBOUNCE_DELAY_MS, MIN_SUGGESTION_LENGTH, SUPPORTED_COUNTRY_CODES } from "@/lib/types";
+import { MIN_SUGGESTION_LENGTH, SUPPORTED_COUNTRY_CODES } from "@/lib/types";
 
 import { CartProvider, useCart } from "./cart-context";
 import { CountryProvider, useCountryCode, useSwitchCountry } from "./country-context";
 import { fetchJson } from "./lib/api-client";
 
 const HeaderBottomBarContext = createContext<HTMLElement | null>(null);
+const SUGGESTION_DEBOUNCE_MS = 150;
 
 export function HeaderBottomBar({ children }: { children: ReactNode }) {
   const host = useContext(HeaderBottomBarContext);
@@ -82,6 +84,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
   );
   const [debouncedQuery, setDebouncedQuery] = useState(query);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
   const searchRef = useRef<HTMLFormElement>(null);
   const cart = useCart();
 
@@ -90,7 +93,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
   }, [location.searchStr]);
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedQuery(query.trim()), DEBOUNCE_DELAY_MS);
+    const timer = setTimeout(() => setDebouncedQuery(query.trim()), SUGGESTION_DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [query]);
 
@@ -98,6 +101,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
     function closeSuggestions(event: MouseEvent) {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setShowSuggestions(false);
+        setActiveSuggestionIndex(-1);
       }
     }
     document.addEventListener("mousedown", closeSuggestions);
@@ -109,21 +113,47 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
     queryFn: () =>
       fetchJson<SuggestionsApiResponse>(`/api/suggestions?q=${encodeURIComponent(debouncedQuery)}`),
     enabled: debouncedQuery.length >= MIN_SUGGESTION_LENGTH,
+    placeholderData: (previousData) => previousData,
+    staleTime: 60_000,
     retry: false,
   });
+  const suggestions = suggestionsQuery.data?.suggestions ?? [];
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const trimmed = query.trim();
     if (!trimmed) return;
     setShowSuggestions(false);
+    setActiveSuggestionIndex(-1);
     void navigate({ to: "/", search: { q: trimmed } });
   }
 
   function selectSuggestion(suggestion: string) {
     setQuery(suggestion);
     setShowSuggestions(false);
+    setActiveSuggestionIndex(-1);
     void navigate({ to: "/", search: { q: suggestion } });
+  }
+
+  function handleSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Escape") {
+      setShowSuggestions(false);
+      setActiveSuggestionIndex(-1);
+      return;
+    }
+    if (!showSuggestions || suggestions.length === 0) return;
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActiveSuggestionIndex((index) => (index + 1) % suggestions.length);
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActiveSuggestionIndex((index) => (index <= 0 ? suggestions.length - 1 : index - 1));
+    } else if (event.key === "Enter" && activeSuggestionIndex >= 0) {
+      event.preventDefault();
+      const suggestion = suggestions[activeSuggestionIndex];
+      if (suggestion) selectSuggestion(suggestion.suggestion);
+    }
   }
 
   async function handleSignOut() {
@@ -161,10 +191,21 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
               onChange={(event) => {
                 setQuery(event.target.value);
                 setShowSuggestions(true);
+                setActiveSuggestionIndex(-1);
               }}
               onFocus={() => setShowSuggestions(true)}
+              onKeyDown={handleSearchKeyDown}
               placeholder={t.searchPlaceholder}
               aria-label={t.searchAriaLabel}
+              role="combobox"
+              aria-autocomplete="list"
+              aria-controls="product-search-suggestions"
+              aria-expanded={showSuggestions && suggestions.length > 0}
+              aria-activedescendant={
+                activeSuggestionIndex >= 0
+                  ? `product-search-suggestion-${activeSuggestionIndex}`
+                  : undefined
+              }
               className="border-input-border text-foreground focus:border-input-focus focus:ring-input-focus/20 w-full rounded-full border bg-white px-4 py-2 pr-12 text-sm shadow-sm transition-shadow outline-none placeholder:text-gray-400 focus:ring-2"
             />
             <button
@@ -174,17 +215,26 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
             >
               <SearchIcon />
             </button>
-            {showSuggestions && suggestionsQuery.data?.suggestions.length ? (
+            {showSuggestions && suggestions.length ? (
               <ul
+                id="product-search-suggestions"
                 role="listbox"
                 className="border-card-border bg-card-bg absolute top-full left-0 z-50 mt-1 w-full overflow-hidden rounded-lg border shadow-lg"
               >
-                {suggestionsQuery.data.suggestions.map((suggestion) => (
-                  <li key={suggestion.id} role="option" aria-selected={false}>
+                {suggestions.map((suggestion, index) => (
+                  <li
+                    id={`product-search-suggestion-${index}`}
+                    key={suggestion.id}
+                    role="option"
+                    aria-selected={index === activeSuggestionIndex}
+                  >
                     <button
                       type="button"
                       onClick={() => selectSuggestion(suggestion.suggestion)}
-                      className="text-foreground w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                      onMouseEnter={() => setActiveSuggestionIndex(index)}
+                      className={`text-foreground w-full px-4 py-2.5 text-left text-sm focus:outline-none ${
+                        index === activeSuggestionIndex ? "bg-gray-100" : "hover:bg-gray-100"
+                      }`}
                     >
                       {suggestion.suggestion}
                     </button>
