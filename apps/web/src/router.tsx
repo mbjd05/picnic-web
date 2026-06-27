@@ -13,7 +13,9 @@ import { CartPage } from "./cart-page";
 import { CountryProvider } from "./country-context";
 import { ApiClientError } from "./lib/api-client";
 import { LoginPage } from "./login-page";
+import { PaymentAccountPage, PaymentReturnPage } from "./payment-pages";
 import { ProductDetailPage } from "./product-detail-page";
+import { CookbookPage, RecipeDetailPage } from "./recipe-pages";
 import { AppShellError, RootNotFound } from "./router-surfaces";
 
 export const queryClient = new QueryClient({
@@ -44,12 +46,6 @@ const authenticatedRoute = createRoute({
   id: "authenticated",
   component: AuthenticatedShell,
 });
-
-function pendingPage(title?: string) {
-  return function PendingPage() {
-    return <LoadingSurface title={title} />;
-  };
-}
 
 const loginRoute = createRoute({
   getParentRoute: () => standaloneRoute,
@@ -87,7 +83,7 @@ const cartRoute = createRoute({
 const paymentReturnRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/cart/payment-return",
-  component: pendingPage("Betaling"),
+  component: PaymentReturnPage,
 });
 const categoryRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
@@ -102,12 +98,12 @@ const subcategoryRoute = createRoute({
 const cookbookRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/cookbook",
-  component: pendingPage("Recepten"),
+  component: CookbookPage,
 });
 const paymentRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/account/payment",
-  component: pendingPage("Betaalmethoden"),
+  component: PaymentAccountPage,
 });
 const productRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
@@ -117,7 +113,7 @@ const productRoute = createRoute({
 const recipeRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/recipe/$id",
-  component: pendingPage("Recept"),
+  component: RecipeDetailPage,
 });
 
 const routeTree = rootRoute.addChildren([

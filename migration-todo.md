@@ -26,8 +26,8 @@ The current Next app is the visual source of truth. Ported UI should preserve th
 - [x] Chunk 11: Port home, search, categories, and product listing UI.
 - [x] Chunk 12: Port product detail UI.
 - [x] Chunk 13: Port cart UI.
-- [ ] Chunk 14: Port cookbook and recipe UI.
-- [ ] Chunk 15: Port payment UI and payment return flow.
+- [x] Chunk 14: Port cookbook and recipe UI.
+- [x] Chunk 15: Port payment UI and payment return flow.
 - [ ] Chunk 16: Add query caching, invalidation, and request de-duplication.
 - [ ] Chunk 17: Verify feature parity against current app behavior and specs.
 - [ ] Chunk 18: Finalize Cloudflare deployment configuration.
@@ -350,46 +350,49 @@ Validation:
 - Manual add/remove/remove-all smoke tests.
 - Manual delivery slot and checkout readiness smoke tests.
 
-## Remaining Chunks
-
 ### Chunk 14: Port Cookbook And Recipe UI
 
-Goal:
+Completed in this chunk.
 
-Port cookbook browsing, scoped search, saved recipes, recipe detail, and recipe cart flow.
+Implemented:
 
-Scope:
+- Added the Vite/TanStack cookbook route at `/cookbook`.
+- Ported cookbook browsing, category selection, saved recipes, saved count loading, global search, scoped search, and simple in-memory category view caching.
+- Ported recipe cards with recipe images, cooking time, saved-state bookmark controls, and recipe detail links.
+- Added the Vite/TanStack recipe detail route at `/recipe/$id`.
+- Ported recipe hero imagery, header save button, portion controls, price-per-serving/total calculation, selectable ingredients, condiments, steps, nutrition, allergens, and recipe add-to-cart.
+- Preserved recipe ingredient title enrichment and needed-quantity display cleanup from the current fork.
+- Kept recipe save/unsave optimistic where the UI already expects it while rolling back on failed save requests.
 
-- Port cookbook page.
-- Port category/scope selector and saved recipes control.
-- Port global and scoped recipe search.
-- Port recipe detail page, hero save button, ingredients, portions, steps, nutrition, allergens, and add-to-cart.
-- Preserve category view caching expectations from the current app.
+Validated:
 
-Validation:
+- `npm run validate`
+- `npm run smoke:api:auth` against the local Worker passed 43 checks, with only credential/2FA skipped by design.
+- The authenticated API smoke covered cookbook browse, category browse, cookbook search, saved recipe count invalidation, recipe detail, portion reload, save/restore, and selected-ingredient add-to-cart with cart restoration.
 
-- Typecheck, lint, `build:web`, Worker dry-run build.
-- Manual cookbook category/search/saved smoke tests.
-- Manual recipe save and add-to-cart smoke tests.
+Notes:
+
+- A headless browser route smoke was attempted, but the local Edge executable exited before opening a CDP debugging port in this environment. The compile, Worker, and authenticated API validation passed.
 
 ### Chunk 15: Port Payment UI And Return Flow
 
-Goal:
+Completed in this chunk.
 
-Port the direct payment user flow to Vite.
+Implemented:
 
-Scope:
+- Added the Vite/TanStack payment settings route at `/account/payment`.
+- Ported preferred payment display, iDEAL | Wero naming, bank selector, add-and-use payment option action, stored option display, local bank metadata persistence, and remove payment option action.
+- Added the Vite/TanStack payment return route at `/cart/payment-return`.
+- Ported cancelled, missing transaction, ready status, retry, cancel, and back-to-cart states.
+- Preserved checkout storage keys used by the cart checkout CTA and existing payment-return flow.
 
-- Port payment settings page.
-- Port payment method selector and preferred option management.
-- Port checkout/payment return page.
-- Preserve iDEAL/WERO naming and all direct order payment behavior.
+Validated:
 
-Validation:
+- `npm run validate`
+- `npm run smoke:api:auth` against the local Worker passed 43 checks, including authenticated payment-profile reads.
+- Payment-option mutation and real checkout-return testing remain deferred to the collaborative testing chunks because they can alter payment state or require a live provider redirect.
 
-- Typecheck, lint, `build:web`, Worker dry-run build.
-- Manual payment profile smoke test.
-- Manual checkout status/return smoke test where safe.
+## Remaining Chunks
 
 ### Chunk 16: Query Caching And Invalidation
 
