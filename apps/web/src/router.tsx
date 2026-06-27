@@ -9,6 +9,7 @@ import {
   ShortcutProductsPage,
   SubcategoryProductsPage,
 } from "./browsing-pages";
+import { CartPage } from "./cart-page";
 import { CountryProvider } from "./country-context";
 import { ApiClientError } from "./lib/api-client";
 import { LoginPage } from "./login-page";
@@ -81,7 +82,7 @@ const pagesRoute = createRoute({
 const cartRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/cart",
-  component: pendingPage("Winkelwagen"),
+  component: CartPage,
 });
 const paymentReturnRoute = createRoute({
   getParentRoute: () => authenticatedRoute,

@@ -25,7 +25,7 @@ The current Next app is the visual source of truth. Ported UI should preserve th
 - [x] Chunk 10: Port login UI and session handling.
 - [x] Chunk 11: Port home, search, categories, and product listing UI.
 - [x] Chunk 12: Port product detail UI.
-- [ ] Chunk 13: Port cart UI.
+- [x] Chunk 13: Port cart UI.
 - [ ] Chunk 14: Port cookbook and recipe UI.
 - [ ] Chunk 15: Port payment UI and payment return flow.
 - [ ] Chunk 16: Add query caching, invalidation, and request de-duplication.
@@ -313,9 +313,25 @@ Validation:
 - Typecheck, lint, `build:web`, Worker dry-run build.
 - Manual smoke test on normal, discounted, bundle, unavailable, and allergen-heavy products.
 
-## Remaining Chunks
-
 ### Chunk 13: Port Cart UI
+
+Completed in this chunk.
+
+Implemented:
+
+- Added the Vite/TanStack cart route at `/cart`.
+- Ported the cart page empty, loading, error, and success states.
+- Ported cart item rows with product links, images, badges, unavailable explanations, price display, plus/minus controls, and the remove-all trash control.
+- Preserved debounced optimistic cart mutations and rollback/toast behavior for add, remove, and remove-all.
+- Ported delivery slot banner and picker modal, including day tabs, selected slot display, green choice sections, slot selection, and cart reconciliation after slot changes.
+- Ported order summary rows for item count, discounts, deposits, membership savings, API fee/credit lines, minimum order value, and total.
+- Ported the "Niets vergeten?" product slider and direct checkout CTA/payment-method summary.
+
+Validated:
+
+- `npm run validate`
+- `npm run smoke:api:auth` against the local Worker passed 43 checks, with only credential/2FA skipped by design.
+- Authenticated Edge/CDP smoke seeded a temporary cart item, loaded `/cart`, confirmed the delivery banner, order summary, checkout CTA, remove-all control, opened the delivery-slot picker, exercised plus/minus for the seeded item, then removed the seeded item again.
 
 Goal:
 
@@ -333,6 +349,8 @@ Validation:
 - Typecheck, lint, `build:web`, Worker dry-run build.
 - Manual add/remove/remove-all smoke tests.
 - Manual delivery slot and checkout readiness smoke tests.
+
+## Remaining Chunks
 
 ### Chunk 14: Port Cookbook And Recipe UI
 
