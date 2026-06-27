@@ -24,7 +24,7 @@ The current Next app is the visual source of truth. Ported UI should preserve th
 - [x] Chunk 9: Establish the Vite web app shell, styling baseline, and API client.
 - [x] Chunk 10: Port login UI and session handling.
 - [x] Chunk 11: Port home, search, categories, and product listing UI.
-- [ ] Chunk 12: Port product detail UI.
+- [x] Chunk 12: Port product detail UI.
 - [ ] Chunk 13: Port cart UI.
 - [ ] Chunk 14: Port cookbook and recipe UI.
 - [ ] Chunk 15: Port payment UI and payment return flow.
@@ -275,9 +275,28 @@ Validated:
 - `npm run smoke:api:auth` against the local Worker passed 43 checks with only the credential/2FA smoke skipped by design.
 - Desktop search and 390x844 category-product screenshots were inspected; the mobile page had no horizontal overflow.
 
-## Remaining Chunks
-
 ### Chunk 12: Port Product Detail UI
+
+Completed in this chunk.
+
+Implemented:
+
+- Added the Vite/TanStack product detail route at `/product/$id`.
+- Ported the product detail layout with the same max-width page structure, gallery, thumbnails, labels, title/brand/unit metadata, price/promotion display, bundle tiers, description, highlights, allergen groups, accordions, structured nutrition table, and similar-product slider.
+- Reused the existing shared parser/API route and pure presentation helpers where they were framework-neutral.
+- Kept Next-specific `next/image`, `next/link`, and Next context imports out of the Vite route by adding Vite-native image, slider, allergen, and price/cart controls.
+- Preserved optimistic add/remove controls through the Vite cart context, including bundle-tier quantity clicks.
+- Added a Vite not-found surface for 404 product responses.
+
+Validated:
+
+- `npm run validate`
+- `npm run smoke:api:auth` against the local Worker passed 43 checks, with only credential/2FA skipped by design.
+- Authenticated Edge/CDP smoke loaded `/product/s1000092`, confirmed title, price, main image, bundle tiers, accordion, similar product links, and an add/remove cycle through the Vite UI.
+
+Notes:
+
+- Unavailable-state data is not currently exposed on `ProductDetail`; PLP cards still preserve unavailable overlays and disabled cart controls. If the Picnic product-detail page exposes unavailable state later, the shared parser should add it before the Vite PDP can display it.
 
 Goal:
 
@@ -293,6 +312,8 @@ Validation:
 
 - Typecheck, lint, `build:web`, Worker dry-run build.
 - Manual smoke test on normal, discounted, bundle, unavailable, and allergen-heavy products.
+
+## Remaining Chunks
 
 ### Chunk 13: Port Cart UI
 

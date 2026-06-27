@@ -12,6 +12,7 @@ import {
 import { CountryProvider } from "./country-context";
 import { ApiClientError } from "./lib/api-client";
 import { LoginPage } from "./login-page";
+import { ProductDetailPage } from "./product-detail-page";
 import { AppShellError, RootNotFound } from "./router-surfaces";
 
 export const queryClient = new QueryClient({
@@ -110,7 +111,7 @@ const paymentRoute = createRoute({
 const productRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/product/$id",
-  component: pendingPage("Product"),
+  component: ProductDetailPage,
 });
 const recipeRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
