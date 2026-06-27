@@ -18,11 +18,11 @@ export default defineConfig({
     port: 5173,
     proxy: {
       "/api": {
-        target: "http://localhost:8787",
+        target: "http://127.0.0.1:8787",
         changeOrigin: true,
         configure(proxy) {
           proxy.on("proxyReq", (proxyRequest) => {
-            proxyRequest.setHeader("origin", "http://localhost:8787");
+            proxyRequest.setHeader("origin", "http://127.0.0.1:8787");
           });
         },
       },

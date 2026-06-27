@@ -8,7 +8,13 @@ import { PriceDisplay } from "@/components/price-display";
 import type { CategoryItem, ShortcutItem } from "@/lib/category-types";
 import { getTranslations } from "@/lib/i18n";
 import { buildImageUrl } from "@/lib/image-url";
-import type { BundleProgress, BundleThreshold, Product, SearchSection } from "@/lib/types";
+import type {
+  BundleProgress,
+  BundleThreshold,
+  CountryCode,
+  Product,
+  SearchSection,
+} from "@/lib/types";
 import { buildSectionId } from "@/lib/types";
 
 import { useCart } from "./cart-context";
@@ -17,6 +23,8 @@ import { useCountryCode } from "./country-context";
 const PLACEHOLDER_IMAGE = "/placeholder-product.svg";
 const STICKY_HEADER_OFFSET_PX = 144;
 const VIEWPORT_FOCUS_RATIO = 0.45;
+const INITIAL_PRODUCT_IMAGE_PRELOAD_COUNT = 12;
+const PRODUCT_IMAGE_PRELOAD_TIMEOUT_MS = 1200;
 
 export function LoadingView() {
   return (
@@ -50,19 +58,25 @@ function ProductImage({
   src,
   alt,
   className = "",
+  loading = "lazy",
+  fetchPriority,
 }: {
   src: string;
   alt: string;
   className?: string;
+  loading?: "eager" | "lazy";
+  fetchPriority?: "high" | "low" | "auto";
 }) {
-  const [imageSrc, setImageSrc] = useState(src || PLACEHOLDER_IMAGE);
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const imageSrc = failedSrc === src ? PLACEHOLDER_IMAGE : src || PLACEHOLDER_IMAGE;
   return (
     <img
       src={imageSrc}
       alt={alt}
-      loading="lazy"
+      loading={loading}
+      fetchPriority={fetchPriority}
       className={className}
-      onError={() => setImageSrc(PLACEHOLDER_IMAGE)}
+      onError={() => setFailedSrc(src)}
     />
   );
 }
@@ -156,7 +170,13 @@ function QuantityControl({
   );
 }
 
-export function ProductCard({ product }: { product: Product }) {
+export function ProductCard({
+  product,
+  priorityImage = false,
+}: {
+  product: Product;
+  priorityImage?: boolean;
+}) {
   const countryCode = useCountryCode();
   const cart = useCart();
   const quantity = cart.getQuantity(product.id);
@@ -170,6 +190,8 @@ export function ProductCard({ product }: { product: Product }) {
           <ProductImage
             src={product.imageId ? buildImageUrl(product.imageId, countryCode) : PLACEHOLDER_IMAGE}
             alt={product.name}
+            loading={priorityImage ? "eager" : "lazy"}
+            fetchPriority={priorityImage ? "high" : "auto"}
             className="h-full w-full object-contain"
           />
           {product.isUnavailable && product.unavailableReason ? (
@@ -250,17 +272,30 @@ export function ProductGrid({
   sections?: SearchSection[];
 }) {
   const { registerBundleDataBatch } = useCart();
+  const countryCode = useCountryCode();
+  const gridProducts = useMemo(
+    () =>
+      sections?.length ? sections.flatMap((section) => section.products) : (products ?? []),
+    [products, sections]
+  );
+  const priorityProductIds = useMemo(
+    () =>
+      new Set(
+        gridProducts.slice(0, INITIAL_PRODUCT_IMAGE_PRELOAD_COUNT).map((product) => product.id)
+      ),
+    [gridProducts]
+  );
+  const initialImagesReady = useInitialProductImagesReady(gridProducts, countryCode);
 
   useEffect(() => {
-    const bundleProducts = sections?.length
-      ? sections.flatMap((section) => section.products)
-      : (products ?? []);
     const entries = new Map<string, BundleThreshold[]>();
-    for (const product of bundleProducts) {
+    for (const product of gridProducts) {
       if (product.priceRanges?.length) entries.set(product.id, product.priceRanges);
     }
     registerBundleDataBatch([...entries]);
-  }, [products, registerBundleDataBatch, sections]);
+  }, [gridProducts, registerBundleDataBatch]);
+
+  if (gridProducts.length && !initialImagesReady) return <LoadingView />;
 
   if (sections?.length) {
     return (
@@ -272,23 +307,85 @@ export function ProductGrid({
             className="scroll-mt-36"
           >
             <h2 className="text-foreground mb-3 text-lg font-semibold">{section.title}</h2>
-            <ProductTiles products={section.products} />
+            <ProductTiles products={section.products} priorityProductIds={priorityProductIds} />
           </section>
         ))}
       </div>
     );
   }
-  return products?.length ? <ProductTiles products={products} /> : null;
+  return products?.length ? (
+    <ProductTiles products={products} priorityProductIds={priorityProductIds} />
+  ) : null;
 }
 
-function ProductTiles({ products }: { products: Product[] }) {
+function ProductTiles({
+  products,
+  priorityProductIds,
+}: {
+  products: Product[];
+  priorityProductIds: Set<string>;
+}) {
   return (
     <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
       {products.map((product) => (
-        <ProductCard key={product.id} product={product} />
+        <ProductCard
+          key={product.id}
+          product={product}
+          priorityImage={priorityProductIds.has(product.id)}
+        />
       ))}
     </div>
   );
+}
+
+function useInitialProductImagesReady(products: Product[], countryCode: CountryCode) {
+  const imageSignature = useMemo(() => {
+    const urls = products
+      .slice(0, INITIAL_PRODUCT_IMAGE_PRELOAD_COUNT)
+      .map((product) =>
+        product.imageId ? buildImageUrl(product.imageId, countryCode) : PLACEHOLDER_IMAGE
+      );
+    return [...new Set(urls)].join("\n");
+  }, [countryCode, products]);
+  const [readySignature, setReadySignature] = useState(imageSignature ? "" : imageSignature);
+
+  useEffect(() => {
+    if (!imageSignature) return;
+
+    let cancelled = false;
+    const urls = imageSignature.split("\n");
+    const timeout = window.setTimeout(() => {
+      if (!cancelled) setReadySignature(imageSignature);
+    }, PRODUCT_IMAGE_PRELOAD_TIMEOUT_MS);
+
+    Promise.all(urls.map(preloadImage)).then(() => {
+      window.clearTimeout(timeout);
+      if (!cancelled) setReadySignature(imageSignature);
+    });
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeout);
+    };
+  }, [imageSignature]);
+
+  return readySignature === imageSignature;
+}
+
+function preloadImage(src: string) {
+  return new Promise<void>((resolve) => {
+    const image = new Image();
+    image.decoding = "async";
+    image.onload = () => {
+      if (image.decode) {
+        image.decode().then(resolve, resolve);
+        return;
+      }
+      resolve();
+    };
+    image.onerror = () => resolve();
+    image.src = src;
+  });
 }
 
 export function ResultsView({
