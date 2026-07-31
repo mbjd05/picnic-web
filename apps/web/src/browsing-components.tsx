@@ -80,12 +80,16 @@ function ProductImage({
   );
 }
 
-function activeBundlePrice(progress: BundleProgress | null, quantity: number): number | null {
+function activeBundlePrice(
+  progress: BundleProgress | null,
+  quantity: number,
+  displayPrice: number
+): number | null {
   if (!progress || quantity === 0) return null;
-  return (
-    progress.thresholds.filter((threshold) => threshold.quantity <= quantity).at(-1)
-      ?.pricePerUnit ?? null
-  );
+  const activePrice = progress.thresholds
+    .filter((threshold) => threshold.quantity <= quantity)
+    .at(-1)?.pricePerUnit;
+  return activePrice !== undefined && activePrice < displayPrice ? activePrice : null;
 }
 
 function BundleDots({ progress, quantity }: { progress: BundleProgress; quantity: number }) {
@@ -183,7 +187,7 @@ export function ProductCard({
   const cart = useCart();
   const quantity = cart.getQuantity(product.id);
   const progress = cart.getBundleProgress(product.id);
-  const bundlePrice = activeBundlePrice(progress, quantity);
+  const bundlePrice = activeBundlePrice(progress, quantity, product.displayPrice);
 
   return (
     <div className="group relative h-full">

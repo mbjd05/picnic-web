@@ -14,7 +14,7 @@ export function PriceDisplay({
   originalPrice,
   displayPriceColor,
 }: PriceDisplayProps) {
-  const hasDiscount = originalPrice !== null;
+  const hasDiscount = originalPrice !== null && originalPrice > displayPrice;
   const priceClass = hasDiscount ? "text-price-discount" : "text-price";
 
   return (
