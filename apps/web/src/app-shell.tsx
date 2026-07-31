@@ -15,10 +15,22 @@ import { createPortal } from "react-dom";
 
 import { getTranslations } from "@/lib/i18n";
 import type { AuthApiResponse, SuggestionsApiResponse } from "@/lib/types";
-import { MIN_SUGGESTION_LENGTH, SUPPORTED_COUNTRY_CODES } from "@/lib/types";
+import {
+  MIN_SUGGESTION_LENGTH,
+  SUPPORTED_COUNTRY_CODES,
+  SUPPORTED_LANGUAGE_CODES,
+  type CountryCode,
+  type LanguageCode,
+} from "@/lib/types";
 
 import { CartProvider, useCart } from "./cart-context";
-import { CountryProvider, useCountryCode, useSwitchCountry } from "./country-context";
+import {
+  CountryProvider,
+  useCountryCode,
+  useLanguageCode,
+  useSwitchCountry,
+  useSwitchLanguage,
+} from "./country-context";
 import { fetchJson } from "./lib/api-client";
 import { queryKeys, queryStaleTime } from "./lib/query-config";
 
@@ -90,6 +102,26 @@ function MenuIcon() {
   );
 }
 
+function LanguageIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+      stroke="currentColor"
+      className="h-5 w-5"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="m10.5 21 5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 0 1 6-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m3.334 2.364C11.176 10.658 7.69 15.08 3 17.502m9.334-12.138c.896.061 1.785.147 2.666.257m-4.589 8.495a18.023 18.023 0 0 1-3.827-5.802"
+      />
+    </svg>
+  );
+}
+
 function formatCartPrice(cents: number): string {
   return (cents / 100).toFixed(2);
 }
@@ -97,7 +129,9 @@ function formatCartPrice(cents: number): string {
 function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement | null) => void }) {
   const countryCode = useCountryCode();
   const switchCountry = useSwitchCountry();
-  const t = getTranslations(countryCode);
+  const languageCode = useLanguageCode();
+  const switchLanguage = useSwitchLanguage();
+  const t = getTranslations(languageCode);
   const location = useLocation();
   const navigate = useNavigate();
   const [query, setQuery] = useState(
@@ -108,8 +142,10 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
   const [suggestionSession, setSuggestionSession] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLocaleMenuOpen, setIsLocaleMenuOpen] = useState(false);
   const searchRef = useRef<HTMLFormElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const localeMenuRef = useRef<HTMLDivElement>(null);
   const cart = useCart();
 
   useEffect(() => {
@@ -137,6 +173,9 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setIsMenuOpen(false);
       }
+      if (localeMenuRef.current && !localeMenuRef.current.contains(event.target as Node)) {
+        setIsLocaleMenuOpen(false);
+      }
     }
     document.addEventListener("mousedown", closeMenu);
     return () => document.removeEventListener("mousedown", closeMenu);
@@ -144,6 +183,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
 
   useEffect(() => {
     setIsMenuOpen(false);
+    setIsLocaleMenuOpen(false);
   }, [location.pathname, location.searchStr]);
 
   const suggestionsQuery = useQuery({
@@ -223,25 +263,37 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
 
   const showCartBadge = cart.totalCount > 0;
 
-  const renderCountrySwitch = (className = "") => (
-    <div className={`flex shrink-0 items-center gap-1 ${className}`}>
-      {SUPPORTED_COUNTRY_CODES.map((code) => (
-        <button
-          key={code}
-          type="button"
-          onClick={() => switchCountry(code)}
-          className={`rounded px-2 py-1 text-xs font-semibold transition-colors ${
-            code === countryCode
-              ? "bg-picnic-red text-white"
-              : "hover:text-foreground text-gray-500"
-          }`}
-          aria-pressed={code === countryCode}
-        >
-          {code}
-        </button>
-      ))}
-    </div>
-  );
+  function renderLocaleOption<TCode extends CountryCode | LanguageCode>({
+    code,
+    selected,
+    label,
+    onSelect,
+  }: {
+    code: TCode;
+    selected: boolean;
+    label: string;
+    onSelect: (code: TCode) => void;
+  }) {
+    return (
+      <button
+        key={code}
+        type="button"
+        onClick={() => {
+          onSelect(code);
+          setIsLocaleMenuOpen(false);
+        }}
+        className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm font-medium transition-colors ${
+          selected
+            ? "bg-picnic-red text-white"
+            : "hover:text-foreground text-gray-600 hover:bg-gray-50"
+        }`}
+        aria-pressed={selected}
+      >
+        <span>{label}</span>
+        <span className={selected ? "text-white/80" : "text-gray-400"}>{code}</span>
+      </button>
+    );
+  }
 
   const cartLink = (
     <Link
@@ -257,6 +309,9 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
       ) : null}
     </Link>
   );
+  const displayLanguageOptions = [countryCode, "EN", ...SUPPORTED_LANGUAGE_CODES].filter(
+    (code, index, options) => options.indexOf(code) === index
+  ) as LanguageCode[];
 
   return (
     <header className="border-card-border sticky top-0 z-50 border-b bg-white/95 backdrop-blur-sm">
@@ -345,7 +400,55 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
         </form>
 
         <nav className="order-1 ml-auto flex shrink-0 items-center gap-2 md:order-2">
-          {renderCountrySwitch("hidden sm:flex")}
+          <div ref={localeMenuRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setIsLocaleMenuOpen((isOpen) => !isOpen)}
+              className={`flex h-9 items-center justify-center gap-1.5 rounded-full border px-2.5 text-sm font-medium transition-colors sm:px-3 ${
+                isLocaleMenuOpen
+                  ? "border-picnic-red bg-picnic-red text-white"
+                  : "border-card-border hover:text-foreground text-gray-600"
+              }`}
+              aria-label={t.languageRegionMenu}
+              aria-controls="locale-navigation"
+              aria-expanded={isLocaleMenuOpen}
+            >
+              <LanguageIcon />
+              <span>{languageCode}</span>
+            </button>
+            <div
+              id="locale-navigation"
+              aria-hidden={!isLocaleMenuOpen}
+              className={`border-card-border bg-card-bg fixed top-14 right-3 left-3 z-50 mt-2 origin-top-right overflow-hidden rounded-lg border text-left shadow-lg transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none sm:absolute sm:top-full sm:right-0 sm:left-auto sm:w-72 sm:max-w-[calc(100vw-1.5rem)] ${
+                isLocaleMenuOpen
+                  ? "translate-y-0 opacity-100"
+                  : "pointer-events-none -translate-y-1 opacity-0"
+              }`}
+            >
+              <div className="p-1.5">
+                <p className="px-3 py-1 text-xs font-semibold text-gray-400">{t.picnicRegion}</p>
+                {SUPPORTED_COUNTRY_CODES.map((code) =>
+                  renderLocaleOption({
+                    code,
+                    selected: code === countryCode,
+                    label: t[`regionName${code}`],
+                    onSelect: switchCountry,
+                  })
+                )}
+              </div>
+              <div className="border-card-border border-t p-1.5">
+                <p className="px-3 py-1 text-xs font-semibold text-gray-400">{t.displayLanguage}</p>
+                {displayLanguageOptions.map((code) =>
+                  renderLocaleOption({
+                    code,
+                    selected: code === languageCode,
+                    label: t[`languageName${code}`],
+                    onSelect: switchLanguage,
+                  })
+                )}
+              </div>
+            </div>
+          </div>
           {cartLink}
           <div className="relative">
             <button
@@ -375,9 +478,6 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
               : "pointer-events-none max-h-0 -translate-y-1 opacity-0 md:max-h-72"
           }`}
         >
-          <div className="border-card-border border-b px-3 py-2 sm:hidden">
-            {renderCountrySwitch()}
-          </div>
           <div className="p-1.5">
             <Link
               to="/cookbook"
