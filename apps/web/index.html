@@ -4,6 +4,28 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Picnic Web</title>
+    <style>
+      :root {
+        background: #fafafa;
+        color-scheme: light;
+      }
+
+      :root[data-theme="dark"] {
+        background: #101210;
+        color-scheme: dark;
+      }
+
+      html,
+      body,
+      #root {
+        min-height: 100%;
+      }
+
+      body {
+        margin: 0;
+        background: inherit;
+      }
+    </style>
     <script>
       (() => {
         try {
