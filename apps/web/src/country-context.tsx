@@ -83,7 +83,6 @@ export function CountryProvider({ children }: { children: ReactNode }) {
   const switchLanguage = useCallback((code: LanguageCode) => {
     document.cookie = `${LANGUAGE_COOKIE_NAME}=${code}; path=/; max-age=${COUNTRY_COOKIE_MAX_AGE_SECONDS}; samesite=lax`;
     setLanguageCode(code);
-    window.location.reload();
   }, []);
 
   return (
