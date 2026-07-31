@@ -17,6 +17,8 @@ The previous delivery-related entries are intentionally merged into one first ch
 
 Reference: MCP Picnic.
 
+Status: implemented in `0f5ac88` on the Cloudflare Worker migration branch. The UI exposes order status on demand, guarded cancellation, invoice email resend, and completed-delivery rating from the delivery detail page.
+
 Direct Picnic surfaces through `picnic-api`:
 
 ```text
