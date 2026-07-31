@@ -174,6 +174,7 @@ const translations = {
     bundleFromLabel: "Vanaf",
     bundlePieceSingular: "stuk",
     bundlePiecePlural: "stuks",
+    bundlePricePerPiece: "per stuk",
     bundleProgressLabel: "Bundelkorting vanaf {quantity} stuks",
     similarProductsTitle: "Vergelijkbare producten",
 
@@ -473,6 +474,7 @@ const translations = {
     bundleFromLabel: "Ab",
     bundlePieceSingular: "Stück",
     bundlePiecePlural: "Stück",
+    bundlePricePerPiece: "pro Stück",
     bundleProgressLabel: "Mengenrabatt ab {quantity} Stück",
     similarProductsTitle: "Ähnliche Produkte",
 
@@ -751,6 +753,7 @@ const translations = {
     bundleFromLabel: "À partir de",
     bundlePieceSingular: "pièce",
     bundlePiecePlural: "pièces",
+    bundlePricePerPiece: "par pièce",
     bundleProgressLabel: "Réduction par lot à partir de {quantity} pièces",
     similarProductsTitle: "Produits similaires",
     allCategoriesTitle: "Toutes les catégories",
@@ -999,6 +1002,7 @@ const englishTranslations: Translations = {
   bundleFromLabel: "From",
   bundlePieceSingular: "piece",
   bundlePiecePlural: "pieces",
+  bundlePricePerPiece: "per piece",
   bundleProgressLabel: "Bundle discount from {quantity} pieces",
   similarProductsTitle: "Similar products",
   allCategoriesTitle: "All categories",

@@ -372,12 +372,15 @@ function BundleTierGrid({
               {t.bundleFromLabel} {bundle.quantity}{" "}
               {bundle.quantity === 1 ? t.bundlePieceSingular : t.bundlePiecePlural}
             </span>
-            <span
-              className={`text-sm font-bold ${
-                isActive ? "text-price-discount" : "text-foreground"
-              }`}
-            >
-              €{formatPrice(bundle.pricePerUnit)}
+            <span className="flex items-baseline gap-1">
+              <span
+                className={`text-sm font-bold ${
+                  isActive ? "text-price-discount" : "text-foreground"
+                }`}
+              >
+                €{formatPrice(bundle.pricePerUnit)}
+              </span>
+              <span className="text-[11px] text-gray-500">{t.bundlePricePerPiece}</span>
             </span>
           </button>
         );
