@@ -15,6 +15,7 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "html"],
       include: [
+        "src/lib/api-validation.ts",
         "src/lib/cart-price-estimates.ts",
         "src/lib/format-price.ts",
         "src/lib/localize-api-label.ts",

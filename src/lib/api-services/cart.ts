@@ -1,9 +1,10 @@
 import { isApiTokenExpiredError } from "@/lib/api-error";
+import { deliverySlotSchema, validateCartMutation, validateInput } from "@/lib/api-validation";
 import type { DeliverySlotPickerData } from "@/lib/delivery-slot-types";
 import { parseCartResponse } from "@/lib/parse-cart";
 import { parseDeliverySlotsPicker } from "@/lib/parse-delivery-slots";
 import { buildPicnicClient } from "@/lib/picnic-client";
-import type { ApiErrorResponse, CartData, CartMutationRequest, CountryCode } from "@/lib/types";
+import type { ApiErrorResponse, CartData, CountryCode } from "@/lib/types";
 
 import type { ApiServiceResult } from "./types";
 
@@ -15,11 +16,6 @@ type SendRequestClient = {
     includeFusion: boolean
   ) => Promise<unknown>;
 };
-
-type CartMutationValidation =
-  { ok: true; body: CartMutationRequest } | { ok: false; error: string };
-
-type DeliverySlotValidation = { ok: true; slotId: string } | { ok: false; error: string };
 
 export async function getCartService(
   authToken: string,
@@ -63,7 +59,7 @@ export async function mutateCartService(
     return { body: { error: validation.error }, status: 400 };
   }
 
-  const endpoint = validation.body.action === "add" ? "/cart/add_product" : "/cart/remove_product";
+  const endpoint = validation.data.action === "add" ? "/cart/add_product" : "/cart/remove_product";
 
   try {
     const client = buildPicnicClient(authToken, countryCode);
@@ -71,8 +67,8 @@ export async function mutateCartService(
       "POST",
       endpoint,
       {
-        product_id: validation.body.productId,
-        count: validation.body.count,
+        product_id: validation.data.productId,
+        count: validation.data.count,
       },
       true
     );
@@ -133,7 +129,7 @@ export async function setDeliverySlotService(
   countryCode: CountryCode,
   rawBody: unknown
 ): Promise<ApiServiceResult<CartData | ApiErrorResponse>> {
-  const validation = validateDeliverySlot(rawBody);
+  const validation = validateInput(deliverySlotSchema, rawBody);
   if (!validation.ok) {
     return { body: { error: validation.error }, status: 400 };
   }
@@ -144,7 +140,7 @@ export async function setDeliverySlotService(
       "POST",
       "/cart/set_delivery_slot",
       {
-        slot_id: validation.slotId,
+        slot_id: validation.data.slotId,
       },
       false
     );
@@ -166,34 +162,4 @@ export async function setDeliverySlotService(
       status: 502,
     };
   }
-}
-
-function validateCartMutation(rawBody: unknown): CartMutationValidation {
-  if (!rawBody || typeof rawBody !== "object") {
-    return { ok: false, error: "Invalid JSON body" };
-  }
-
-  const body = rawBody as Partial<CartMutationRequest>;
-  if (!body.productId || !body.action || typeof body.count !== "number") {
-    return { ok: false, error: "Missing required fields: productId, action, count" };
-  }
-
-  if (body.action !== "add" && body.action !== "remove") {
-    return { ok: false, error: 'action must be "add" or "remove"' };
-  }
-
-  return { ok: true, body: body as CartMutationRequest };
-}
-
-function validateDeliverySlot(rawBody: unknown): DeliverySlotValidation {
-  if (!rawBody || typeof rawBody !== "object") {
-    return { ok: false, error: "Invalid JSON body" };
-  }
-
-  const slotId = (rawBody as { slotId?: unknown }).slotId;
-  if (!slotId || typeof slotId !== "string") {
-    return { ok: false, error: "Missing required field: slotId" };
-  }
-
-  return { ok: true, slotId };
 }

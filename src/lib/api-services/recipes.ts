@@ -1,4 +1,5 @@
 import { isApiTokenExpiredError } from "@/lib/api-error";
+import { addRecipeToCartSchema, validateInput } from "@/lib/api-validation";
 import { parseCookbookPage } from "@/lib/parse-cookbook";
 import { extractProductNutritionRows, extractProductTileData } from "@/lib/parse-fusion-product";
 import { parseRecipeDetail } from "@/lib/parse-recipe-detail";
@@ -19,13 +20,6 @@ const countsCache = new Map<string, { counts: Record<string, number>; expiresAt:
 
 type SendRequestClient = PicnicClientInstance & {
   sendRequest: (method: string, path: string, body: unknown, fusion: boolean) => Promise<unknown>;
-};
-
-type SelectedIngredient = { id: string; count: number };
-
-type AddRecipeRequest = {
-  portions?: unknown;
-  selectedIngredients?: unknown;
 };
 
 export async function getRecipeDetailService(
@@ -108,17 +102,12 @@ export async function addRecipeToCartService(
     return { body: { error: "Invalid recipe ID" }, status: 400 };
   }
 
-  if (!rawBody || typeof rawBody !== "object") {
-    return { body: { error: "Invalid request body" }, status: 400 };
+  const validation = validateInput(addRecipeToCartSchema, rawBody);
+  if (!validation.ok) {
+    return { body: { error: validation.error }, status: 400 };
   }
-
-  const body = rawBody as AddRecipeRequest;
-  const portions = typeof body.portions === "number" && body.portions > 0 ? body.portions : 2;
-  const selectedIngredients = parseSelectedIngredients(body.selectedIngredients);
-
-  if (body.selectedIngredients !== undefined && selectedIngredients === null) {
-    return { body: { error: "Invalid request body" }, status: 400 };
-  }
+  const portions = validation.data.portions ?? 2;
+  const selectedIngredients = validation.data.selectedIngredients;
 
   try {
     const client = buildPicnicClient(authToken, countryCode);
@@ -253,23 +242,6 @@ async function enrichIngredients(
       priceRanges: data.priceRanges,
     };
   });
-}
-
-function parseSelectedIngredients(value: unknown): SelectedIngredient[] | null | undefined {
-  if (value === undefined) return undefined;
-  if (!Array.isArray(value)) return null;
-
-  const selectedIngredients: SelectedIngredient[] = [];
-  for (const item of value) {
-    if (!item || typeof item !== "object") return null;
-    const { id, count } = item as { id?: unknown; count?: unknown };
-    if (typeof id !== "string" || !id || typeof count !== "number" || !Number.isFinite(count)) {
-      return null;
-    }
-    selectedIngredients.push({ id, count });
-  }
-
-  return selectedIngredients;
 }
 
 async function invalidateCookbookCounts(

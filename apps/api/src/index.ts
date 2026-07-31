@@ -47,6 +47,14 @@ import {
   updateSavedRecipeService,
 } from "@/lib/api-services/recipes";
 import { searchProductsService } from "@/lib/api-services/search";
+import {
+  authCredentialsLoginSchema,
+  authTokenLoginSchema,
+  deliveryRatingSchema,
+  switchCountrySchema,
+  twoFactorVerifySchema,
+  validateInput,
+} from "@/lib/api-validation";
 
 import {
   authJson,
@@ -109,10 +117,11 @@ app.get("/api/dev/login-from-env", async (c) => {
 app.post("/api/auth/login", async (c) => {
   const body = await c.req.json().catch(() => null);
   const { countryCode } = readSession(c);
+  const validation = validateInput(authTokenLoginSchema, body);
   const result = await loginWithTokenService(
-    typeof body?.token === "string" ? body.token : undefined,
-    resolveAuthCountryCode(body?.countryCode, countryCode),
-    resolveTwoFactorChannel(body?.twoFactorChannel)
+    validation.ok ? validation.data.token : undefined,
+    resolveAuthCountryCode(validation.ok ? validation.data.countryCode : undefined, countryCode),
+    resolveTwoFactorChannel(validation.ok ? validation.data.twoFactorChannel : undefined)
   );
 
   applyAuthResultCookies(c, result);
@@ -122,11 +131,12 @@ app.post("/api/auth/login", async (c) => {
 app.post("/api/auth/login-credentials", async (c) => {
   const body = await c.req.json().catch(() => null);
   const { countryCode } = readSession(c);
+  const validation = validateInput(authCredentialsLoginSchema, body);
   const result = await loginWithCredentialsService(
-    typeof body?.email === "string" ? body.email : undefined,
-    typeof body?.password === "string" ? body.password : undefined,
-    resolveAuthCountryCode(body?.countryCode, countryCode),
-    resolveTwoFactorChannel(body?.twoFactorChannel)
+    validation.ok ? validation.data.email : undefined,
+    validation.ok ? validation.data.password : undefined,
+    resolveAuthCountryCode(validation.ok ? validation.data.countryCode : undefined, countryCode),
+    resolveTwoFactorChannel(validation.ok ? validation.data.twoFactorChannel : undefined)
   );
 
   applyAuthResultCookies(c, result);
@@ -136,9 +146,10 @@ app.post("/api/auth/login-credentials", async (c) => {
 app.post("/api/auth/verify-2fa", async (c) => {
   const body = await c.req.json().catch(() => null);
   const { countryCode } = readSession(c);
+  const validation = validateInput(twoFactorVerifySchema, body);
   const result = await verify2FAService(
-    typeof body?.partialToken === "string" ? body.partialToken : undefined,
-    typeof body?.code === "string" ? body.code : undefined,
+    validation.ok ? validation.data.partialToken : undefined,
+    validation.ok ? validation.data.code : undefined,
     countryCode
   );
 
@@ -154,7 +165,11 @@ app.post("/api/auth/logout", (c) => {
 app.post("/api/auth/switch-country", async (c) => {
   const body = await c.req.json().catch(() => null);
   const { countryCode } = readSession(c);
-  const targetCountryCode = resolveAuthCountryCode(body?.countryCode, countryCode);
+  const validation = validateInput(switchCountrySchema, body);
+  const targetCountryCode = resolveAuthCountryCode(
+    validation.ok ? validation.data.countryCode : undefined,
+    countryCode
+  );
 
   return c.json({
     success: true,
@@ -422,15 +437,16 @@ app.post("/api/deliveries/:deliveryId/rating", async (c) => {
   }
 
   const body = await c.req.json().catch(() => null);
-  if (body === null) {
-    return c.json({ error: "Invalid JSON body" }, 400);
+  const validation = validateInput(deliveryRatingSchema, body);
+  if (!validation.ok) {
+    return c.json({ error: validation.error }, 400);
   }
 
   const result = await setDeliveryRatingService(
     token,
     countryCode,
     c.req.param("deliveryId"),
-    Number(body.rating)
+    validation.data.rating
   );
   return c.json(result.body, jsonStatus(result.status));
 });

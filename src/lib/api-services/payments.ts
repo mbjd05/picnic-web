@@ -1,3 +1,4 @@
+import { checkoutCancelSchema, paymentOptionSchema, validateInput } from "@/lib/api-validation";
 import { getErrorMessage } from "@/lib/payment";
 import { buildPicnicClient } from "@/lib/picnic-client";
 import {
@@ -40,21 +41,17 @@ export async function createPaymentOptionService(
   countryCode: CountryCode,
   rawBody: unknown
 ): Promise<ApiServiceResult<PaymentProfile | ApiErrorResponse>> {
-  if (!rawBody || typeof rawBody !== "object") {
-    return { body: { error: "Invalid JSON body" }, status: 400 };
+  const validation = validateInput(paymentOptionSchema, rawBody);
+  if (!validation.ok) {
+    return { body: { error: validation.error }, status: 400 };
   }
 
-  const body = rawBody as { paymentMethod?: unknown; bankId?: unknown };
-  if (!body.paymentMethod || typeof body.paymentMethod !== "string") {
-    return { body: { error: "Missing required field: paymentMethod" }, status: 400 };
-  }
-
-  const bankId = typeof body.bankId === "string" ? body.bankId : null;
+  const bankId = typeof validation.data.bankId === "string" ? validation.data.bankId : null;
 
   try {
     const client = buildPicnicClient(authToken, countryCode);
     return {
-      body: await createPreferredPaymentOption(client, body.paymentMethod, bankId),
+      body: await createPreferredPaymentOption(client, validation.data.paymentMethod, bankId),
     };
   } catch (error) {
     return mapPaymentError(
@@ -107,13 +104,9 @@ export async function cancelCheckoutService(
   countryCode: CountryCode,
   rawBody: unknown
 ): Promise<ApiServiceResult<CheckoutCancelResponse | ApiErrorResponse>> {
-  if (!rawBody || typeof rawBody !== "object") {
-    return { body: { error: "Invalid JSON body" }, status: 400 };
-  }
-
-  const transactionId = (rawBody as { transactionId?: unknown }).transactionId;
-  if (!transactionId || typeof transactionId !== "string") {
-    return { body: { error: "Missing required field: transactionId" }, status: 400 };
+  const validation = validateInput(checkoutCancelSchema, rawBody);
+  if (!validation.ok) {
+    return { body: { error: validation.error }, status: 400 };
   }
 
   try {
@@ -122,7 +115,7 @@ export async function cancelCheckoutService(
       client,
       "POST",
       "/cart/checkout/cancel",
-      { transaction_id: transactionId },
+      { transaction_id: validation.data.transactionId },
       true
     );
 
