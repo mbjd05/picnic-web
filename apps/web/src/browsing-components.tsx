@@ -658,7 +658,8 @@ export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
 
 export function useDocumentTitle(title?: string) {
   useEffect(() => {
-    document.title = title ? `${title} | Picnic Web` : "Picnic Web";
+    const context = title && title.length > 60 ? `${title.slice(0, 57)}...` : title;
+    document.title = context ? `${context} - Picnic Web` : "Picnic Web";
   }, [title]);
 }
 

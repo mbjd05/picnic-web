@@ -350,3 +350,31 @@ Do not expose Picnic payment auth details to browser code beyond narrow app-spec
 - Stable auth/session behavior.
 - Cart and payment flows remain reliable.
 - Fewer repeated Picnic upstream calls during normal browsing.
+
+## Current Worker Deployment Notes
+
+The migration branch currently deploys as one Cloudflare Worker from `apps/api/wrangler.jsonc`.
+
+- `apps/web` builds static assets into `apps/web/dist`.
+- The Worker assets binding serves `apps/web/dist`.
+- `run_worker_first` is limited to `/api/*`, so normal web routes are served as static assets without invoking Hono.
+- `not_found_handling = "single-page-application"` serves the SPA shell for direct client routes such as `/cart`, `/product/:id`, and `/recipe/:id`.
+- `apps/web/public/_headers` keeps `index.html` revalidatable and serves hashed Vite chunks under `/assets/*` with long immutable caching.
+- Private authenticated API responses are marked `Cache-Control: no-store` by Hono middleware.
+- Auth cookies are `HttpOnly`, `SameSite=Strict`, path-scoped to `/`, and marked `Secure` whenever the incoming request is HTTPS, which is the production Cloudflare path.
+
+Deployment command:
+
+```powershell
+npm run deploy:worker
+```
+
+Validation before deployment:
+
+```powershell
+npm run validate
+npm run build:web
+npm run build:api
+```
+
+Authenticated production smoke testing remains part of the later stability/performance chunk because it requires a live token, live Picnic state, and careful payment/cart mutation boundaries.

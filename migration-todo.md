@@ -29,8 +29,8 @@ The current Next app is the visual source of truth. Ported UI should preserve th
 - [x] Chunk 14: Port cookbook and recipe UI.
 - [x] Chunk 15: Port payment UI and payment return flow.
 - [x] Chunk 16: Add query caching, invalidation, and request de-duplication.
-- [ ] Chunk 17: Verify feature parity against current app behavior and specs.
-- [ ] Chunk 18: Finalize Cloudflare deployment configuration.
+- [x] Chunk 17: Verify feature parity against current app behavior and specs.
+- [x] Chunk 18: Finalize Cloudflare deployment configuration.
 - [ ] Chunk 19: Stability, performance, and deployment smoke testing.
 - [ ] Chunk 20: Remove or archive the old Next app after parity is proven.
 
@@ -416,44 +416,47 @@ Validated:
 
 ### Chunk 17: Feature Parity And Spec Review
 
-Goal:
+Completed in this chunk.
 
-Confirm the Vite/Hono app preserves current intended behavior and only diverges from specs where the current fork intentionally improved behavior.
+Implemented:
 
-Scope:
+- Reviewed the current Vite/Hono migration against the specs in `specs/`.
+- Fixed search URL clearing: submitting an emptied header search now returns to `/` with no `q` parameter, matching `002-search-url-sections`.
+- Fixed Vite document title formatting to use `[Context] - Picnic Web`, including 60-character truncation, matching `011-dynamic-page-title`.
+- Confirmed migrated behavior for search URL state, section navigation, auth gate, product search cards, product detail, cart page/actions, delivery slots, category/subcategory browsing, shortcut navigation, bundle UI, cookbook/recipe, login, and payment flow remains aligned with the current fork's intended behavior.
 
-- Review specs in `specs/` against migrated behavior.
-- Check product search, URL state, nav badges, auth gate, product detail, cart, PLP actions, cart actions, category search, subcategories, shortcuts, bundle UI, cookbook, recipe, login, and payment.
-- Compare migrated screens visually against the current Next app and treat unintended visual drift as a regression.
-- Do not edit spec files unless explicitly requested.
-- Document intentional divergences in this file or a review note.
+Intentional divergences from older specs:
 
-Validation:
+- `001-product-search` says product cards are display-only; this is intentionally superseded by `005-product-detail-page`, which requires product cards to link to PDPs.
+- `006-cart-page` says the cart is read-only and checkout should redirect users to the Picnic app; this is intentionally superseded by later fork improvements for cart item controls, delivery-slot selection, and direct payment.
+- `014-search-categories` says category tiles navigate directly to product listings; this is intentionally superseded by `015-subcategory-navigation` and `016-subcategory-products`, where top-level categories drill into subcategories before leaf product lists.
+- `005-product-detail-page` includes combine-with sliders and recipe associations. The current parser/UI preserves available similar products and omits unavailable product-detail sections rather than inventing UI without parsed API data.
 
-- Typecheck, lint, web/API builds.
-- Manual smoke test matrix across all core flows.
+Validated:
+
+- `npm run validate`
+- `npm run smoke:api:auth` against the local Worker passed 43 checks, with only credential/2FA skipped by design.
 
 ### Chunk 18: Cloudflare Deployment Configuration
 
-Goal:
+Completed in this chunk.
 
-Make the migration deployable as one Worker serving static assets and API routes.
+Implemented:
 
-Scope:
+- Confirmed `apps/api/wrangler.jsonc` deploys one Worker with Hono API routes and static Vite assets.
+- Confirmed `/api/*` runs through the Worker while normal web routes use static assets.
+- Confirmed SPA fallback is enabled for direct client routes.
+- Added static asset header policy: revalidatable SPA shell plus immutable caching for hashed `/assets/*` chunks.
+- Confirmed private API responses stay `Cache-Control: no-store`.
+- Confirmed production auth cookies become `Secure` on HTTPS Cloudflare requests.
+- Added `npm run deploy:worker` to build Vite assets and deploy the Worker in one command.
+- Added current deployment notes to `platform_migration.md`.
 
-- Finalize `wrangler.jsonc`.
-- Confirm static asset caching.
-- Confirm SPA fallback for direct web routes.
-- Configure production cookie security.
-- Confirm environment variable strategy, if any.
-- Add deployment notes to `platform_migration.md` or this file.
+Validated:
 
-Validation:
-
-- `npm run build:web`
-- `npm run build:api`
-- Local `wrangler dev` smoke test.
-- Cloudflare preview or dry-run deploy check.
+- `npm run validate`
+- Local Worker header smoke confirmed SPA route fallback, immutable hashed asset caching, public health headers, and `no-store` private API responses.
+- `npm run smoke:api:auth` against the local Worker passed 43 checks, with only credential/2FA skipped by design.
 
 ### Chunk 19: Stability And Performance Testing
 

@@ -134,7 +134,12 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const trimmed = query.trim();
-    if (!trimmed) return;
+    if (!trimmed) {
+      setShowSuggestions(false);
+      setActiveSuggestionIndex(-1);
+      void navigate({ to: "/", search: {} });
+      return;
+    }
     setShowSuggestions(false);
     setActiveSuggestionIndex(-1);
     void navigate({ to: "/", search: { q: trimmed } });
