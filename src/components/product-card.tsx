@@ -88,11 +88,23 @@ export function ProductCard({ product, href }: ProductCardProps) {
             regularPrice={product.displayPrice}
           />
         )}
+        {product.promoBadge && product.promoPlacement === "image" && (
+          <div className="absolute bottom-1 left-1 z-20">
+            <Badge badge={product.promoBadge} />
+          </div>
+        )}
       </div>
 
       {/* Subtitle (e.g. "D.O.P. Sarnese-Nocerino") */}
       {product.subtitle && (
-        <p className="text-text-muted mb-0.5 truncate text-xs">{product.subtitle}</p>
+        <p
+          className={`mb-0.5 truncate text-xs ${product.subtitleColor ? "" : "text-text-muted"}`}
+          style={product.subtitleColor ? { color: product.subtitleColor } : undefined}
+        >
+          {product.subtitleLeadingIcon ? "« " : ""}
+          {product.subtitle}
+          {product.subtitleTrailingIcon ? " »" : ""}
+        </p>
       )}
 
       {/* Product name */}
@@ -126,26 +138,26 @@ export function ProductCard({ product, href }: ProductCardProps) {
         </div>
       )}
 
-      {/* Unit quantity */}
-      <p className="text-text-muted text-xs">{product.unitQuantity}</p>
+      {/* Unit quantity + non-promotion badges */}
+      <div className="flex flex-wrap items-center gap-1">
+        <p className="text-text-muted text-xs">{product.unitQuantity}</p>
+        {product.badges.map((badge, index) => (
+          <Badge key={`${badge.variant}-${index}`} badge={badge} />
+        ))}
+      </div>
 
       {/* Bottom-anchored: badges + price */}
       <div className="mt-auto">
-        {/* Badges */}
-        {product.badges.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1">
-            {product.badges.map((badge, index) => (
-              <Badge key={`${badge.variant}-${index}`} badge={badge} />
-            ))}
-          </div>
-        )}
-
         {/* Price — show bundle-discounted price when applicable */}
-        <div className="mt-1.5">
+        <div className="mt-1.5 flex flex-wrap items-end justify-between gap-1.5">
           <PriceDisplay
             displayPrice={effectiveDisplayPrice}
             originalPrice={bundleOriginalPrice ?? product.originalPrice}
+            displayPriceColor={product.displayPriceColor}
           />
+          {product.promoBadge && product.promoPlacement === "inline" && (
+            <Badge badge={product.promoBadge} />
+          )}
         </div>
       </div>
 

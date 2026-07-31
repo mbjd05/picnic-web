@@ -506,17 +506,17 @@ Validation:
 Use the smallest relevant set while developing, then run the full baseline before committing a chunk:
 
 ```powershell
-npm run validate
+pnpm validate
 ```
 
 `validate` runs these steps sequentially:
 
 ```powershell
-npm run lint
-npm run typecheck
-npm run build:web
-npm run build:api
-npm run build
+pnpm lint
+pnpm typecheck
+pnpm build:web
+pnpm build:api
+pnpm build
 ```
 
 After the Next app is retired, replace `npm run build` with the final Worker/web build commands only.

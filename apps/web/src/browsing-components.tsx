@@ -96,7 +96,10 @@ function BundleDots({ progress, quantity }: { progress: BundleProgress; quantity
   const total = next?.quantity ?? active?.quantity ?? 0;
   if (total <= 0) return null;
   return (
-    <span className="flex max-w-10 flex-wrap justify-center gap-0.5" aria-label={`Voortgang tot ${total} producten`}>
+    <span
+      className="flex max-w-10 flex-wrap justify-center gap-0.5"
+      aria-label={`Voortgang tot ${total} producten`}
+    >
       {Array.from({ length: total }, (_, index) => (
         <span
           key={index}
@@ -207,10 +210,22 @@ export function ProductCard({
               <QuantityControl product={product} quantity={quantity} progress={progress} />
             </div>
           ) : null}
+          {product.promoBadge && product.promoPlacement === "image" ? (
+            <div className="absolute bottom-1 left-1 z-20">
+              <Badge badge={product.promoBadge} />
+            </div>
+          ) : null}
         </div>
 
         {product.subtitle ? (
-          <p className="text-text-muted mb-0.5 truncate text-xs">{product.subtitle}</p>
+          <p
+            className={`mb-0.5 truncate text-xs ${product.subtitleColor ? "" : "text-text-muted"}`}
+            style={product.subtitleColor ? { color: product.subtitleColor } : undefined}
+          >
+            {product.subtitleLeadingIcon ? "« " : ""}
+            {product.subtitle}
+            {product.subtitleTrailingIcon ? " »" : ""}
+          </p>
         ) : null}
         <h3 className="text-text-dark mb-0.5 line-clamp-2 text-sm leading-snug font-medium break-words">
           {product.namePrefix ? (
@@ -235,20 +250,22 @@ export function ProductCard({
             ) : null}
           </div>
         ) : null}
-        <p className="text-text-muted text-xs">{product.unitQuantity}</p>
+        <div className="flex flex-wrap items-center gap-1">
+          <p className="text-text-muted text-xs">{product.unitQuantity}</p>
+          {product.badges.map((badge, index) => (
+            <Badge key={`${badge.variant}-${index}`} badge={badge} />
+          ))}
+        </div>
         <div className="mt-auto">
-          {product.badges.length ? (
-            <div className="mt-2 flex flex-wrap gap-1">
-              {product.badges.map((badge, index) => (
-                <Badge key={`${badge.variant}-${index}`} badge={badge} />
-              ))}
-            </div>
-          ) : null}
-          <div className="mt-1.5">
+          <div className="mt-1.5 flex flex-wrap items-end justify-between gap-1.5">
             <PriceDisplay
               displayPrice={bundlePrice ?? product.displayPrice}
               originalPrice={bundlePrice ? product.displayPrice : product.originalPrice}
+              displayPriceColor={product.displayPriceColor}
             />
+            {product.promoBadge && product.promoPlacement === "inline" ? (
+              <Badge badge={product.promoBadge} />
+            ) : null}
           </div>
         </div>
         {product.isUnavailable ? (
@@ -275,8 +292,7 @@ export function ProductGrid({
   const { registerBundleDataBatch } = useCart();
   const countryCode = useCountryCode();
   const gridProducts = useMemo(
-    () =>
-      sections?.length ? sections.flatMap((section) => section.products) : (products ?? []),
+    () => (sections?.length ? sections.flatMap((section) => section.products) : (products ?? [])),
     [products, sections]
   );
   const priorityProductIds = useMemo(
@@ -538,7 +554,9 @@ export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
 
   function stickyOffset() {
     const navBottom = navRef.current?.getBoundingClientRect().bottom;
-    return (navBottom && navBottom > 0 ? navBottom : STICKY_HEADER_OFFSET_PX) + SECTION_SCROLL_GAP_PX;
+    return (
+      (navBottom && navBottom > 0 ? navBottom : STICKY_HEADER_OFFSET_PX) + SECTION_SCROLL_GAP_PX
+    );
   }
 
   useEffect(() => {

@@ -41,18 +41,13 @@ export function buildSectionId(index: number): string {
 // ─── Badge / Label ───────────────────────────────────────────────────────────
 
 export type BadgeVariant =
-  | "promo"
-  | "discount"
-  | "size"
-  | "freshness"
-  | "availability"
-  | "info"
-  | "unit-price"
-  | "bundle";
+  "promo" | "discount" | "size" | "freshness" | "availability" | "info" | "unit-price" | "bundle";
 
 export type Badge = {
   text: string;
   variant: BadgeVariant;
+  backgroundColor?: string;
+  textColor?: string;
 };
 
 // ─── Highlight (colored subtext) ─────────────────────────────────────────────
@@ -64,6 +59,13 @@ export type Highlight = {
   color: string;
 };
 
+export type PromoPlacement = "image" | "inline";
+
+export type SubtitleIcon = {
+  iconKey: string;
+  fallbackId: string | null;
+};
+
 // ─── Product ─────────────────────────────────────────────────────────────────
 
 export type Product = {
@@ -73,6 +75,12 @@ export type Product = {
   namePrefix: string | null;
   /** Small subtitle above the product name (e.g. "D.O.P. Sarnese-Nocerino"). */
   subtitle: string | null;
+  /** Optional API-provided color for the subtitle text. */
+  subtitleColor: string | null;
+  /** Optional decorative icon before the subtitle text. */
+  subtitleLeadingIcon: SubtitleIcon | null;
+  /** Optional decorative icon after the subtitle text. */
+  subtitleTrailingIcon: SubtitleIcon | null;
   /** Brand name shown below the product name (e.g. "Mutti"). */
   brand: string | null;
   /** Colored subtext like "Prijskampioen" shown in the brand/subtext row. */
@@ -84,6 +92,8 @@ export type Product = {
   imageId: string;
   /** Current display price in cents. */
   displayPrice: number;
+  /** Optional API-provided display price color. */
+  displayPriceColor: string | null;
   /** Original price in cents when discounted, or null. */
   originalPrice: number | null;
   /** Human-readable unit/quantity string (e.g. "500 g", "6 x 300 ml"). */
@@ -92,8 +102,12 @@ export type Product = {
   maxCount: number;
   /** Bundle price ranges from the API, or null if no bundle. */
   priceRanges: BundleThreshold[] | null;
-  /** All labels/badges extracted from decorators. */
+  /** Non-promotion labels/badges extracted from decorators. */
   badges: Badge[];
+  /** API-colored promotion badge extracted from the PML label surface. */
+  promoBadge: Badge | null;
+  /** Preferred placement for the promotion badge. */
+  promoPlacement: PromoPlacement | null;
   /** Whether the product is currently unavailable. */
   isUnavailable: boolean;
   /** Reason for unavailability, if applicable. */

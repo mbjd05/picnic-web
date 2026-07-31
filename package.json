@@ -2,6 +2,7 @@
   "name": "picnic-web",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@11.19.0",
   "engines": {
     "node": ">=26.5.1 <27"
   },
@@ -12,13 +13,13 @@
     "build": "next build",
     "build:api": "wrangler deploy --dry-run --config apps/api/wrangler.jsonc",
     "build:web": "vite build --config apps/web/vite.config.mts",
-    "deploy:worker": "npm run build:web && wrangler deploy --config apps/api/wrangler.jsonc",
+    "deploy:worker": "pnpm build:web && wrangler deploy --config apps/api/wrangler.jsonc",
     "auth-key": "node src/generate-auth-key.mjs",
     "smoke:api:auth": "node ./src/scripts/worker-auth-smoke.mjs",
     "start": "next start",
     "lint": "eslint --cache --cache-location .eslintcache",
     "typecheck": "tsc --noEmit --pretty false",
-    "validate": "npm run lint && npm run typecheck && npm run build:web && npm run build:api && npm run build",
+    "validate": "pnpm lint && pnpm typecheck && pnpm build:web && pnpm build:api && pnpm build",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

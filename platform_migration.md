@@ -366,15 +366,15 @@ The migration branch currently deploys as one Cloudflare Worker from `apps/api/w
 Deployment command:
 
 ```powershell
-npm run deploy:worker
+pnpm deploy:worker
 ```
 
 Validation before deployment:
 
 ```powershell
-npm run validate
-npm run build:web
-npm run build:api
+pnpm validate
+pnpm build:web
+pnpm build:api
 ```
 
 Authenticated production smoke testing remains part of the later stability/performance chunk because it requires a live token, live Picnic state, and careful payment/cart mutation boundaries.

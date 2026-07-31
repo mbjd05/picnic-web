@@ -7,7 +7,8 @@ import {
   findIconNodes,
   stripColorTags,
 } from "./pml-helpers";
-import type { BadgeVariant, Highlight } from "./types";
+import { collectLabels } from "./pml-product-helpers";
+import type { Badge, BadgeVariant, Highlight, PromoPlacement, SubtitleIcon } from "./types";
 
 /** Extract a promotion label from the analytics contexts (e.g. "3 voor €5"). */
 export function extractPromotionLabel(contexts: AnalyticsContext[] | undefined): string | null {
@@ -21,6 +22,51 @@ export function extractPromotionLabel(contexts: AnalyticsContext[] | undefined):
     }
   }
   return null;
+}
+
+export function extractPromotionBadge(
+  contexts: AnalyticsContext[] | undefined,
+  pml: PmlNode | undefined,
+  stackChildren: PmlNode[] | null
+): { badge: Badge; placement: PromoPlacement } | null {
+  const labelText = extractPromotionLabel(contexts);
+  if (!labelText) return null;
+
+  if (stackChildren) {
+    for (const source of stackChildren) {
+      const labels = collectLabels(source);
+      const label = labels.find((entry) => entry.text.trim() === labelText);
+      if (label) {
+        return {
+          badge: {
+            text: label.text,
+            variant: "promo",
+            backgroundColor: label.backgroundColor,
+            textColor: label.textColor,
+          },
+          placement: "inline",
+        };
+      }
+    }
+  }
+
+  if (pml) {
+    const labels = collectLabels(pml);
+    const label = labels.find((entry) => entry.text.trim() === labelText);
+    if (label) {
+      return {
+        badge: {
+          text: label.text,
+          variant: "promo",
+          backgroundColor: label.backgroundColor,
+          textColor: label.textColor,
+        },
+        placement: "image",
+      };
+    }
+  }
+
+  return { badge: { text: labelText, variant: "promo" }, placement: "inline" };
 }
 
 /**
@@ -70,6 +116,32 @@ export function findTextStackChildren(pml: PmlNode | undefined): PmlNode[] | nul
 /** Known product size labels that should use the "size" badge variant. */
 export const SIZE_LABELS = new Set(["Klein", "XL", "Groot"]);
 
+function splitFlankingIcons(row: PmlNode): {
+  leadingIcon: SubtitleIcon | null;
+  trailingIcon: SubtitleIcon | null;
+} {
+  const children = Array.isArray(row.children) ? (row.children as PmlNode[]) : [];
+  const richTextIndex = children.findIndex((child) => child.type === "RICH_TEXT");
+  if (richTextIndex === -1) return { leadingIcon: null, trailingIcon: null };
+
+  const toSubtitleIcon = (node: PmlNode | undefined): SubtitleIcon | null => {
+    if (!node || node.type !== "ICON" || typeof node.iconKey !== "string") return null;
+    return {
+      iconKey: node.iconKey,
+      fallbackId: typeof node.fallbackId === "string" ? node.fallbackId : null,
+    };
+  };
+
+  return {
+    leadingIcon: toSubtitleIcon(
+      children.slice(0, richTextIndex).find((child) => child.type === "ICON")
+    ),
+    trailingIcon: toSubtitleIcon(
+      children.slice(richTextIndex + 1).find((child) => child.type === "ICON")
+    ),
+  };
+}
+
 /** Classify text stack rows and extract structured product info. */
 export function extractTextStackInfo(
   stackChildren: PmlNode[] | null,
@@ -84,6 +156,9 @@ export function extractTextStackInfo(
   flagIconKey: string | null;
   flagFallbackImageId: string | null;
   extraLabel: { text: string; variant: BadgeVariant } | null;
+  subtitleColor: string | null;
+  subtitleLeadingIcon: SubtitleIcon | null;
+  subtitleTrailingIcon: SubtitleIcon | null;
 } {
   const result = {
     subtitle: null as string | null,
@@ -94,6 +169,9 @@ export function extractTextStackInfo(
     flagIconKey: null as string | null,
     flagFallbackImageId: null as string | null,
     extraLabel: null as { text: string; variant: BadgeVariant } | null,
+    subtitleColor: null as string | null,
+    subtitleLeadingIcon: null as SubtitleIcon | null,
+    subtitleTrailingIcon: null as SubtitleIcon | null,
   };
 
   if (!stackChildren || stackChildren.length < 3) return result;
@@ -127,6 +205,10 @@ export function extractTextStackInfo(
       .join(" ");
     if (text) {
       result.subtitle = text;
+      result.subtitleColor = extractInnerColor(markdowns.join(" ")) ?? null;
+      const icons = splitFlankingIcons(subtitleRow);
+      result.subtitleLeadingIcon = icons.leadingIcon;
+      result.subtitleTrailingIcon = icons.trailingIcon;
     }
   }
 
@@ -290,5 +372,53 @@ export function extractOriginalPriceFromPml(
     }
   }
 
+  return null;
+}
+
+const DEFAULT_PRICE_COLORS = new Set(["#333333", "#5b534e", "#787570"]);
+
+export function extractDisplayPriceColor(
+  stackChildren: PmlNode[] | null,
+  displayPrice: number
+): string | null {
+  if (!stackChildren) return null;
+
+  const displayPriceText = (displayPrice / 100).toFixed(2).replace(".", ",");
+
+  for (const child of stackChildren) {
+    const markdowns = collectMarkdowns(child);
+    if (!markdowns.some((markdown) => cleanMarkdown(markdown) === displayPriceText)) continue;
+
+    const color = findTextColor(child);
+    if (color && !DEFAULT_PRICE_COLORS.has(color.toLowerCase())) {
+      return color;
+    }
+  }
+
+  return null;
+}
+
+function findTextColor(node: unknown): string | null {
+  if (typeof node !== "object" || node === null) return null;
+
+  if (Array.isArray(node)) {
+    for (const item of node) {
+      const color = findTextColor(item);
+      if (color) return color;
+    }
+    return null;
+  }
+
+  const record = node as Record<string, unknown>;
+  const attrs = record.textAttributes;
+  if (typeof attrs === "object" && attrs !== null) {
+    const color = (attrs as Record<string, unknown>).color;
+    if (typeof color === "string") return color;
+  }
+
+  for (const value of Object.values(record)) {
+    const color = findTextColor(value);
+    if (color) return color;
+  }
   return null;
 }
