@@ -108,6 +108,7 @@ export function CartPage() {
   useEffect(() => {
     if (cartQuery.data) {
       confirmedCartRef.current = cartQuery.data;
+      if (hasPendingCartMutations()) return;
       setPageState(
         cartQuery.data.totalCount === 0
           ? { status: "empty" }
@@ -124,7 +125,7 @@ export function CartPage() {
             : "Er is iets misgegaan. Probeer het later opnieuw.",
       });
     }
-  }, [cartQuery.data, cartQuery.error, cartQuery.isError]);
+  }, [cartQuery.data, cartQuery.error, cartQuery.isError, hasPendingCartMutations]);
 
   const flushProductDelta = useCallback(
     async (productId: string) => {
@@ -261,12 +262,25 @@ export function CartPage() {
         if (!previousItem || previousItem.quantity <= 0) return previous;
         const nextItems = previous.cart.items.filter((line) => line.productId !== productId);
         const nextCount = Math.max(0, previous.cart.totalCount - previousItem.quantity);
+        const lineDiscount =
+          previousItem.originalPrice !== null &&
+          previousItem.originalPrice > previousItem.displayPrice
+            ? previousItem.originalPrice - previousItem.displayPrice
+            : 0;
+        const nextTotalPrice = Math.max(0, previous.cart.totalPrice - previousItem.displayPrice);
+        const nextTotalDiscount = Math.max(0, previous.cart.totalDiscount - lineDiscount);
         return nextCount === 0 || nextItems.length === 0
           ? { status: "empty" }
           : {
               status: "success",
               isReconciling: true,
-              cart: { ...previous.cart, totalCount: nextCount, items: nextItems },
+              cart: {
+                ...previous.cart,
+                totalPrice: nextTotalPrice,
+                totalCount: nextCount,
+                totalDiscount: nextTotalDiscount,
+                items: nextItems,
+              },
             };
       });
       enqueueDelta(productId, -item.quantity);
