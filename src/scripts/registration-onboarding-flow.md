@@ -525,6 +525,38 @@ Additional static discovery:
 - The public deeplink script maps broad paths such as `profile`, `settings`, and `activate`, but does not reveal an address-edit API route.
 - Authenticated `POST /deeplink/resolve` echoes unknown profile/settings/address-style deeplinks rather than resolving them to hidden page IDs.
 - `GET /bootstrap` only exposed the normal store tab configuration for the verified account, not a profile/settings page tree.
+- `codesalatdev/python-picnic-api` was inspected on 2026-07-31. It does not expose address/profile/settings write methods beyond typed reads such as `get_user()`. Its implemented account-relevant routes are still conventional reads and cart/delivery/product/search methods:
+
+```text
+GET  /user
+GET  /cart
+POST /cart/add_product
+POST /cart/remove_product
+POST /cart/clear
+GET  /cart/delivery_slots
+POST /deliveries/summary
+GET  /deliveries/{delivery_id}
+GET  /deliveries/{delivery_id}/scenario
+GET  /deliveries/{delivery_id}/position
+GET  /pages/search-page-results?search_term=...
+GET  /pages/product-details-page-root?id=...&show_category_action=true
+GET  /pages/L2-category-page-root?category_id=...&l3_category_id=...
+POST /user/2fa/generate with channel "SMS" or "EMAIL"
+POST /user/2fa/verify
+```
+
+This fork reinforces that `GET /user` is currently the stable address/settings read surface, but it does not reveal a delivery-address update target. Its README links Picnic's "Adding Write Functionality to Pages with Self-Service APIs" blog post, which explains that new mutations are increasingly implemented as Page Platform Tasks rather than feature-specific Java endpoints.
+
+Picnic's blog post describes Tasks as a Page Platform response type that can return arbitrary JSON and execute backend operations through a generic command binding. It explicitly uses adding a recipe to favorites as the kind of operation moved from a conventional backend API call to a Page Platform Task. That matches routes we already use, such as:
+
+```text
+POST /api/17/pages/task/recipe-saving
+POST /api/17/pages/task/assign-selling-group-to-basket
+POST /api/17/pages/task/update-selling-group-number-of-portions-task
+POST /api/17/pages/task/remove-selling-group-from-basket
+```
+
+Implication for address/settings discovery: the missing write route may not look like `/user/address` at all. It may be a task endpoint whose ID appears only inside a real server-driven settings or onboarding page response. Without that page response, broad route guessing is a weak strategy.
 
 Discovery caution:
 
