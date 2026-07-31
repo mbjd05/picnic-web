@@ -76,9 +76,9 @@ function MenuIcon() {
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"
-      strokeWidth={1.75}
+      strokeWidth={1.5}
       stroke="currentColor"
-      className="h-5 w-5"
+      className="h-6 w-6"
       aria-hidden="true"
     >
       <path
@@ -107,8 +107,9 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
   const [suggestionSession, setSuggestionSession] = useState(0);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const searchRef = useRef<HTMLFormElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const cart = useCart();
 
   useEffect(() => {
@@ -130,6 +131,20 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
     document.addEventListener("mousedown", closeSuggestions);
     return () => document.removeEventListener("mousedown", closeSuggestions);
   }, []);
+
+  useEffect(() => {
+    function closeMenu(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", closeMenu);
+    return () => document.removeEventListener("mousedown", closeMenu);
+  }, []);
+
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location.pathname, location.searchStr]);
 
   const suggestionsQuery = useQuery({
     queryKey: [
@@ -208,8 +223,8 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
 
   const showCartBadge = cart.totalCount > 0;
 
-  const countrySwitch = (
-    <div className="flex shrink-0 items-center gap-1">
+  const renderCountrySwitch = (className = "") => (
+    <div className={`flex shrink-0 items-center gap-1 ${className}`}>
       {SUPPORTED_COUNTRY_CODES.map((code) => (
         <button
           key={code}
@@ -245,7 +260,10 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
 
   return (
     <header className="border-card-border sticky top-0 z-50 border-b bg-white/95 backdrop-blur-sm">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2 sm:px-6 md:flex-nowrap md:gap-x-4">
+      <div
+        ref={menuRef}
+        className="relative mx-auto flex max-w-7xl flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2 sm:px-6 md:flex-nowrap md:gap-x-4"
+      >
         <Link
           to="/"
           search={{}}
@@ -254,69 +272,6 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
         >
           Picnic Web
         </Link>
-
-        <div className="ml-auto flex items-center gap-2 md:hidden">
-          {countrySwitch}
-          {cartLink}
-          <button
-            type="button"
-            onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
-            className={`flex h-9 w-9 items-center justify-center rounded-full border transition-colors ${
-              isMobileMenuOpen
-                ? "border-picnic-red bg-picnic-red text-white"
-                : "border-card-border hover:text-foreground text-gray-600"
-            }`}
-            aria-label="Menu"
-            aria-controls="primary-navigation"
-            aria-expanded={isMobileMenuOpen}
-          >
-            <MenuIcon />
-          </button>
-        </div>
-
-        <nav
-          id="primary-navigation"
-          aria-hidden={!isMobileMenuOpen}
-          className={`order-2 grid w-full grid-cols-4 items-center gap-1 overflow-hidden rounded-lg bg-gray-50 text-center transition-[max-height,opacity,padding,transform] duration-150 ease-out motion-reduce:transition-none md:hidden ${
-            isMobileMenuOpen
-              ? "max-h-14 translate-y-0 p-1 opacity-100"
-              : "pointer-events-none max-h-0 -translate-y-1 p-0 opacity-0"
-          }`}
-        >
-          <Link
-            to="/cookbook"
-            onClick={() => setIsMobileMenuOpen(false)}
-            tabIndex={isMobileMenuOpen ? undefined : -1}
-            className="hover:text-foreground min-w-0 truncate rounded-md px-2 py-2 text-xs font-medium text-gray-600 transition-colors sm:text-sm"
-          >
-            {t.cookbookNavLink}
-          </Link>
-          <Link
-            to="/deliveries"
-            onClick={() => setIsMobileMenuOpen(false)}
-            tabIndex={isMobileMenuOpen ? undefined : -1}
-            className="hover:text-foreground min-w-0 truncate rounded-md px-2 py-2 text-xs font-medium text-gray-600 transition-colors sm:text-sm"
-          >
-            {t.deliveriesNavLink}
-          </Link>
-          <Link
-            to="/account/payment"
-            search={{ from: undefined }}
-            onClick={() => setIsMobileMenuOpen(false)}
-            tabIndex={isMobileMenuOpen ? undefined : -1}
-            className="hover:text-foreground min-w-0 truncate rounded-md px-2 py-2 text-xs font-medium text-gray-600 transition-colors sm:text-sm"
-          >
-            {t.accountPaymentLink}
-          </Link>
-          <button
-            type="button"
-            onClick={() => void handleSignOut()}
-            tabIndex={isMobileMenuOpen ? undefined : -1}
-            className="hover:text-foreground min-w-0 truncate rounded-md px-2 py-2 text-xs font-medium text-gray-600 transition-colors sm:text-sm"
-          >
-            {t.signOut}
-          </button>
-        </nav>
 
         <form
           ref={searchRef}
@@ -389,36 +344,81 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
           </div>
         </form>
 
-        <nav className="order-2 ml-auto hidden max-w-full min-w-0 items-center gap-3 overflow-x-auto text-left md:flex">
-          {countrySwitch}
-          <Link
-            to="/cookbook"
-            className="hover:text-foreground shrink-0 text-sm text-gray-500 transition-colors"
-          >
-            {t.cookbookNavLink}
-          </Link>
-          <Link
-            to="/deliveries"
-            className="hover:text-foreground shrink-0 text-sm text-gray-500 transition-colors"
-          >
-            {t.deliveriesNavLink}
-          </Link>
-          <Link
-            to="/account/payment"
-            search={{ from: undefined }}
-            className="hover:text-foreground shrink-0 text-sm text-gray-500 transition-colors"
-          >
-            {t.accountPaymentLink}
-          </Link>
-          <button
-            type="button"
-            onClick={() => void handleSignOut()}
-            className="hover:text-foreground shrink-0 text-sm text-gray-500 transition-colors"
-          >
-            {t.signOut}
-          </button>
+        <nav className="order-1 ml-auto flex shrink-0 items-center gap-2 md:order-2">
+          {renderCountrySwitch("hidden sm:flex")}
           {cartLink}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsMenuOpen((isOpen) => !isOpen)}
+              className={`flex h-9 items-center justify-center gap-2 rounded-full border px-2.5 text-sm font-medium transition-colors sm:px-3 ${
+                isMenuOpen
+                  ? "border-picnic-red bg-picnic-red text-white"
+                  : "border-card-border hover:text-foreground text-gray-600"
+              }`}
+              aria-label="Menu"
+              aria-controls="primary-navigation"
+              aria-expanded={isMenuOpen}
+            >
+              <MenuIcon />
+              <span className="hidden sm:inline">Menu</span>
+            </button>
+          </div>
         </nav>
+
+        <div
+          id="primary-navigation"
+          aria-hidden={!isMenuOpen}
+          className={`border-card-border bg-card-bg order-4 z-50 w-full origin-top overflow-hidden rounded-lg border text-left shadow-lg transition-[max-height,opacity,transform] duration-150 ease-out motion-reduce:transition-none md:absolute md:top-full md:right-6 md:mt-2 md:w-72 md:max-w-[calc(100vw-1.5rem)] md:origin-top-right ${
+            isMenuOpen
+              ? "max-h-72 translate-y-0 opacity-100"
+              : "pointer-events-none max-h-0 -translate-y-1 opacity-0 md:max-h-72"
+          }`}
+        >
+          <div className="border-card-border border-b px-3 py-2 sm:hidden">
+            {renderCountrySwitch()}
+          </div>
+          <div className="p-1.5">
+            <Link
+              to="/cookbook"
+              onClick={() => setIsMenuOpen(false)}
+              tabIndex={isMenuOpen ? undefined : -1}
+              className="hover:text-foreground block rounded-md px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
+            >
+              {t.cookbookNavLink}
+            </Link>
+            <Link
+              to="/deliveries"
+              onClick={() => setIsMenuOpen(false)}
+              tabIndex={isMenuOpen ? undefined : -1}
+              className="hover:text-foreground block rounded-md px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
+            >
+              {t.deliveriesNavLink}
+            </Link>
+            <Link
+              to="/account/payment"
+              search={{ from: undefined }}
+              onClick={() => setIsMenuOpen(false)}
+              tabIndex={isMenuOpen ? undefined : -1}
+              className="hover:text-foreground block rounded-md px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
+            >
+              {t.accountPaymentLink}
+            </Link>
+          </div>
+          <div className="border-card-border border-t p-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                setIsMenuOpen(false);
+                void handleSignOut();
+              }}
+              tabIndex={isMenuOpen ? undefined : -1}
+              className="hover:text-foreground block w-full rounded-md px-3 py-2 text-left text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
+            >
+              {t.signOut}
+            </button>
+          </div>
+        </div>
       </div>
       <div ref={setBottomBarHost} />
     </header>
