@@ -600,7 +600,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
         </form>
 
         <nav className="order-1 ml-auto flex shrink-0 items-center gap-2 md:order-2">
-          <div className="border-card-border mr-1 flex min-w-[9.9rem] items-center justify-end border-r pr-3 xl:min-w-[14rem]">
+          <div className="border-card-border mr-1 flex min-w-[9.9rem] items-center border-r pr-3 xl:min-w-[14rem]">
             {cartLink}
           </div>
           <div ref={localeMenuRef} className="relative">
@@ -717,59 +717,58 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
               <MenuIcon />
               <span className="hidden sm:inline">Menu</span>
             </button>
+            <div
+              id="primary-navigation"
+              aria-hidden={!isMenuOpen}
+              className={`border-card-border bg-card-bg fixed top-14 right-3 left-3 z-50 mt-2 origin-top-right overflow-hidden rounded-lg border text-left shadow-lg transition-[max-height,opacity,transform] duration-150 ease-out motion-reduce:transition-none sm:absolute sm:top-full sm:right-0 sm:left-auto sm:w-72 sm:max-w-[calc(100vw-1.5rem)] ${
+                isMenuOpen
+                  ? "max-h-72 translate-y-0 opacity-100"
+                  : "pointer-events-none max-h-0 -translate-y-1 opacity-0 sm:max-h-72"
+              }`}
+            >
+              <div className="p-1.5">
+                <Link
+                  to="/cookbook"
+                  onClick={() => setIsMenuOpen(false)}
+                  tabIndex={isMenuOpen ? undefined : -1}
+                  className="hover:text-foreground block rounded-md px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
+                >
+                  {t.cookbookNavLink}
+                </Link>
+                <Link
+                  to="/deliveries"
+                  onClick={() => setIsMenuOpen(false)}
+                  tabIndex={isMenuOpen ? undefined : -1}
+                  className="hover:text-foreground block rounded-md px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
+                >
+                  {t.deliveriesNavLink}
+                </Link>
+                <Link
+                  to="/account/payment"
+                  search={{ from: undefined }}
+                  onClick={() => setIsMenuOpen(false)}
+                  tabIndex={isMenuOpen ? undefined : -1}
+                  className="hover:text-foreground block rounded-md px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
+                >
+                  {t.accountPaymentLink}
+                </Link>
+              </div>
+              <div className="border-card-border border-t p-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    void handleSignOut();
+                  }}
+                  tabIndex={isMenuOpen ? undefined : -1}
+                  className="hover:text-foreground block w-full rounded-md px-3 py-2 text-left text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
+                >
+                  {t.signOut}
+                </button>
+              </div>
+            </div>
           </div>
         </nav>
-
-        <div
-          id="primary-navigation"
-          aria-hidden={!isMenuOpen}
-          className={`border-card-border bg-card-bg z-50 order-4 w-full origin-top overflow-hidden rounded-lg border text-left shadow-lg transition-[max-height,opacity,transform] duration-150 ease-out motion-reduce:transition-none md:absolute md:top-full md:right-6 md:mt-2 md:w-72 md:max-w-[calc(100vw-1.5rem)] md:origin-top-right ${
-            isMenuOpen
-              ? "max-h-72 translate-y-0 opacity-100"
-              : "pointer-events-none max-h-0 -translate-y-1 opacity-0 md:max-h-72"
-          }`}
-        >
-          <div className="p-1.5">
-            <Link
-              to="/cookbook"
-              onClick={() => setIsMenuOpen(false)}
-              tabIndex={isMenuOpen ? undefined : -1}
-              className="hover:text-foreground block rounded-md px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
-            >
-              {t.cookbookNavLink}
-            </Link>
-            <Link
-              to="/deliveries"
-              onClick={() => setIsMenuOpen(false)}
-              tabIndex={isMenuOpen ? undefined : -1}
-              className="hover:text-foreground block rounded-md px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
-            >
-              {t.deliveriesNavLink}
-            </Link>
-            <Link
-              to="/account/payment"
-              search={{ from: undefined }}
-              onClick={() => setIsMenuOpen(false)}
-              tabIndex={isMenuOpen ? undefined : -1}
-              className="hover:text-foreground block rounded-md px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
-            >
-              {t.accountPaymentLink}
-            </Link>
-          </div>
-          <div className="border-card-border border-t p-1.5">
-            <button
-              type="button"
-              onClick={() => {
-                setIsMenuOpen(false);
-                void handleSignOut();
-              }}
-              tabIndex={isMenuOpen ? undefined : -1}
-              className="hover:text-foreground block w-full rounded-md px-3 py-2 text-left text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
-            >
-              {t.signOut}
-            </button>
-          </div>
-        </div>
       </div>
       <div ref={setBottomBarHost} />
     </header>
