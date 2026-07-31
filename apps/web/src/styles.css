@@ -149,13 +149,13 @@ button:disabled {
 }
 
 .bundle-tier-active {
+  border-color: #b0cfb0;
   background: #d6e6cd;
-  box-shadow: 0 0 0 1px #b0cfb0;
 }
 
 :root[data-theme="dark"] .bundle-tier-active {
+  border-color: #5f7f55;
   background: #263820;
-  box-shadow: 0 0 0 1px #5f7f55;
 }
 
 .section-nav-scrollbar {

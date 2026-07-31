@@ -364,8 +364,8 @@ function BundleTierGrid({
             key={bundle.id || index}
             type="button"
             onClick={() => onSetQuantity(bundle.quantity)}
-            className={`flex min-w-[70px] flex-1 cursor-pointer flex-col items-center rounded-lg px-3 py-2 transition-colors ${
-              isActive ? "bundle-tier-active" : "bg-gray-100 hover:bg-gray-200"
+            className={`flex min-w-[70px] flex-1 cursor-pointer flex-col items-center rounded-lg border px-3 py-2 transition-colors ${
+              isActive ? "bundle-tier-active" : "border-transparent bg-gray-100 hover:bg-gray-200"
             }`}
           >
             <span className="text-xs text-gray-500">
