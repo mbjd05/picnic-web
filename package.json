@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "pnpm dev:web",
-    "dev:api": "wrangler dev --config apps/api/wrangler.jsonc",
+    "dev:api": "node ./src/scripts/sync-worker-dev-vars.mjs && wrangler dev --config apps/api/wrangler.jsonc",
     "dev:web": "vite --config apps/web/vite.config.mts",
     "build": "pnpm build:web && pnpm build:api",
     "build:api": "wrangler deploy --dry-run --config apps/api/wrangler.jsonc",

@@ -77,6 +77,30 @@ app.get("/api/health", (c) =>
   })
 );
 
+app.get("/api/dev/login-from-env", async (c) => {
+  const url = new URL(c.req.url);
+  if (!["127.0.0.1", "localhost"].includes(url.hostname)) {
+    return authJson(c, { success: false, error: "TOKEN_INVALID" }, 404);
+  }
+
+  const env = c.env as Record<string, string | undefined>;
+  const token = env.PICNIC_TOKEN?.trim() || process.env.PICNIC_TOKEN?.trim();
+  if (!token) {
+    return c.text("Missing local PICNIC_TOKEN.", 500);
+  }
+
+  const { countryCode } = readSession(c);
+  const result = await loginWithTokenService(
+    token,
+    resolveAuthCountryCode(env.PICNIC_COUNTRY_CODE, countryCode)
+  );
+
+  applyAuthResultCookies(c, result);
+  if (result.body.success) return c.redirect("/");
+
+  return c.text("Local PICNIC_TOKEN could not be used for login.", 401);
+});
+
 app.post("/api/auth/login", async (c) => {
   const body = await c.req.json().catch(() => null);
   const { countryCode } = readSession(c);
