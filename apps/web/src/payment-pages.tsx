@@ -1,5 +1,6 @@
 import { Link, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useForm } from "@tanstack/react-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { getPaymentDisplayName, getPreferredPaymentOption } from "@/lib/payment";
@@ -58,7 +59,6 @@ export function PaymentAccountPage() {
   useDocumentTitle(t.paymentMethodsPageTitle);
   const showBackToCart = search.from === "cart";
 
-  const [selectedBank, setSelectedBank] = useState("");
   const [storedBankMetadata, setStoredBankMetadata] = useState<StoredBankMetadata>({});
   const [actionError, setActionError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -87,13 +87,27 @@ export function PaymentAccountPage() {
     [profile]
   );
   const selectedBanks = idealMethod.available_banks ?? IDEAL_BANKS;
-  const activeSelectedBank = selectedBanks.some((bank) => bank.bank_id === selectedBank)
-    ? selectedBank
-    : selectedBanks[0]?.bank_id || "";
+  const resolveSelectedBank = useCallback(
+    (bankId: string) =>
+      selectedBanks.some((bank) => bank.bank_id === bankId)
+        ? bankId
+        : selectedBanks[0]?.bank_id || "",
+    [selectedBanks]
+  );
 
-  async function handleSavePaymentOption() {
+  const paymentForm = useForm({
+    defaultValues: {
+      bankId: "",
+    },
+    onSubmit: async ({ value }) => {
+      await handleSavePaymentOption(value.bankId);
+    },
+  });
+
+  async function handleSavePaymentOption(bankId: string) {
     setIsSaving(true);
     setActionError(null);
+    const activeSelectedBank = resolveSelectedBank(bankId);
 
     try {
       const data = await fetchJson<PaymentProfile>("/api/account/payment-profile/payment-options", {
@@ -189,7 +203,14 @@ export function PaymentAccountPage() {
             <h2 className="text-base font-semibold text-gray-900">{t.addPaymentMethod}</h2>
             <p className="mt-2 text-sm text-gray-600">{t.addPaymentMethodEffectNote}</p>
             {selectedBanks.length ? (
-              <div className="mt-4 space-y-4">
+              <form
+                className="mt-4 space-y-4"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  void paymentForm.handleSubmit();
+                }}
+              >
                 <div className="block text-sm font-medium text-gray-700">
                   {t.paymentMethodTitle}
                   <div className="border-input-border mt-1 rounded-lg border bg-gray-50 px-3 py-2 text-sm font-normal text-gray-900">
@@ -197,30 +218,33 @@ export function PaymentAccountPage() {
                   </div>
                 </div>
 
-                <label className="block text-sm font-medium text-gray-700">
-                  {t.paymentBankLabel}
-                  <select
-                    value={activeSelectedBank}
-                    onChange={(event) => setSelectedBank(event.target.value)}
-                    className="border-input-border mt-1 block w-full rounded-lg border bg-white px-3 py-2 text-sm"
-                  >
-                    {selectedBanks.map((bank) => (
-                      <option key={bank.bank_id} value={bank.bank_id}>
-                        {bank.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <paymentForm.Field name="bankId">
+                  {(field) => (
+                    <label className="block text-sm font-medium text-gray-700">
+                      {t.paymentBankLabel}
+                      <select
+                        value={resolveSelectedBank(field.state.value)}
+                        onChange={(event) => field.handleChange(event.target.value)}
+                        className="border-input-border mt-1 block w-full rounded-lg border bg-white px-3 py-2 text-sm"
+                      >
+                        {selectedBanks.map((bank) => (
+                          <option key={bank.bank_id} value={bank.bank_id}>
+                            {bank.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+                </paymentForm.Field>
 
                 <button
-                  type="button"
-                  onClick={() => void handleSavePaymentOption()}
+                  type="submit"
                   disabled={isSaving}
                   className="bg-picnic-red rounded-lg px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-gray-300"
                 >
                   {isSaving ? t.savingPaymentMethod : t.addAndUsePaymentMethod}
                 </button>
-              </div>
+              </form>
             ) : (
               <p className="mt-2 text-sm text-gray-600">{t.noAvailablePaymentMethods}</p>
             )}

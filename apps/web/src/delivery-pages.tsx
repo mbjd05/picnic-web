@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type {
@@ -204,7 +205,6 @@ function DeliveryDetailPanel({
   const t = useTranslations();
   const queryClient = useQueryClient();
   const order = delivery.orders[0] ?? null;
-  const [rating, setRating] = useState("10");
   const [orderStatusRequested, setOrderStatusRequested] = useState(false);
 
   useEffect(() => {
@@ -245,12 +245,21 @@ function DeliveryDetailPanel({
   });
 
   const ratingMutation = useMutation({
-    mutationFn: () =>
+    mutationFn: (rating: number) =>
       fetchJson<DeliveryActionApiResponse>(`/api/deliveries/${delivery.deliveryId}/rating`, {
         method: "POST",
-        body: JSON.stringify({ rating: Number(rating) }),
+        body: JSON.stringify({ rating }),
       }),
     onSuccess: invalidateDeliveryData,
+  });
+
+  const ratingForm = useForm({
+    defaultValues: {
+      rating: "10",
+    },
+    onSubmit: async ({ value }) => {
+      ratingMutation.mutate(Number(value.rating));
+    },
   });
 
   useEffect(() => {
@@ -355,23 +364,28 @@ function DeliveryDetailPanel({
             className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end"
             onSubmit={(event) => {
               event.preventDefault();
-              ratingMutation.mutate();
+              event.stopPropagation();
+              void ratingForm.handleSubmit();
             }}
           >
-            <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
-              {t.deliveryRating}
-              <select
-                value={rating}
-                onChange={(event) => setRating(event.target.value)}
-                className="border-input-border focus:border-input-focus focus:ring-input-focus/20 rounded-md border bg-white px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:outline-none"
-              >
-                {Array.from({ length: 11 }, (_, score) => (
-                  <option key={score} value={score}>
-                    {score}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <ratingForm.Field name="rating">
+              {(field) => (
+                <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
+                  {t.deliveryRating}
+                  <select
+                    value={field.state.value}
+                    onChange={(event) => field.handleChange(event.target.value)}
+                    className="border-input-border focus:border-input-focus focus:ring-input-focus/20 rounded-md border bg-white px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:outline-none"
+                  >
+                    {Array.from({ length: 11 }, (_, score) => (
+                      <option key={score} value={score}>
+                        {score}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+            </ratingForm.Field>
             <button
               type="submit"
               disabled={ratingMutation.isPending}

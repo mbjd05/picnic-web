@@ -1,5 +1,6 @@
-import { type FormEvent, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
+import { useForm } from "@tanstack/react-form";
 import { useSearch } from "@tanstack/react-router";
 
 import { type Translations, getTranslations } from "@/lib/i18n";
@@ -54,13 +55,9 @@ function LoginForm({
   isExpired: boolean;
   t: Translations;
 }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [token, setToken] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showToken, setShowToken] = useState(false);
   const [loginMode, setLoginMode] = useState<LoginMode>("credentials");
-  const [twoFactorCode, setTwoFactorCode] = useState("");
   const [partialToken, setPartialToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(isExpired ? t.sessionExpired : null);
@@ -70,7 +67,7 @@ function LoginForm({
   async function handleCountrySelect(code: CountryCode) {
     setCountryCode(code);
     setPartialToken(null);
-    setTwoFactorCode("");
+    form.setFieldValue("twoFactorCode", "");
     setError(null);
 
     try {
@@ -96,7 +93,7 @@ function LoginForm({
 
       if (isTwoFactorResponse(data)) {
         setPartialToken(data.partialToken);
-        setTwoFactorCode("");
+        form.setFieldValue("twoFactorCode", "");
         setError(null);
         return;
       }
@@ -113,44 +110,51 @@ function LoginForm({
     }
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
+  const form = useForm({
+    defaultValues: {
+      email: "",
+      password: "",
+      token: "",
+      twoFactorCode: "",
+    },
+    onSubmit: async ({ value }) => {
+      setError(null);
 
-    if (partialToken) {
-      const code = twoFactorCode.trim();
-      if (!code) {
-        setError(t.enter2FACode);
+      if (partialToken) {
+        const code = value.twoFactorCode.trim();
+        if (!code) {
+          setError(t.enter2FACode);
+          return;
+        }
+        await submitAuth("/api/auth/verify-2fa", { partialToken, code }, t.verificationFailed);
         return;
       }
-      await submitAuth("/api/auth/verify-2fa", { partialToken, code }, t.verificationFailed);
-      return;
-    }
 
-    if (loginMode === "token") {
-      const trimmedToken = token.trim();
-      if (!trimmedToken) {
-        setError(t.enterToken);
+      if (loginMode === "token") {
+        const trimmedToken = value.token.trim();
+        if (!trimmedToken) {
+          setError(t.enterToken);
+          return;
+        }
+        await submitAuth(
+          "/api/auth/login",
+          { token: trimmedToken, countryCode },
+          t.tokenVerifyFailed
+        );
+        return;
+      }
+
+      if (!value.email.trim() || !value.password) {
+        setError(t.enterEmailAndPassword);
         return;
       }
       await submitAuth(
-        "/api/auth/login",
-        { token: trimmedToken, countryCode },
-        t.tokenVerifyFailed
+        "/api/auth/login-credentials",
+        { email: value.email.trim(), password: value.password, countryCode },
+        t.loginFailed
       );
-      return;
-    }
-
-    if (!email.trim() || !password) {
-      setError(t.enterEmailAndPassword);
-      return;
-    }
-    await submitAuth(
-      "/api/auth/login-credentials",
-      { email: email.trim(), password, countryCode },
-      t.loginFailed
-    );
-  }
+    },
+  });
 
   const showTwoFactor = partialToken !== null;
 
@@ -184,32 +188,43 @@ function LoginForm({
           ))}
         </div>
 
-        <form onSubmit={(event) => void handleSubmit(event)} className="space-y-4">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            void form.handleSubmit();
+          }}
+          className="space-y-4"
+        >
           {showTwoFactor ? (
-            <div>
-              <p className="mb-3 text-sm text-gray-600">{t.smsSent}</p>
-              <label
-                htmlFor="two-factor-code"
-                className="text-foreground mb-1 block text-sm font-medium"
-              >
-                {t.verificationCodeLabel}
-              </label>
-              <input
-                id="two-factor-code"
-                type="text"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                value={twoFactorCode}
-                onChange={(event) => {
-                  setTwoFactorCode(event.target.value);
-                  clearError();
-                }}
-                placeholder={t.verificationCodePlaceholder}
-                disabled={isLoading}
-                autoFocus
-                className="border-input-border text-foreground focus:border-input-focus focus:ring-input-focus w-full rounded-lg border px-3 py-2 text-sm placeholder:text-gray-400 focus:ring-1 focus:outline-none disabled:opacity-50"
-              />
-            </div>
+            <form.Field name="twoFactorCode">
+              {(field) => (
+                <div>
+                  <p className="mb-3 text-sm text-gray-600">{t.smsSent}</p>
+                  <label
+                    htmlFor="two-factor-code"
+                    className="text-foreground mb-1 block text-sm font-medium"
+                  >
+                    {t.verificationCodeLabel}
+                  </label>
+                  <input
+                    id="two-factor-code"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    value={field.state.value}
+                    onChange={(event) => {
+                      field.handleChange(event.target.value);
+                      clearError();
+                    }}
+                    placeholder={t.verificationCodePlaceholder}
+                    disabled={isLoading}
+                    autoFocus
+                    className="border-input-border text-foreground focus:border-input-focus focus:ring-input-focus w-full rounded-lg border px-3 py-2 text-sm placeholder:text-gray-400 focus:ring-1 focus:outline-none disabled:opacity-50"
+                  />
+                </div>
+              )}
+            </form.Field>
           ) : (
             <>
               <ModeSelector
@@ -222,27 +237,52 @@ function LoginForm({
                 {loginMode === "credentials" ? t.credentialsLoginHelp : t.tokenLoginHelp}
               </p>
               {loginMode === "credentials" ? (
-                <CredentialFields
-                  email={email}
-                  password={password}
-                  showPassword={showPassword}
-                  isLoading={isLoading}
-                  t={t}
-                  setEmail={setEmail}
-                  setPassword={setPassword}
-                  setShowPassword={setShowPassword}
-                  clearError={clearError}
-                />
+                <>
+                  <form.Field name="email">
+                    {(field) => (
+                      <EmailField
+                        value={field.state.value}
+                        isLoading={isLoading}
+                        t={t}
+                        onChange={(value) => {
+                          field.handleChange(value);
+                          clearError();
+                        }}
+                      />
+                    )}
+                  </form.Field>
+                  <form.Field name="password">
+                    {(field) => (
+                      <PasswordField
+                        value={field.state.value}
+                        showPassword={showPassword}
+                        isLoading={isLoading}
+                        t={t}
+                        onChange={(value) => {
+                          field.handleChange(value);
+                          clearError();
+                        }}
+                        setShowPassword={setShowPassword}
+                      />
+                    )}
+                  </form.Field>
+                </>
               ) : (
-                <TokenField
-                  token={token}
-                  showToken={showToken}
-                  isLoading={isLoading}
-                  t={t}
-                  setToken={setToken}
-                  setShowToken={setShowToken}
-                  clearError={clearError}
-                />
+                <form.Field name="token">
+                  {(field) => (
+                    <TokenField
+                      token={field.state.value}
+                      showToken={showToken}
+                      isLoading={isLoading}
+                      t={t}
+                      setToken={(value) => {
+                        field.handleChange(value);
+                        clearError();
+                      }}
+                      setShowToken={setShowToken}
+                    />
+                  )}
+                </form.Field>
               )}
             </>
           )}
@@ -313,69 +353,70 @@ function ModeSelector({
   );
 }
 
-function CredentialFields({
-  email,
-  password,
+function EmailField({
+  value,
+  isLoading,
+  t,
+  onChange,
+}: {
+  value: string;
+  isLoading: boolean;
+  t: Translations;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div>
+      <label htmlFor="email" className="text-foreground mb-1 block text-sm font-medium">
+        {t.emailLabel}
+      </label>
+      <input
+        id="email"
+        type="email"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={t.emailPlaceholder}
+        disabled={isLoading}
+        autoFocus
+        autoComplete="email"
+        className="border-input-border text-foreground focus:border-input-focus focus:ring-input-focus w-full rounded-lg border px-3 py-2 text-sm placeholder:text-gray-400 focus:ring-1 focus:outline-none disabled:opacity-50"
+      />
+    </div>
+  );
+}
+
+function PasswordField({
+  value,
   showPassword,
   isLoading,
   t,
-  setEmail,
-  setPassword,
+  onChange,
   setShowPassword,
-  clearError,
 }: {
-  email: string;
-  password: string;
+  value: string;
   showPassword: boolean;
   isLoading: boolean;
   t: Translations;
-  setEmail: (value: string) => void;
-  setPassword: (value: string) => void;
+  onChange: (value: string) => void;
   setShowPassword: (value: boolean) => void;
-  clearError: () => void;
 }) {
   return (
-    <>
-      <div>
-        <label htmlFor="email" className="text-foreground mb-1 block text-sm font-medium">
-          {t.emailLabel}
-        </label>
-        <input
-          id="email"
-          type="email"
-          value={email}
-          onChange={(event) => {
-            setEmail(event.target.value);
-            clearError();
-          }}
-          placeholder={t.emailPlaceholder}
-          disabled={isLoading}
-          autoFocus
-          autoComplete="email"
-          className="border-input-border text-foreground focus:border-input-focus focus:ring-input-focus w-full rounded-lg border px-3 py-2 text-sm placeholder:text-gray-400 focus:ring-1 focus:outline-none disabled:opacity-50"
-        />
-      </div>
-      <div>
-        <label htmlFor="password" className="text-foreground mb-1 block text-sm font-medium">
-          {t.passwordLabel}
-        </label>
-        <SecretField
-          id="password"
-          value={password}
-          visible={showPassword}
-          placeholder={t.passwordPlaceholder}
-          autoComplete="current-password"
-          disabled={isLoading}
-          showLabel={t.showToken}
-          hideLabel={t.hideToken}
-          onChange={(value) => {
-            setPassword(value);
-            clearError();
-          }}
-          onToggle={() => setShowPassword(!showPassword)}
-        />
-      </div>
-    </>
+    <div>
+      <label htmlFor="password" className="text-foreground mb-1 block text-sm font-medium">
+        {t.passwordLabel}
+      </label>
+      <SecretField
+        id="password"
+        value={value}
+        visible={showPassword}
+        placeholder={t.passwordPlaceholder}
+        autoComplete="current-password"
+        disabled={isLoading}
+        showLabel={t.showToken}
+        hideLabel={t.hideToken}
+        onChange={onChange}
+        onToggle={() => setShowPassword(!showPassword)}
+      />
+    </div>
   );
 }
 
@@ -386,7 +427,6 @@ function TokenField({
   t,
   setToken,
   setShowToken,
-  clearError,
 }: {
   token: string;
   showToken: boolean;
@@ -394,7 +434,6 @@ function TokenField({
   t: Translations;
   setToken: (value: string) => void;
   setShowToken: (value: boolean) => void;
-  clearError: () => void;
 }) {
   return (
     <div>
@@ -411,10 +450,7 @@ function TokenField({
         autoFocus
         showLabel={t.showToken}
         hideLabel={t.hideToken}
-        onChange={(value) => {
-          setToken(value);
-          clearError();
-        }}
+        onChange={setToken}
         onToggle={() => setShowToken(!showToken)}
       />
     </div>
