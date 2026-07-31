@@ -33,6 +33,7 @@ import {
 } from "./country-context";
 import { fetchJson } from "./lib/api-client";
 import { queryKeys, queryStaleTime } from "./lib/query-config";
+import { ThemeProvider, type ThemePreference, useTheme } from "./theme-context";
 
 const HeaderBottomBarContext = createContext<HTMLElement | null>(null);
 const SUGGESTION_DEBOUNCE_MS = 150;
@@ -122,6 +123,72 @@ function LanguageIcon() {
   );
 }
 
+function SunIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+      stroke="currentColor"
+      className="h-5 w-5"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z"
+      />
+    </svg>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+      stroke="currentColor"
+      className="h-5 w-5"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M21.752 15.002A9.718 9.718 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z"
+      />
+    </svg>
+  );
+}
+
+function ComputerDesktopIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+      stroke="currentColor"
+      className="h-5 w-5"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M9 17.25v1.007a3 3 0 0 1-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0 1 15 18.257V17.25m6-12V15a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 15V5.25m18 0A2.25 2.25 0 0 0 18.75 3H5.25A2.25 2.25 0 0 0 3 5.25m18 0v7.5A2.25 2.25 0 0 1 18.75 15H5.25A2.25 2.25 0 0 1 3 12.75v-7.5"
+      />
+    </svg>
+  );
+}
+
+function ThemePreferenceIcon({ preference }: { preference: ThemePreference }) {
+  if (preference === "light") return <SunIcon />;
+  if (preference === "dark") return <MoonIcon />;
+  return <ComputerDesktopIcon />;
+}
+
 function formatCartPrice(cents: number): string {
   return (cents / 100).toFixed(2);
 }
@@ -131,6 +198,11 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
   const switchCountry = useSwitchCountry();
   const languageCode = useLanguageCode();
   const switchLanguage = useSwitchLanguage();
+  const {
+    preference: themePreference,
+    resolvedTheme,
+    setPreference: setThemePreference,
+  } = useTheme();
   const t = getTranslations(languageCode);
   const location = useLocation();
   const navigate = useNavigate();
@@ -143,9 +215,11 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
   const [suggestionSession, setSuggestionSession] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLocaleMenuOpen, setIsLocaleMenuOpen] = useState(false);
+  const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
   const searchRef = useRef<HTMLFormElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const localeMenuRef = useRef<HTMLDivElement>(null);
+  const themeMenuRef = useRef<HTMLDivElement>(null);
   const lastNonEmptySuggestionsRef = useRef<SuggestionsApiResponse["suggestions"]>([]);
   const cart = useCart();
 
@@ -177,6 +251,9 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
       if (localeMenuRef.current && !localeMenuRef.current.contains(event.target as Node)) {
         setIsLocaleMenuOpen(false);
       }
+      if (themeMenuRef.current && !themeMenuRef.current.contains(event.target as Node)) {
+        setIsThemeMenuOpen(false);
+      }
     }
     document.addEventListener("mousedown", closeMenu);
     return () => document.removeEventListener("mousedown", closeMenu);
@@ -185,6 +262,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
   useEffect(() => {
     setIsMenuOpen(false);
     setIsLocaleMenuOpen(false);
+    setIsThemeMenuOpen(false);
   }, [location.pathname, location.searchStr]);
 
   const suggestionsQuery = useQuery({
@@ -313,6 +391,40 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
     );
   }
 
+  function renderThemeOption(preference: ThemePreference) {
+    const selected = themePreference === preference;
+    return (
+      <button
+        key={preference}
+        type="button"
+        onClick={() => {
+          setThemePreference(preference);
+          setIsThemeMenuOpen(false);
+        }}
+        className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm font-medium transition-colors ${
+          selected
+            ? "bg-picnic-red text-white"
+            : "hover:text-foreground text-gray-600 hover:bg-gray-50"
+        }`}
+        aria-pressed={selected}
+      >
+        <span className="flex items-center gap-2">
+          <ThemePreferenceIcon preference={preference} />
+          {preference === "system"
+            ? t.themeSystem
+            : preference === "dark"
+              ? t.themeDark
+              : t.themeLight}
+        </span>
+        {preference === "system" ? (
+          <span className={selected ? "text-white/80" : "text-gray-400"}>
+            {resolvedTheme === "dark" ? t.themeDark : t.themeLight}
+          </span>
+        ) : null}
+      </button>
+    );
+  }
+
   const cartLink = (
     <Link
       to="/cart"
@@ -427,6 +539,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
               onClick={() => {
                 setIsLocaleMenuOpen((isOpen) => !isOpen);
                 setIsMenuOpen(false);
+                setIsThemeMenuOpen(false);
               }}
               className={`flex h-9 items-center justify-center gap-1.5 rounded-full border px-2.5 text-sm font-medium transition-colors sm:px-3 ${
                 isLocaleMenuOpen
@@ -473,6 +586,47 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
               </div>
             </div>
           </div>
+          <div ref={themeMenuRef} className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                setIsThemeMenuOpen((isOpen) => !isOpen);
+                setIsLocaleMenuOpen(false);
+                setIsMenuOpen(false);
+              }}
+              className={`flex h-9 items-center justify-center gap-1.5 rounded-full border px-2.5 text-sm font-medium transition-colors sm:px-3 ${
+                isThemeMenuOpen
+                  ? "border-picnic-red bg-picnic-red text-white"
+                  : "border-card-border hover:text-foreground text-gray-600"
+              }`}
+              aria-label={t.themeMenu}
+              aria-controls="theme-navigation"
+              aria-expanded={isThemeMenuOpen}
+            >
+              <ThemePreferenceIcon preference={themePreference} />
+              <span className="hidden sm:inline">
+                {themePreference === "system"
+                  ? t.themeSystem
+                  : themePreference === "dark"
+                    ? t.themeDark
+                    : t.themeLight}
+              </span>
+            </button>
+            <div
+              id="theme-navigation"
+              aria-hidden={!isThemeMenuOpen}
+              className={`border-card-border bg-card-bg fixed top-14 right-3 left-3 z-50 mt-2 origin-top-right overflow-hidden rounded-lg border text-left shadow-lg transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none sm:absolute sm:top-full sm:right-0 sm:left-auto sm:w-56 sm:max-w-[calc(100vw-1.5rem)] ${
+                isThemeMenuOpen
+                  ? "translate-y-0 opacity-100"
+                  : "pointer-events-none -translate-y-1 opacity-0"
+              }`}
+            >
+              <div className="p-1.5">
+                <p className="px-3 py-1 text-xs font-semibold text-gray-400">{t.themeMenu}</p>
+                {(["system", "light", "dark"] as const).map(renderThemeOption)}
+              </div>
+            </div>
+          </div>
           {cartLink}
           <div className="relative">
             <button
@@ -480,6 +634,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
               onClick={() => {
                 setIsMenuOpen((isOpen) => !isOpen);
                 setIsLocaleMenuOpen(false);
+                setIsThemeMenuOpen(false);
               }}
               className={`flex h-9 items-center justify-center gap-2 rounded-full border px-2.5 text-sm font-medium transition-colors sm:px-3 ${
                 isMenuOpen
@@ -555,25 +710,29 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
 export function AuthenticatedShell() {
   const [bottomBarHost, setBottomBarHost] = useState<HTMLElement | null>(null);
   return (
-    <CountryProvider>
-      <CartProvider>
-        <HeaderBottomBarContext.Provider value={bottomBarHost}>
-          <div className="flex min-h-screen flex-col">
-            <AppHeader setBottomBarHost={setBottomBarHost} />
-            <Outlet />
-          </div>
-        </HeaderBottomBarContext.Provider>
-      </CartProvider>
-    </CountryProvider>
+    <ThemeProvider>
+      <CountryProvider>
+        <CartProvider>
+          <HeaderBottomBarContext.Provider value={bottomBarHost}>
+            <div className="flex min-h-screen flex-col">
+              <AppHeader setBottomBarHost={setBottomBarHost} />
+              <Outlet />
+            </div>
+          </HeaderBottomBarContext.Provider>
+        </CartProvider>
+      </CountryProvider>
+    </ThemeProvider>
   );
 }
 
 export function StandaloneShell() {
   return (
-    <CountryProvider>
-      <div className="flex min-h-screen flex-col">
-        <Outlet />
-      </div>
-    </CountryProvider>
+    <ThemeProvider>
+      <CountryProvider>
+        <div className="flex min-h-screen flex-col">
+          <Outlet />
+        </div>
+      </CountryProvider>
+    </ThemeProvider>
   );
 }
