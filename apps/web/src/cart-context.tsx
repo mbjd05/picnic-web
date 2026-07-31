@@ -47,6 +47,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
   const confirmedRef = useRef(new Map<string, number>());
+  const visibleQuantitiesRef = useRef(new Map<string, number>());
   const pendingDeltasRef = useRef(new Map<string, number>());
   const pendingTimersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const requestCountRef = useRef(0);
@@ -56,33 +57,49 @@ export function CartProvider({ children }: { children: ReactNode }) {
     staleTime: queryStaleTime.cart,
   });
 
-  const reconcile = useCallback((cart: CartData) => {
-    const next = quantitiesFromCart(cart);
-    confirmedRef.current = new Map(next);
+  const hasPendingCartWork = useCallback(
+    () => pendingDeltasRef.current.size > 0 || requestCountRef.current > 0,
+    []
+  );
+
+  const applyQuantities = useCallback((next: Map<string, number>) => {
+    visibleQuantitiesRef.current = new Map(next);
     setQuantities(next);
-    setTotalPrice(cart.totalPrice);
-    setTotalCount(cart.totalCount);
   }, []);
+
+  const reconcile = useCallback(
+    (cart: CartData) => {
+      const next = quantitiesFromCart(cart);
+      confirmedRef.current = new Map(next);
+      applyQuantities(next);
+      setTotalPrice(cart.totalPrice);
+      setTotalCount(cart.totalCount);
+    },
+    [applyQuantities]
+  );
 
   const refresh = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.cart() });
     void cartQuery
       .refetch()
       .then((result) => {
-        if (result.data) reconcile(result.data);
+        if (!result.data) return;
+        confirmedRef.current = quantitiesFromCart(result.data);
+        if (!hasPendingCartWork()) reconcile(result.data);
       })
       .catch(() => undefined)
       .finally(() => setIsLoading(false));
-  }, [cartQuery, queryClient, reconcile]);
+  }, [cartQuery, hasPendingCartWork, queryClient, reconcile]);
 
   useEffect(() => {
     if (cartQuery.data) {
-      reconcile(cartQuery.data);
+      confirmedRef.current = quantitiesFromCart(cartQuery.data);
+      if (!hasPendingCartWork()) reconcile(cartQuery.data);
       setIsLoading(false);
     } else if (cartQuery.isError) {
       setIsLoading(false);
     }
-  }, [cartQuery.data, cartQuery.isError, reconcile]);
+  }, [cartQuery.data, cartQuery.isError, hasPendingCartWork, reconcile]);
 
   const flush = useCallback(
     async (productId: string) => {
@@ -105,13 +122,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
         confirmedRef.current = quantitiesFromCart(cart);
         if (pendingDeltasRef.current.size === 0 && requestCountRef.current === 1) reconcile(cart);
       } catch {
-        setQuantities((current) => {
-          const next = new Map(current);
-          const confirmed = confirmedRef.current.get(productId) ?? 0;
-          if (confirmed === 0) next.delete(productId);
-          else next.set(productId, confirmed);
-          return next;
-        });
+        const next = new Map(visibleQuantitiesRef.current);
+        const confirmed = confirmedRef.current.get(productId) ?? 0;
+        if (confirmed === 0) next.delete(productId);
+        else next.set(productId, confirmed);
+        applyQuantities(next);
         setToast("Er ging iets mis. Probeer het opnieuw.");
         refresh();
       } finally {
@@ -149,34 +164,29 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addProduct = useCallback(
     (productId: string, maxCount: number) => {
-      const quantity = quantities.get(productId) ?? 0;
+      const quantity = visibleQuantitiesRef.current.get(productId) ?? 0;
       if (quantity >= maxCount) return;
-      setQuantities((current) => {
-        const next = new Map(current);
-        next.set(productId, (current.get(productId) ?? 0) + 1);
-        return next;
-      });
+      const next = new Map(visibleQuantitiesRef.current);
+      next.set(productId, quantity + 1);
+      applyQuantities(next);
       setTotalCount((count) => count + 1);
       enqueue(productId, 1);
     },
-    [enqueue, quantities]
+    [applyQuantities, enqueue]
   );
 
   const removeProduct = useCallback(
     (productId: string) => {
-      const quantity = quantities.get(productId) ?? 0;
+      const quantity = visibleQuantitiesRef.current.get(productId) ?? 0;
       if (quantity === 0) return;
-      setQuantities((current) => {
-        const next = new Map(current);
-        const currentQuantity = current.get(productId) ?? 0;
-        if (currentQuantity <= 1) next.delete(productId);
-        else next.set(productId, currentQuantity - 1);
-        return next;
-      });
+      const next = new Map(visibleQuantitiesRef.current);
+      if (quantity <= 1) next.delete(productId);
+      else next.set(productId, quantity - 1);
+      applyQuantities(next);
       setTotalCount((count) => Math.max(0, count - 1));
       enqueue(productId, -1);
     },
-    [enqueue, quantities]
+    [applyQuantities, enqueue]
   );
 
   const getQuantity = useCallback(
