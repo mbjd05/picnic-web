@@ -30,6 +30,18 @@ describe("cart price estimates", () => {
     expect(estimatedBundlePriceDelta(bundleTiers, 5, 6, displayPrice)).toBe(75);
   });
 
+  it("uses the next active tier for cart-page optimistic bundle totals", () => {
+    const juiceTiers: BundleThreshold[] = [
+      { quantity: 1, pricePerUnit: 299 },
+      { quantity: 2, pricePerUnit: 289 },
+      { quantity: 6, pricePerUnit: 285 },
+    ];
+
+    expect(estimatedBundleLineTotal(juiceTiers, 5, 299)).toBe(1445);
+    expect(estimatedBundleLineTotal(juiceTiers, 6, 299)).toBe(1710);
+    expect(estimatedBundlePriceDelta(juiceTiers, 5, 6, 299)).toBe(265);
+  });
+
   it("does not treat a tier equal to the display price as a discount", () => {
     const equalOnly = [{ quantity: 1, pricePerUnit: displayPrice }];
     expect(estimatedBundleLineTotal(equalOnly, 2, displayPrice)).toBe(500);

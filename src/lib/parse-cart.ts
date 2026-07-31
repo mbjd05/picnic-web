@@ -11,6 +11,7 @@ import { parseSelectedSlot } from "@/lib/parse-delivery-slots";
 import { asArray, asNumber, asString, isObject } from "@/lib/type-guards";
 import type {
   Badge,
+  BundleThreshold,
   CartData,
   CartItem,
   CountryCode,
@@ -160,6 +161,19 @@ function extractQuantity(decorators: RawDecorator[]): number {
     return asNumber(quantityDec["quantity"], 1);
   }
   return 1;
+}
+
+function parsePriceRanges(raw: unknown): BundleThreshold[] | null {
+  const thresholds = asArray(raw)
+    .filter(isObject)
+    .map((range) => ({
+      quantity: asNumber(range["from_quantity"]),
+      pricePerUnit: asNumber(range["price"]),
+    }))
+    .filter((range) => range.quantity > 0 && range.pricePerUnit > 0)
+    .sort((a, b) => a.quantity - b.quantity);
+
+  return thresholds.length > 0 ? thresholds : null;
 }
 
 // ─── Unavailability extraction ────────────────────────────────────────────────
@@ -328,6 +342,7 @@ function mapOrderLineToCartItem(rawLine: unknown): CartItem | null {
   // Quantity, badges, unavailability — from merged line + article decorators
   const quantity = extractQuantity(effectiveDecorators);
   const badges = mapDecoratorsToBadges(effectiveDecorators);
+  const priceRanges = firstArticle ? parsePriceRanges(firstArticle["price_ranges"]) : null;
   const unavailable = extractUnavailableInfo(effectiveDecorators);
 
   return {
@@ -341,6 +356,7 @@ function mapOrderLineToCartItem(rawLine: unknown): CartItem | null {
     quantity,
     maxCount: firstArticle ? asNumber(firstArticle["max_count"], 99) : 99,
     badges,
+    priceRanges,
     isUnavailable: unavailable.isUnavailable,
     unavailableExplanation: unavailable.unavailableExplanation,
     replacements: unavailable.replacements,

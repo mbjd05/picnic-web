@@ -357,6 +357,8 @@ export type CartItem = {
   maxCount: number;
   /** Decorator-derived badges (discount labels, freshness, base price, bundle). */
   badges: Badge[];
+  /** Buy-more-pay-less tiers from the cart article, or null if absent. */
+  priceRanges: BundleThreshold[] | null;
   /** Whether the item is currently unavailable. */
   isUnavailable: boolean;
   /** Short unavailability reason, or null. */

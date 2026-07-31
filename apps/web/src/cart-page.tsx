@@ -15,7 +15,9 @@ import { formatTime } from "@/lib/format-delivery-window";
 import { formatEuroPrice, formatPrice } from "@/lib/format-price";
 import { buildImageUrl } from "@/lib/image-url";
 import { getPreferredPaymentOption } from "@/lib/payment";
+import { estimatedBundleLineTotal } from "@/lib/cart-price-estimates";
 import type {
+  BundleProgress,
   CartData,
   CartItem,
   CheckoutPaymentResponse,
@@ -59,6 +61,15 @@ function estimateLineUnitPrice(item: CartItem): number {
   return item.quantity > 0 ? Math.round(item.displayPrice / item.quantity) : item.displayPrice;
 }
 
+function estimateLineBaseUnitPrice(item: CartItem): number {
+  if (item.quantity <= 0) return item.displayPrice;
+  const baseLinePrice =
+    item.originalPrice !== null && item.originalPrice > item.displayPrice
+      ? item.originalPrice
+      : item.displayPrice;
+  return Math.round(baseLinePrice / item.quantity);
+}
+
 function estimateLineUnitDiscount(item: CartItem): number {
   if (
     item.originalPrice === null ||
@@ -70,11 +81,45 @@ function estimateLineUnitDiscount(item: CartItem): number {
   return Math.round((item.originalPrice - item.displayPrice) / item.quantity);
 }
 
+function estimateLineDiscount(item: Pick<CartItem, "displayPrice" | "originalPrice">): number {
+  return item.originalPrice !== null && item.originalPrice > item.displayPrice
+    ? item.originalPrice - item.displayPrice
+    : 0;
+}
+
+function estimateCartLinePrices(
+  item: CartItem,
+  nextQuantity: number,
+  bundleProgress: BundleProgress | null
+): Pick<CartItem, "displayPrice" | "originalPrice"> {
+  const baseUnitPrice = estimateLineBaseUnitPrice(item);
+  const bundleThresholds = item.priceRanges ?? bundleProgress?.thresholds ?? null;
+  if (bundleThresholds?.length) {
+    const displayPrice = estimatedBundleLineTotal(bundleThresholds, nextQuantity, baseUnitPrice);
+    const originalPrice = baseUnitPrice * nextQuantity;
+    return {
+      displayPrice,
+      originalPrice: originalPrice > displayPrice ? originalPrice : null,
+    };
+  }
+
+  const quantityDelta = nextQuantity - item.quantity;
+  const unitPrice = estimateLineUnitPrice(item);
+  const unitDiscount = estimateLineUnitDiscount(item);
+  return {
+    displayPrice: Math.max(0, item.displayPrice + quantityDelta * unitPrice),
+    originalPrice:
+      item.originalPrice === null
+        ? null
+        : Math.max(0, item.originalPrice + quantityDelta * (unitPrice + unitDiscount)),
+  };
+}
+
 export function CartPage() {
   const countryCode = useCountryCode();
   const t = useTranslations();
   const queryClient = useQueryClient();
-  const { applyVisibleCart } = useCart();
+  const { applyVisibleCart, getBundleProgress } = useCart();
   const search = useSearch({ from: "/authenticated/cart" });
   useDocumentTitle(t.cartTitle);
 
@@ -230,26 +275,29 @@ export function CartPage() {
         if (previous.status !== "success") return previous;
         const previousItem = previous.cart.items.find((line) => line.productId === productId);
         if (!previousItem || previousItem.quantity >= previousItem.maxCount) return previous;
-        const unitPrice = estimateLineUnitPrice(previousItem);
-        const unitDiscount = estimateLineUnitDiscount(previousItem);
+        const nextQuantity = previousItem.quantity + 1;
+        const nextLinePrices = estimateCartLinePrices(
+          previousItem,
+          nextQuantity,
+          getBundleProgress(productId)
+        );
+        const priceDelta = nextLinePrices.displayPrice - previousItem.displayPrice;
+        const discountDelta =
+          estimateLineDiscount(nextLinePrices) - estimateLineDiscount(previousItem);
         return {
           status: "success",
           isReconciling: true,
           cart: {
             ...previous.cart,
-            totalPrice: previous.cart.totalPrice + unitPrice,
+            totalPrice: previous.cart.totalPrice + priceDelta,
             totalCount: previous.cart.totalCount + 1,
-            totalDiscount: previous.cart.totalDiscount + unitDiscount,
+            totalDiscount: Math.max(0, previous.cart.totalDiscount + discountDelta),
             items: previous.cart.items.map((line) =>
               line.productId === productId
                 ? {
                     ...line,
-                    displayPrice: line.displayPrice + unitPrice,
-                    originalPrice:
-                      line.originalPrice === null
-                        ? null
-                        : line.originalPrice + unitPrice + unitDiscount,
-                    quantity: line.quantity + 1,
+                    ...nextLinePrices,
+                    quantity: nextQuantity,
                   }
                 : line
             ),
@@ -272,9 +320,15 @@ export function CartPage() {
         if (previous.status !== "success") return previous;
         const previousItem = previous.cart.items.find((line) => line.productId === productId);
         if (!previousItem || previousItem.quantity <= 0) return previous;
-        const unitPrice = estimateLineUnitPrice(previousItem);
-        const unitDiscount = estimateLineUnitDiscount(previousItem);
         const nextQuantity = previousItem.quantity - 1;
+        const nextLinePrices = estimateCartLinePrices(
+          previousItem,
+          nextQuantity,
+          getBundleProgress(productId)
+        );
+        const priceDelta = previousItem.displayPrice - nextLinePrices.displayPrice;
+        const discountDelta =
+          estimateLineDiscount(previousItem) - estimateLineDiscount(nextLinePrices);
         const nextItems =
           nextQuantity === 0
             ? previous.cart.items.filter((line) => line.productId !== productId)
@@ -282,18 +336,14 @@ export function CartPage() {
                 line.productId === productId
                   ? {
                       ...line,
-                      displayPrice: Math.max(0, line.displayPrice - unitPrice),
-                      originalPrice:
-                        line.originalPrice === null
-                          ? null
-                          : Math.max(0, line.originalPrice - unitPrice - unitDiscount),
+                      ...nextLinePrices,
                       quantity: nextQuantity,
                     }
                   : line
               );
         const nextCount = Math.max(0, previous.cart.totalCount - 1);
-        const nextTotalPrice = Math.max(0, previous.cart.totalPrice - unitPrice);
-        const nextTotalDiscount = Math.max(0, previous.cart.totalDiscount - unitDiscount);
+        const nextTotalPrice = Math.max(0, previous.cart.totalPrice - priceDelta);
+        const nextTotalDiscount = Math.max(0, previous.cart.totalDiscount - discountDelta);
         return nextCount === 0 || nextItems.length === 0
           ? { status: "empty" }
           : {
@@ -326,7 +376,7 @@ export function CartPage() {
         if (!previousItem || previousItem.quantity <= 0) return previous;
         const nextItems = previous.cart.items.filter((line) => line.productId !== productId);
         const nextCount = Math.max(0, previous.cart.totalCount - previousItem.quantity);
-        const lineDiscount = estimateLineUnitDiscount(previousItem) * previousItem.quantity;
+        const lineDiscount = estimateLineDiscount(previousItem);
         const nextTotalPrice = Math.max(0, previous.cart.totalPrice - previousItem.displayPrice);
         const nextTotalDiscount = Math.max(0, previous.cart.totalDiscount - lineDiscount);
         return nextCount === 0 || nextItems.length === 0
