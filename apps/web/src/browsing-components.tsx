@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Link } from "@tanstack/react-router";
 
@@ -19,6 +19,7 @@ import { buildSectionId } from "@/lib/types";
 
 import { useCart } from "./cart-context";
 import { useCountryCode, useTranslations } from "./country-context";
+import { useWheelQuantityAdjust } from "./lib/use-wheel-quantity-adjust";
 
 const PLACEHOLDER_IMAGE = "/placeholder-product.svg";
 const STICKY_HEADER_OFFSET_PX = 144;
@@ -130,6 +131,29 @@ function QuantityControl({
 }) {
   const cart = useCart();
   const t = useTranslations();
+  const increment = useCallback(
+    () =>
+      cart.addProduct(
+        product.id,
+        product.maxCount,
+        estimatedProgressPriceDelta(progress, quantity, quantity + 1, product.displayPrice)
+      ),
+    [cart, product.displayPrice, product.id, product.maxCount, progress, quantity]
+  );
+  const decrement = useCallback(
+    () =>
+      cart.removeProduct(
+        product.id,
+        estimatedProgressPriceDelta(progress, quantity, quantity - 1, product.displayPrice)
+      ),
+    [cart, product.displayPrice, product.id, progress, quantity]
+  );
+  const handleWheelAdjust = useWheelQuantityAdjust({
+    canIncrement: quantity < product.maxCount,
+    canDecrement: quantity > 0,
+    onIncrement: increment,
+    onDecrement: decrement,
+  });
   const stop = (event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
@@ -141,12 +165,9 @@ function QuantityControl({
         type="button"
         onClick={(event) => {
           stop(event);
-          cart.addProduct(
-            product.id,
-            product.maxCount,
-            estimatedProgressPriceDelta(progress, 0, 1, product.displayPrice)
-          );
+          increment();
         }}
+        onWheel={handleWheelAdjust}
         className="text-text-dark flex h-8 w-8 items-center justify-center rounded-full bg-white text-lg font-bold shadow-md hover:bg-gray-100"
         aria-label={t.addToCartAriaLabel}
       >
@@ -156,16 +177,11 @@ function QuantityControl({
   }
 
   return (
-    <div className="flex flex-col items-center gap-1" onClick={stop}>
+    <div className="flex flex-col items-center gap-1" onClick={stop} onWheel={handleWheelAdjust}>
       <div className="grid w-24 grid-cols-[1.75rem_2.5rem_1.75rem] items-center rounded-full bg-white shadow-sm">
         <button
           type="button"
-          onClick={() =>
-            cart.removeProduct(
-              product.id,
-              estimatedProgressPriceDelta(progress, quantity, quantity - 1, product.displayPrice)
-            )
-          }
+          onClick={decrement}
           className="text-text-muted flex h-7 w-7 items-center justify-center text-base font-semibold"
           aria-label={t.removeOneAriaLabel}
         >
@@ -177,13 +193,7 @@ function QuantityControl({
         </span>
         <button
           type="button"
-          onClick={() =>
-            cart.addProduct(
-              product.id,
-              product.maxCount,
-              estimatedProgressPriceDelta(progress, quantity, quantity + 1, product.displayPrice)
-            )
-          }
+          onClick={increment}
           disabled={quantity >= product.maxCount}
           className="text-text-muted flex h-7 w-7 items-center justify-center text-base font-semibold disabled:text-gray-300"
           aria-label={t.addOneAriaLabel}

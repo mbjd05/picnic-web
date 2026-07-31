@@ -25,6 +25,7 @@ import { useCart } from "./cart-context";
 import { useCountryCode, useTranslations } from "./country-context";
 import { ApiClientError, fetchJson } from "./lib/api-client";
 import { queryKeys, queryStaleTime } from "./lib/query-config";
+import { useWheelQuantityAdjust } from "./lib/use-wheel-quantity-adjust";
 
 const PLACEHOLDER_IMAGE = "/placeholder-product.svg";
 const GALLERY_IMAGE_SIZE = "large";
@@ -408,11 +409,19 @@ function PdpStepper({
   addLabel: string;
   inCartLabel: string;
 }) {
+  const handleWheelAdjust = useWheelQuantityAdjust({
+    canIncrement: quantity < maxCount,
+    canDecrement: quantity > 0,
+    onIncrement,
+    onDecrement,
+  });
+
   if (quantity === 0) {
     return (
       <button
         type="button"
         onClick={onIncrement}
+        onWheel={handleWheelAdjust}
         disabled={maxCount <= 0}
         className="border-card-border text-foreground w-full rounded-lg border bg-white py-3 text-center text-sm font-semibold transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
       >
@@ -422,7 +431,10 @@ function PdpStepper({
   }
 
   return (
-    <div className="border-card-border flex items-center rounded-lg border bg-white">
+    <div
+      className="border-card-border flex items-center rounded-lg border bg-white"
+      onWheel={handleWheelAdjust}
+    >
       <button
         type="button"
         onClick={onDecrement}
