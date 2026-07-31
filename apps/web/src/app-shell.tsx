@@ -500,7 +500,9 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
           className="h-5 w-[3.1rem] shrink-0 animate-pulse rounded-full bg-gray-200"
           aria-hidden="true"
         />
-      ) : null}
+      ) : (
+        <span className="w-[3.1rem] shrink-0" aria-hidden="true" />
+      )}
     </Link>
   );
   const displayLanguageOptions = [countryCode, "EN", ...SUPPORTED_LANGUAGE_CODES].filter(
