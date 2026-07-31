@@ -481,12 +481,12 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
     <Link
       to="/cart"
       search={{ returnSearch: activeSearchTerm || undefined }}
-      className="border-card-border bg-card-bg text-foreground hover:border-picnic-red hover:text-picnic-red relative flex h-10 shrink-0 items-center gap-2 rounded-full border px-3 text-sm font-semibold transition-colors sm:px-4 lg:w-[11.5rem] lg:justify-between"
+      className="border-card-border bg-card-bg text-foreground hover:border-picnic-red hover:text-picnic-red relative flex h-10 shrink-0 items-center gap-2 rounded-full border px-3 text-sm font-semibold transition-colors sm:px-4 lg:w-[8.5rem] lg:justify-between xl:w-[14rem]"
       aria-label={t.cartTitle}
     >
       <span className="flex items-center gap-2">
         <CartIcon />
-        <span className="hidden lg:inline">{t.cartTitle}</span>
+        <span className="hidden xl:inline">{t.cartTitle}</span>
       </span>
       {showCartBadge ? (
         <span className="bg-picnic-red min-w-[4.75rem] rounded-full px-2 py-0.5 text-center text-xs font-bold text-white tabular-nums">
