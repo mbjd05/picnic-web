@@ -13,6 +13,7 @@
 # testing
 /coverage
 /.eslintcache
+/.playwright-mcp/
 
 # next.js
 /.next/

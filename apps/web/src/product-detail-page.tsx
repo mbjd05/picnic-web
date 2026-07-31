@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element -- Vite has no Next Image component. */
 import { useCallback, useState } from "react";
 
 import { useQuery } from "@tanstack/react-query";
@@ -154,7 +153,11 @@ function ProductDetailContent({ product }: { product: ProductDetail }) {
               );
             }
             return (
-              <AccordionSection key={section.title} title={section.title} content={section.content} />
+              <AccordionSection
+                key={section.title}
+                title={section.title}
+                content={section.content}
+              />
             );
           })}
         </div>
@@ -280,7 +283,11 @@ function ProductPriceSection({
       </div>
 
       {bundles.length > 0 ? (
-        <BundleTierGrid bundles={bundles} cartQuantity={cartQuantity} onSetQuantity={onSetQuantity} />
+        <BundleTierGrid
+          bundles={bundles}
+          cartQuantity={cartQuantity}
+          onSetQuantity={onSetQuantity}
+        />
       ) : null}
 
       <PdpStepper

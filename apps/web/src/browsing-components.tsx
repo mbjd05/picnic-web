@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element -- Vite has no Next Image component. */
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 
 import { Link } from "@tanstack/react-router";

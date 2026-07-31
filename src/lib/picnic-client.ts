@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
 import { type CountryCode, DEFAULT_COUNTRY_CODE } from "./types";
 
 const PICNIC_API_VERSION = "17";

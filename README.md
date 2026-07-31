@@ -22,4 +22,4 @@ Please report issues in the [Github issues section](https://github.com/MRVDH/pic
 
 #### How do I run a local instance?
 
-Clone or download the repo, run `npm install`, `npm run build` and then `npm run start`.
+Clone or download the repo, run `pnpm install`, then use `pnpm dev:web` for the Vite web app or `pnpm dev:api` for the Cloudflare Worker with API routes and built web assets. Run `pnpm build` to build both the web app and Worker, and `pnpm deploy:worker` to deploy the Worker.

@@ -31,8 +31,8 @@ The current Next app is the visual source of truth. Ported UI should preserve th
 - [x] Chunk 16: Add query caching, invalidation, and request de-duplication.
 - [x] Chunk 17: Verify feature parity against current app behavior and specs.
 - [x] Chunk 18: Finalize Cloudflare deployment configuration.
-- [ ] Chunk 19: Stability, performance, and deployment smoke testing.
-- [ ] Chunk 20: Remove or archive the old Next app after parity is proven.
+- [x] Chunk 19: Stability, performance, and deployment smoke testing.
+- [x] Chunk 20: Remove or archive the old Next app after parity is proven.
 
 ## Completed Chunks
 
@@ -460,6 +460,23 @@ Validated:
 
 ### Chunk 19: Stability And Performance Testing
 
+Completed in this chunk.
+
+Implemented:
+
+- Followed `migration-e2e-testing-plan.md` as the Chunk 19 source of truth.
+- Ran restored-state authenticated API smoke against the local Worker.
+- Exercised authenticated browser flows for login/session, search, section navigation, categories, shortcuts, product detail, cart, cookbook, recipe detail, payment settings, payment return, and mobile overflow.
+- Captured request-count and Worker-log checks to look for obvious request fan-out or CPU-heavy behavior.
+- Fixed follow-up issues discovered during the pass before proceeding to branch replacement.
+
+Validated:
+
+- `pnpm validate`
+- `pnpm smoke:api:auth` against the local Worker passed 43 checks, with only credential/2FA skipped by design.
+- Playwright MCP desktop and mobile matrix passed after follow-up fixes.
+- Header smoke confirmed SPA fallback, private API `no-store`, public health headers, and revalidatable SPA shell headers.
+
 Goal:
 
 Prove the Worker app is fast, reliable, and suitable for the free tier.
@@ -481,6 +498,30 @@ Validation:
 - No obvious CPU or request explosion issues.
 
 ### Chunk 20: Retire The Next App
+
+Completed in this chunk.
+
+Implemented:
+
+- Removed the old Next App Router tree, Next route handlers, Next proxy, Next config, and remaining Next-only UI components.
+- Removed `next` and `eslint-config-next` from dependencies.
+- Replaced the Next lint/build baseline with Vite/Hono/Worker validation.
+- Kept shared parser, service, API-client, formatting, and presentation helpers that are still used by the migrated app.
+- Updated package tooling to pnpm-first commands and ESLint 10 with `typescript-eslint`.
+- Adopted missed upstream/picnic-api compatibility improvements for promotion labels, subtitle icons, 32-character recipe IDs, and product-detail page request flags.
+- Updated documentation to make Vite/Hono the default development and deployment path.
+
+Validated:
+
+- `pnpm install`
+- `pnpm validate`
+- `pnpm audit --audit-level high`
+- `pnpm peers check`
+- `pnpm smoke:api:auth` against the local Worker passed 43 checks, with only credential/2FA skipped by design.
+- Playwright MCP desktop route matrix passed for home, search, category, subcategory, product detail, cookbook, recipe detail, payment settings, and payment return.
+- Playwright MCP mobile overflow matrix passed at `390x844`.
+- Header smoke passed for SPA routes, public health, and unauthenticated private API responses.
+- Code/config scan found no remaining `next/*` imports.
 
 Goal:
 
@@ -514,9 +555,7 @@ pnpm validate
 ```powershell
 pnpm lint
 pnpm typecheck
-pnpm build:web
-pnpm build:api
 pnpm build
 ```
 
-After the Next app is retired, replace `npm run build` with the final Worker/web build commands only.
+`pnpm build` runs `pnpm build:web` and `pnpm build:api`.

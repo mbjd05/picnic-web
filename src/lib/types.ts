@@ -62,8 +62,10 @@ export type Highlight = {
 export type PromoPlacement = "image" | "inline";
 
 export type SubtitleIcon = {
-  iconKey: string;
-  fallbackId: string | null;
+  /** Fallback CDN image ID for the icon, when Picnic provides one. */
+  imageId: string;
+  /** API-provided icon tint color, or null. */
+  color: string | null;
 };
 
 // ─── Product ─────────────────────────────────────────────────────────────────

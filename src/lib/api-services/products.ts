@@ -40,7 +40,7 @@ export async function getProductDetailService(
     const client = buildPicnicClient(authToken, countryCode);
     const rawPage = await (client as unknown as FusionRequestClient).sendRequest(
       "GET",
-      `/pages/product-details-page-root?id=${encodeURIComponent(productId)}`,
+      `/pages/product-details-page-root?id=${encodeURIComponent(productId)}&show_category_action=true&show_remove_from_purchases_page_action=true`,
       null,
       true
     );

@@ -1,24 +1,26 @@
-import nextVitals from "eslint-config-next/core-web-vitals";
-import nextTs from "eslint-config-next/typescript";
 import { defineConfig, globalIgnores } from "eslint/config";
+import tseslint from "typescript-eslint";
 
-const eslintConfig = defineConfig([
-  ...nextVitals,
-  ...nextTs,
-  // Override default ignores of eslint-config-next.
+export default defineConfig([
   globalIgnores([
-    // Default ignores of eslint-config-next:
     "node_modules/**",
     ".next/**",
-    "out/**",
     "dist/**",
     "apps/**/dist/**",
     "apps/**/.wrangler/**",
     "build/**",
     "coverage/**",
     "**/*.min.js",
-    "next-env.d.ts",
   ]),
+  ...tseslint.config({
+    files: ["**/*.{ts,tsx,mts}"],
+    languageOptions: {
+      parser: tseslint.parser,
+      parserOptions: {
+        ecmaFeatures: { jsx: true },
+        sourceType: "module",
+      },
+    },
+    rules: {},
+  }),
 ]);
-
-export default eslintConfig;

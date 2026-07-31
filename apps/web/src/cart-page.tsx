@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element -- Vite has no Next Image component. */
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -108,7 +107,6 @@ export function CartPage() {
   });
 
   useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect -- Mirror authoritative cart query state into the optimistic cart page state machine. */
     if (cartQuery.data) {
       confirmedCartRef.current = cartQuery.data;
       setPageState(
@@ -127,7 +125,6 @@ export function CartPage() {
             : "Er is iets misgegaan. Probeer het later opnieuw.",
       });
     }
-    /* eslint-enable react-hooks/set-state-in-effect */
   }, [cartQuery.data, cartQuery.error, cartQuery.isError]);
 
   const flushProductDelta = useCallback(
@@ -159,7 +156,13 @@ export function CartPage() {
         if (result && !hasPendingCartMutations()) reconcileFromServer(result);
       }
     },
-    [hasPendingCartMutations, queryClient, reconcileFromServer, rollbackProduct, t.cartMutationError]
+    [
+      hasPendingCartMutations,
+      queryClient,
+      reconcileFromServer,
+      rollbackProduct,
+      t.cartMutationError,
+    ]
   );
 
   const enqueueDelta = useCallback(
@@ -780,7 +783,11 @@ function CheckoutCta({
       {hasKnownMissingPayment ? (
         <p className="text-sm text-gray-600">
           {t.noPreferredPaymentMethod}{" "}
-          <Link to="/account/payment" search={{ from: "cart" }} className="text-picnic-red font-semibold">
+          <Link
+            to="/account/payment"
+            search={{ from: "cart" }}
+            className="text-picnic-red font-semibold"
+          >
             {t.choosePaymentMethod}
           </Link>
         </p>
@@ -837,7 +844,9 @@ function DeliverySlotPicker({
           onSlotSelected(cart);
         })
         .catch((error) => {
-          setSelectionError(error instanceof Error ? error.message : "Kan bezorgmoment niet kiezen.");
+          setSelectionError(
+            error instanceof Error ? error.message : "Kan bezorgmoment niet kiezen."
+          );
         })
         .finally(() => {
           setSelectingSlotId(null);
@@ -859,9 +868,7 @@ function DeliverySlotPicker({
       <div className="flex max-h-[min(600px,90vh)] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-xl">
         <PickerHeader onClose={onClose} />
         {slotsQuery.isPending ? <PickerLoading /> : null}
-        {slotsQuery.isError ? (
-          <PickerError message={slotErrorMessage} onRetry={loadSlots} />
-        ) : null}
+        {slotsQuery.isError ? <PickerError message={slotErrorMessage} onRetry={loadSlots} /> : null}
         {slotsQuery.data ? (
           <SlotListBody
             data={slotsQuery.data}

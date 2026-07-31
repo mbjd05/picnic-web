@@ -76,14 +76,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [cartQuery, queryClient, reconcile]);
 
   useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect -- Reconcile optimistic cart state from the authoritative API response. */
     if (cartQuery.data) {
       reconcile(cartQuery.data);
       setIsLoading(false);
     } else if (cartQuery.isError) {
       setIsLoading(false);
     }
-    /* eslint-enable react-hooks/set-state-in-effect */
   }, [cartQuery.data, cartQuery.isError, reconcile]);
 
   const flush = useCallback(

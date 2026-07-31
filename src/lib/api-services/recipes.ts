@@ -13,7 +13,7 @@ import type {
 
 import type { ApiServiceResult } from "./types";
 
-const RECIPE_ID_RE = /^[0-9a-f]{24}$/;
+const RECIPE_ID_RE = /^[0-9a-f]{24}([0-9a-f]{8})?$/;
 const COUNTS_CACHE_TTL_MS = 5 * 60 * 1000;
 const countsCache = new Map<string, { counts: Record<string, number>; expiresAt: number }>();
 

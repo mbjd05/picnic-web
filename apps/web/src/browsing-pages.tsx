@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element -- Vite has no Next Image component. */
 import { useMemo } from "react";
 
 import { useQuery } from "@tanstack/react-query";
@@ -30,7 +29,9 @@ import { fetchJson } from "./lib/api-client";
 import { queryKeys, queryStaleTime } from "./lib/query-config";
 
 function PageLayout({ children }: { children: React.ReactNode }) {
-  return <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 sm:py-8">{children}</main>;
+  return (
+    <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 sm:py-8">{children}</main>
+  );
 }
 
 export function HomePage() {
@@ -121,8 +122,11 @@ export function CategoryPage() {
       ),
     staleTime: queryStaleTime.categories,
   });
-  const categoryName = categories.data?.categories.find((category) => category.id === categoryId)?.name;
-  const title = query.data?.title && query.data.title !== categoryId ? query.data.title : categoryName;
+  const categoryName = categories.data?.categories.find(
+    (category) => category.id === categoryId
+  )?.name;
+  const title =
+    query.data?.title && query.data.title !== categoryId ? query.data.title : categoryName;
 
   useDocumentTitle(title);
 

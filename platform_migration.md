@@ -18,7 +18,7 @@ Move Picnic Web away from Next.js SSR/App Router runtime assumptions and toward 
   payment return/status routes
 ```
 
-The target should keep the current product behavior, but make the runtime smaller, more predictable, and cheaper to execute on Cloudflare Workers.
+The target keeps the current product behavior, but makes the runtime smaller, more predictable, and cheaper to execute on Cloudflare Workers. The migration branch now uses this Vite/Hono architecture as the default app; the old Next app has been retired from the branch.
 
 ## Recommendation
 
@@ -176,7 +176,7 @@ Create:
 - `/apps/api` with Hono and Wrangler.
 - Optional root workspace config if moving to a monorepo package setup.
 
-Keep the existing Next app intact during this phase.
+Keep the existing Next app intact during this phase. This phase is complete on the migration branch.
 
 Exit criteria:
 
@@ -377,4 +377,4 @@ pnpm build:web
 pnpm build:api
 ```
 
-Authenticated production smoke testing remains part of the later stability/performance chunk because it requires a live token, live Picnic state, and careful payment/cart mutation boundaries.
+The legacy Next app has been removed from this branch after the Chunk 19/20 validation matrix passed. Authenticated production smoke testing still requires a live token, live Picnic state, and careful payment/cart mutation boundaries.

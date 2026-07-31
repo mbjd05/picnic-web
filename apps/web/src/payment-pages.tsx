@@ -108,8 +108,12 @@ export function PaymentAccountPage() {
       const previousIds = new Set(profile?.stored_payment_options?.map((option) => option.id));
       const createdOption =
         data.stored_payment_options?.find((option) => !previousIds.has(option.id)) ??
-        data.stored_payment_options?.find((option) => option.id === data.preferred_payment_option_id);
-      const selectedBankName = selectedBanks.find((bank) => bank.bank_id === activeSelectedBank)?.name;
+        data.stored_payment_options?.find(
+          (option) => option.id === data.preferred_payment_option_id
+        );
+      const selectedBankName = selectedBanks.find(
+        (bank) => bank.bank_id === activeSelectedBank
+      )?.name;
 
       if (createdOption && activeSelectedBank && selectedBankName) {
         const nextMetadata = {
@@ -224,13 +228,19 @@ export function PaymentAccountPage() {
             {profile.stored_payment_options?.length ? (
               <div className="mt-3 divide-y divide-gray-100">
                 {profile.stored_payment_options.slice(0, 1).map((option) => (
-                  <div key={option.id} className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div
+                    key={option.id}
+                    className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between"
+                  >
                     <div>
                       <p className="text-sm font-medium text-gray-900">
                         {option.display_name ?? option.payment_method}
                       </p>
                       <p className="mt-1 text-xs text-gray-500">
-                        {storedBankMetadata[option.id]?.bankName ?? option.account ?? option.brand ?? t.paymentBankUnknown}
+                        {storedBankMetadata[option.id]?.bankName ??
+                          option.account ??
+                          option.brand ??
+                          t.paymentBankUnknown}
                       </p>
                     </div>
                     <button
@@ -286,12 +296,15 @@ export function PaymentReturnPage() {
   const loadStatus = useCallback(async () => {
     const searchParams = new URLSearchParams(window.location.search);
     const providerResult = searchParams.get("result");
-    const paymentId = searchParams.get("payment_id") ?? localStorage.getItem("picnic_checkout_payment_id");
+    const paymentId =
+      searchParams.get("payment_id") ?? localStorage.getItem("picnic_checkout_payment_id");
     const transactionId =
       searchParams.get("tx_id") ||
       sessionStorage.getItem("picnic_checkout_transaction_id") ||
       localStorage.getItem("picnic_checkout_transaction_id");
-    const orderId = sessionStorage.getItem("picnic_checkout_order_id") || localStorage.getItem("picnic_checkout_order_id");
+    const orderId =
+      sessionStorage.getItem("picnic_checkout_order_id") ||
+      localStorage.getItem("picnic_checkout_order_id");
 
     if (providerResult === "CANCELLED") {
       const cancelId = transactionId || paymentId || orderId;
@@ -322,7 +335,9 @@ export function PaymentReturnPage() {
     setReturnState({ status: "loading" });
 
     try {
-      const data = await fetchJson<CheckoutStatusResponse>(`/api/checkout/status/${encodeURIComponent(transactionId)}`);
+      const data = await fetchJson<CheckoutStatusResponse>(
+        `/api/checkout/status/${encodeURIComponent(transactionId)}`
+      );
       setReturnState({
         status: "ready",
         transactionId,
@@ -338,7 +353,6 @@ export function PaymentReturnPage() {
   }, [t.paymentStatusLoadError]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- Load the provider return status once the memoized loader is ready.
     void loadStatus();
   }, [loadStatus]);
 
@@ -368,7 +382,9 @@ export function PaymentReturnPage() {
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-8">
       {returnState.status === "loading" ? <LoadingView /> : null}
-      {returnState.status === "error" ? <ErrorView message={returnState.message} onRetry={loadStatus} /> : null}
+      {returnState.status === "error" ? (
+        <ErrorView message={returnState.message} onRetry={loadStatus} />
+      ) : null}
       {returnState.status === "missing" ? (
         <section className="border-card-border rounded-xl border bg-white p-6">
           <h1 className="text-foreground text-2xl font-bold">{t.paymentReturnTitle}</h1>
@@ -414,7 +430,10 @@ export function PaymentReturnPage() {
             >
               {isCancelling ? t.paymentCancelling : t.cancelPayment}
             </button>
-            <Link to="/cart" className="bg-picnic-red rounded-lg px-4 py-2 text-sm font-semibold text-white">
+            <Link
+              to="/cart"
+              className="bg-picnic-red rounded-lg px-4 py-2 text-sm font-semibold text-white"
+            >
               {t.backToCart}
             </Link>
           </div>

@@ -29,44 +29,22 @@ export function extractPromotionBadge(
   pml: PmlNode | undefined,
   stackChildren: PmlNode[] | null
 ): { badge: Badge; placement: PromoPlacement } | null {
-  const labelText = extractPromotionLabel(contexts);
-  if (!labelText) return null;
+  const label = extractPromotionLabel(contexts);
+  if (!label) return null;
 
-  if (stackChildren) {
-    for (const source of stackChildren) {
-      const labels = collectLabels(source);
-      const label = labels.find((entry) => entry.text.trim() === labelText);
-      if (label) {
-        return {
-          badge: {
-            text: label.text,
-            variant: "promo",
-            backgroundColor: label.backgroundColor,
-            textColor: label.textColor,
-          },
-          placement: "inline",
-        };
-      }
-    }
-  }
+  const matches = (entry: { text: string }) => cleanMarkdown(entry.text) === label;
+  const inline = collectLabels(stackChildren).find(matches);
+  const colored = inline ?? collectLabels(pml).find(matches);
 
-  if (pml) {
-    const labels = collectLabels(pml);
-    const label = labels.find((entry) => entry.text.trim() === labelText);
-    if (label) {
-      return {
-        badge: {
-          text: label.text,
-          variant: "promo",
-          backgroundColor: label.backgroundColor,
-          textColor: label.textColor,
-        },
-        placement: "image",
-      };
-    }
-  }
-
-  return { badge: { text: labelText, variant: "promo" }, placement: "inline" };
+  return {
+    badge: {
+      text: label,
+      variant: "promo",
+      backgroundColor: colored?.backgroundColor,
+      textColor: colored?.textColor,
+    },
+    placement: inline ? "inline" : "image",
+  };
 }
 
 /**
@@ -120,26 +98,62 @@ function splitFlankingIcons(row: PmlNode): {
   leadingIcon: SubtitleIcon | null;
   trailingIcon: SubtitleIcon | null;
 } {
-  const children = Array.isArray(row.children) ? (row.children as PmlNode[]) : [];
-  const richTextIndex = children.findIndex((child) => child.type === "RICH_TEXT");
-  if (richTextIndex === -1) return { leadingIcon: null, trailingIcon: null };
+  type Token = { kind: "icon"; icon: SubtitleIcon } | { kind: "text" };
+  const tokens: Token[] = [];
 
-  const toSubtitleIcon = (node: PmlNode | undefined): SubtitleIcon | null => {
-    if (!node || node.type !== "ICON" || typeof node.iconKey !== "string") return null;
-    return {
-      iconKey: node.iconKey,
-      fallbackId: typeof node.fallbackId === "string" ? node.fallbackId : null,
-    };
-  };
+  const walk = (node: unknown): void => {
+    if (Array.isArray(node)) {
+      for (const item of node) walk(item);
+      return;
+    }
+    if (typeof node !== "object" || node === null) return;
+    const record = node as Record<string, unknown>;
 
-  return {
-    leadingIcon: toSubtitleIcon(
-      children.slice(0, richTextIndex).find((child) => child.type === "ICON")
-    ),
-    trailingIcon: toSubtitleIcon(
-      children.slice(richTextIndex + 1).find((child) => child.type === "ICON")
-    ),
+    if (record.type === "ICON" && typeof record.iconKey === "string") {
+      const fallback = record.fallback as { id?: string } | undefined;
+      if (fallback?.id) {
+        tokens.push({
+          kind: "icon",
+          icon: {
+            imageId: fallback.id,
+            color: typeof record.color === "string" ? record.color : null,
+          },
+        });
+      }
+      return;
+    }
+
+    if (typeof record.markdown === "string" && cleanMarkdown(record.markdown) !== "") {
+      tokens.push({ kind: "text" });
+    }
+
+    for (const value of Object.values(record)) walk(value);
   };
+  walk(row);
+
+  const firstTextIndex = tokens.findIndex((token) => token.kind === "text");
+  if (firstTextIndex === -1) {
+    const firstIcon = tokens.find(
+      (token): token is { kind: "icon"; icon: SubtitleIcon } => token.kind === "icon"
+    );
+    return { leadingIcon: firstIcon?.icon ?? null, trailingIcon: null };
+  }
+
+  const lastTextIndex = tokens.map((token) => token.kind).lastIndexOf("text");
+  let leadingIcon: SubtitleIcon | null = null;
+  let trailingIcon: SubtitleIcon | null = null;
+
+  for (let index = 0; index < tokens.length; index++) {
+    const token = tokens[index];
+    if (token.kind !== "icon") continue;
+    if (index < firstTextIndex && !leadingIcon) {
+      leadingIcon = token.icon;
+    } else if (index > lastTextIndex && !trailingIcon) {
+      trailingIcon = token.icon;
+    }
+  }
+
+  return { leadingIcon, trailingIcon };
 }
 
 /** Classify text stack rows and extract structured product info. */

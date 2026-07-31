@@ -81,7 +81,11 @@ function MenuIcon() {
       className="h-5 w-5"
       aria-hidden="true"
     >
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+      />
     </svg>
   );
 }
@@ -108,7 +112,6 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
   const cart = useCart();
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- Keep the input synced with browser navigation.
     setQuery(new URLSearchParams(location.searchStr).get("q") ?? "");
   }, [location.searchStr]);
 
@@ -129,7 +132,11 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
   }, []);
 
   const suggestionsQuery = useQuery({
-    queryKey: ["suggestions-session", suggestionSession, ...queryKeys.suggestions(debouncedQuery, countryCode)],
+    queryKey: [
+      "suggestions-session",
+      suggestionSession,
+      ...queryKeys.suggestions(debouncedQuery, countryCode),
+    ],
     queryFn: () =>
       fetchJson<SuggestionsApiResponse>(`/api/suggestions?q=${encodeURIComponent(debouncedQuery)}`),
     enabled: debouncedQuery.length >= MIN_SUGGESTION_LENGTH,
@@ -209,7 +216,9 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
           type="button"
           onClick={() => switchCountry(code)}
           className={`rounded px-2 py-1 text-xs font-semibold transition-colors ${
-            code === countryCode ? "bg-picnic-red text-white" : "hover:text-foreground text-gray-500"
+            code === countryCode
+              ? "bg-picnic-red text-white"
+              : "hover:text-foreground text-gray-500"
           }`}
           aria-pressed={code === countryCode}
         >
@@ -255,7 +264,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
             className={`flex h-9 w-9 items-center justify-center rounded-full border transition-colors ${
               isMobileMenuOpen
                 ? "border-picnic-red bg-picnic-red text-white"
-                : "border-card-border text-gray-600 hover:text-foreground"
+                : "border-card-border hover:text-foreground text-gray-600"
             }`}
             aria-label="Menu"
             aria-controls="primary-navigation"

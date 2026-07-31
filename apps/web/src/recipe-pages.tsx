@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element -- Vite has no Next Image component. */
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 
@@ -85,14 +84,11 @@ export function CookbookPage() {
   useEffect(() => {
     const saved = savedRecipesQuery.data?.recipes;
     if (!saved) return;
-    /* eslint-disable react-hooks/set-state-in-effect -- Keep optimistic saved-recipe state aligned with the saved-recipes query. */
     setSavedRecipeIds(new Set(saved.map((recipe) => recipe.id)));
     setCategoryCounts((current) => ({ ...current, __saved__: saved.length }));
-    /* eslint-enable react-hooks/set-state-in-effect */
   }, [savedRecipesQuery.data]);
 
   useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect -- Preserve the cookbook view state machine while reflecting query status changes. */
     if (recipesQuery.isPending) {
       setRecipesState({ status: "loading" });
       return;
@@ -100,7 +96,8 @@ export function CookbookPage() {
     if (recipesQuery.isError) {
       setRecipesState({
         status: "error",
-        message: recipesQuery.error instanceof Error ? recipesQuery.error.message : t.cookbookLoadError,
+        message:
+          recipesQuery.error instanceof Error ? recipesQuery.error.message : t.cookbookLoadError,
       });
       return;
     }
@@ -116,7 +113,6 @@ export function CookbookPage() {
       setSavedRecipeIds(new Set(recipes.map((recipe) => recipe.id)));
     }
     setRecipesState({ status: "success", recipes });
-    /* eslint-enable react-hooks/set-state-in-effect */
   }, [
     recipesQuery.data,
     recipesQuery.error,
@@ -130,7 +126,9 @@ export function CookbookPage() {
   const loadedRecipes = recipesState.status === "success" ? recipesState.recipes : [];
   const recipesForDisplay =
     hasActiveQuery && !useGlobalSearch
-      ? loadedRecipes.filter((recipe) => recipe.name.toLowerCase().includes(debouncedQuery.toLowerCase()))
+      ? loadedRecipes.filter((recipe) =>
+          recipe.name.toLowerCase().includes(debouncedQuery.toLowerCase())
+        )
       : loadedRecipes;
 
   useEffect(() => {
@@ -138,7 +136,8 @@ export function CookbookPage() {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
     const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) setVisibleCount((count) => Math.min(count + PAGE_SIZE, recipesForDisplay.length));
+      if (entry.isIntersecting)
+        setVisibleCount((count) => Math.min(count + PAGE_SIZE, recipesForDisplay.length));
     });
     observer.observe(sentinel);
     return () => observer.disconnect();
@@ -185,7 +184,10 @@ export function CookbookPage() {
       if (wasSaved && selectedCategory === "__saved__") {
         setRecipesState((current) =>
           current.status === "success"
-            ? { status: "success", recipes: current.recipes.filter((item) => item.id !== recipe.id) }
+            ? {
+                status: "success",
+                recipes: current.recipes.filter((item) => item.id !== recipe.id),
+              }
             : current
         );
       }
@@ -227,7 +229,11 @@ export function CookbookPage() {
   return (
     <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-8">
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <button type="button" onClick={() => void navigate({ to: "/", search: {} })} className="text-text-muted hover:text-foreground shrink-0 text-sm transition-colors">
+        <button
+          type="button"
+          onClick={() => void navigate({ to: "/", search: {} })}
+          className="text-text-muted hover:text-foreground shrink-0 text-sm transition-colors"
+        >
           ← {t.backButton}
         </button>
         <h1 className="text-foreground text-xl font-bold">{t.cookbookTitle}</h1>
@@ -236,13 +242,15 @@ export function CookbookPage() {
           onClick={handleSelectSaved}
           className={`ml-auto flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium shadow-sm transition-colors ${
             selectedCategory === "__saved__" && !debouncedQuery
-              ? "border-picnic-red bg-red-50 text-picnic-red"
-              : "border-gray-200 bg-white text-foreground hover:border-gray-400"
+              ? "border-picnic-red text-picnic-red bg-red-50"
+              : "text-foreground border-gray-200 bg-white hover:border-gray-400"
           }`}
         >
           <BookmarkIcon filled={selectedCategory === "__saved__" && !debouncedQuery} />
           <span>{t.cookbookSaved}</span>
-          {categoryCounts.__saved__ !== undefined ? <span className="text-xs text-gray-400">{categoryCounts.__saved__}</span> : null}
+          {categoryCounts.__saved__ !== undefined ? (
+            <span className="text-xs text-gray-400">{categoryCounts.__saved__}</span>
+          ) : null}
         </button>
       </div>
       <div className="mb-6 flex flex-wrap items-center gap-3">
@@ -286,7 +294,9 @@ export function CookbookPage() {
                   if (debouncedQuery) setRecipesState({ status: "loading" });
                 }}
                 className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                  searchScope === option.value ? "bg-red-50 text-picnic-red" : "text-text-muted hover:text-foreground"
+                  searchScope === option.value
+                    ? "text-picnic-red bg-red-50"
+                    : "text-text-muted hover:text-foreground"
                 }`}
               >
                 {option.label}
@@ -306,8 +316,12 @@ export function CookbookPage() {
           }}
         />
       ) : null}
-      {recipesState.status === "success" ? <p className="text-text-muted mb-3 text-sm">{resultSummary}</p> : null}
-      {recipesState.status === "success" && recipesForDisplay.length === 0 ? <p className="text-text-muted text-sm">{t.noRecipes}</p> : null}
+      {recipesState.status === "success" ? (
+        <p className="text-text-muted mb-3 text-sm">{resultSummary}</p>
+      ) : null}
+      {recipesState.status === "success" && recipesForDisplay.length === 0 ? (
+        <p className="text-text-muted text-sm">{t.noRecipes}</p>
+      ) : null}
       {recipesState.status === "success" && recipesForDisplay.length > 0 ? (
         <>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
@@ -345,19 +359,38 @@ function RecipeCard({
 }) {
   const countryCode = useCountryCode();
   const t = getTranslations(countryCode);
-  const [imageSrc, setImageSrc] = useState(recipe.imageId ? buildRecipeImageUrl(recipe.imageId, countryCode) : PLACEHOLDER);
+  const [imageSrc, setImageSrc] = useState(
+    recipe.imageId ? buildRecipeImageUrl(recipe.imageId, countryCode) : PLACEHOLDER
+  );
   return (
     <div className="group relative h-full">
       <div className="border-card-border bg-card-bg flex h-full flex-col overflow-hidden rounded-lg border shadow-sm transition-shadow group-hover:shadow-md">
         <div className="relative h-40 w-full bg-gray-50">
-          <img src={imageSrc} alt={recipe.name} loading="lazy" className="h-full w-full object-cover" onError={() => setImageSrc(PLACEHOLDER)} />
+          <img
+            src={imageSrc}
+            alt={recipe.name}
+            loading="lazy"
+            className="h-full w-full object-cover"
+            onError={() => setImageSrc(PLACEHOLDER)}
+          />
         </div>
         <div className="flex flex-1 flex-col gap-1 p-3">
-          <h3 className="text-text-dark line-clamp-2 text-sm leading-snug font-medium">{recipe.name}</h3>
-          {recipe.cookingTimeMinutes !== null ? <p className="text-text-muted text-xs">{recipe.cookingTimeMinutes} {t.cookingTimeMinutes}</p> : null}
+          <h3 className="text-text-dark line-clamp-2 text-sm leading-snug font-medium">
+            {recipe.name}
+          </h3>
+          {recipe.cookingTimeMinutes !== null ? (
+            <p className="text-text-muted text-xs">
+              {recipe.cookingTimeMinutes} {t.cookingTimeMinutes}
+            </p>
+          ) : null}
         </div>
       </div>
-      <Link to="/recipe/$id" params={{ id: recipe.id }} className="absolute inset-0 z-10 rounded-lg" aria-label={recipe.name} />
+      <Link
+        to="/recipe/$id"
+        params={{ id: recipe.id }}
+        className="absolute inset-0 z-10 rounded-lg"
+        aria-label={recipe.name}
+      />
       <button
         type="button"
         onClick={() => onToggleSaved(recipe)}
@@ -391,7 +424,9 @@ function CategoryDropdown({
   const selected = options.find((option) => option.id === value) ?? options[0];
   const normalized = query.trim().toLowerCase();
   const filtered = normalized
-    ? options.filter((option) => [option.name, option.section ?? ""].some((text) => text.toLowerCase().includes(normalized)))
+    ? options.filter((option) =>
+        [option.name, option.section ?? ""].some((text) => text.toLowerCase().includes(normalized))
+      )
     : options;
   return (
     <div className="relative inline-block min-w-48">
@@ -407,7 +442,12 @@ function CategoryDropdown({
       {open ? (
         <div className="absolute left-0 z-50 mt-1.5 w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
           <div className="border-b border-gray-100 p-2">
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={searchPlaceholder} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-picnic-red" />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={searchPlaceholder}
+              className="focus:ring-picnic-red w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2"
+            />
           </div>
           <ul className="max-h-72 overflow-y-auto py-1">
             {filtered.map((option, index) => {
@@ -416,7 +456,11 @@ function CategoryDropdown({
               const isSelected = option.id === value;
               return (
                 <li key={option.id ?? "__featured__"}>
-                  {showSection ? <div className="text-text-muted px-4 pt-3 pb-1 text-[11px] font-semibold tracking-wide uppercase">{option.section}</div> : null}
+                  {showSection ? (
+                    <div className="text-text-muted px-4 pt-3 pb-1 text-[11px] font-semibold tracking-wide uppercase">
+                      {option.section}
+                    </div>
+                  ) : null}
                   <button
                     type="button"
                     onClick={() => {
@@ -424,10 +468,12 @@ function CategoryDropdown({
                       setOpen(false);
                       setQuery("");
                     }}
-                    className={`flex w-full items-center justify-between px-4 py-2 text-left text-sm transition-colors ${isSelected ? "bg-red-50 font-semibold text-picnic-red" : "text-foreground hover:bg-gray-50"}`}
+                    className={`flex w-full items-center justify-between px-4 py-2 text-left text-sm transition-colors ${isSelected ? "text-picnic-red bg-red-50 font-semibold" : "text-foreground hover:bg-gray-50"}`}
                   >
                     <span>{option.name}</span>
-                    {option.count !== undefined ? <span className="ml-2 text-xs text-gray-400">{option.count}</span> : null}
+                    {option.count !== undefined ? (
+                      <span className="ml-2 text-xs text-gray-400">{option.count}</span>
+                    ) : null}
                   </button>
                 </li>
               );
@@ -439,10 +485,24 @@ function CategoryDropdown({
   );
 }
 
-function RecipeSearchInput({ value, placeholder, onChange }: { value: string; placeholder: string; onChange: (value: string) => void }) {
+function RecipeSearchInput({
+  value,
+  placeholder,
+  onChange,
+}: {
+  value: string;
+  placeholder: string;
+  onChange: (value: string) => void;
+}) {
   return (
     <div className="relative flex-1 sm:max-w-xs">
-      <input type="search" value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pr-4 pl-4 text-sm shadow-sm transition-colors placeholder:text-gray-400 focus:border-picnic-red focus:ring-2 focus:ring-picnic-red focus:outline-none" />
+      <input
+        type="search"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        className="focus:border-picnic-red focus:ring-picnic-red w-full rounded-xl border border-gray-200 bg-white py-2.5 pr-4 pl-4 text-sm shadow-sm transition-colors placeholder:text-gray-400 focus:ring-2 focus:outline-none"
+      />
     </div>
   );
 }
@@ -450,12 +510,21 @@ function RecipeSearchInput({ value, placeholder, onChange }: { value: string; pl
 function BookmarkIcon({ filled, className = "h-5 w-5" }: { filled: boolean; className?: string }) {
   return (
     <svg viewBox="0 0 20 20" className={className} aria-hidden="true">
-      <path d="M5.75 3.5h8.5v13l-4.25-2.7-4.25 2.7v-13Z" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+      <path
+        d="M5.75 3.5h8.5v13l-4.25-2.7-4.25 2.7v-13Z"
+        fill={filled ? "currentColor" : "none"}
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
 
-type RecipePageState = { status: "loading" } | { status: "success"; recipe: RecipeDetail } | { status: "error"; message: string };
+type RecipePageState =
+  | { status: "loading" }
+  | { status: "success"; recipe: RecipeDetail }
+  | { status: "error"; message: string };
 type AddState = "idle" | "adding" | "done";
 
 export function RecipeDetailPage() {
@@ -484,7 +553,6 @@ export function RecipeDetailPage() {
   useDocumentTitle(pageState.status === "success" ? pageState.recipe.name : t.cookbookTitle);
 
   useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect -- Preserve recipe detail UI state while reflecting query status changes. */
     if (recipeQuery.isPending) {
       setPageState({ status: "loading" });
       return;
@@ -502,17 +570,32 @@ export function RecipeDetailPage() {
     setConfirmedPortions(p);
     setPortions(p);
     setPageState({ status: "success", recipe: recipeQuery.data });
-    setCheckedIds(new Set(recipeQuery.data.ingredients.filter((ingredient) => !ingredient.isCondiment).map((ingredient) => ingredient.id)));
-    /* eslint-enable react-hooks/set-state-in-effect */
-  }, [recipeQuery.data, recipeQuery.error, recipeQuery.isError, recipeQuery.isPending, t.recipeLoadError]);
+    setCheckedIds(
+      new Set(
+        recipeQuery.data.ingredients
+          .filter((ingredient) => !ingredient.isCondiment)
+          .map((ingredient) => ingredient.id)
+      )
+    );
+  }, [
+    recipeQuery.data,
+    recipeQuery.error,
+    recipeQuery.isError,
+    recipeQuery.isPending,
+    t.recipeLoadError,
+  ]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- Keep optimistic detail bookmark state aligned with the saved-recipes query.
     setIsSaved(Boolean(detailSavedQuery.data?.recipes?.some((recipe) => recipe.id === id)));
   }, [detailSavedQuery.data, id]);
 
   useEffect(() => {
-    if (pageState.status !== "success" || confirmedPortions === null || confirmedPortions === portions) return;
+    if (
+      pageState.status !== "success" ||
+      confirmedPortions === null ||
+      confirmedPortions === portions
+    )
+      return;
     const controller = new AbortController();
     const timer = setTimeout(() => {
       fetchJson<RecipeDetail>(`/api/recipe/${encodeURIComponent(id)}?portions=${portions}`, {
@@ -536,7 +619,13 @@ export function RecipeDetailPage() {
                 }
               : current
           );
-          setCheckedIds(new Set(fetched.ingredients.filter((ingredient) => !ingredient.isCondiment).map((ingredient) => ingredient.id)));
+          setCheckedIds(
+            new Set(
+              fetched.ingredients
+                .filter((ingredient) => !ingredient.isCondiment)
+                .map((ingredient) => ingredient.id)
+            )
+          );
         })
         .catch(() => undefined);
     }, 600);
@@ -552,7 +641,9 @@ export function RecipeDetailPage() {
     setIsSavingRecipe(true);
     setIsSaved(nextSaved);
     try {
-      await fetchJson<unknown>(`/api/recipe/${encodeURIComponent(id)}/saved`, { method: nextSaved ? "POST" : "DELETE" });
+      await fetchJson<unknown>(`/api/recipe/${encodeURIComponent(id)}/saved`, {
+        method: nextSaved ? "POST" : "DELETE",
+      });
       void queryClient.invalidateQueries({ queryKey: ["cookbook"] });
     } catch {
       setIsSaved(!nextSaved);
@@ -561,8 +652,18 @@ export function RecipeDetailPage() {
     }
   }, [id, isSaved, isSavingRecipe, queryClient]);
 
-  if (pageState.status === "loading") return <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 sm:px-6 sm:py-8"><LoadingView /></main>;
-  if (pageState.status === "error") return <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 sm:px-6 sm:py-8"><ErrorView message={pageState.message} onRetry={() => void recipeQuery.refetch()} /></main>;
+  if (pageState.status === "loading")
+    return (
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
+        <LoadingView />
+      </main>
+    );
+  if (pageState.status === "error")
+    return (
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
+        <ErrorView message={pageState.message} onRetry={() => void recipeQuery.refetch()} />
+      </main>
+    );
 
   const { recipe } = pageState;
   const mainIngredients = recipe.ingredients.filter((ingredient) => !ingredient.isCondiment);
@@ -574,16 +675,24 @@ export function RecipeDetailPage() {
     const bundleTier = ingredient.priceRanges?.filter((tier) => tier.quantity <= qty).at(-1);
     return sum + (bundleTier ? bundleTier.pricePerUnit : ingredient.displayPrice) * qty;
   }, 0);
-  const pricePerServing = pricePortions > 0 ? formatEuroPrice(Math.round(totalCents / pricePortions)) : null;
-  const buttonLabel = addState === "adding" ? t.recipeAddingToCart : addState === "done" ? t.recipeAddedToCart : t.recipeAddToCart;
+  const pricePerServing =
+    pricePortions > 0 ? formatEuroPrice(Math.round(totalCents / pricePortions)) : null;
+  const buttonLabel =
+    addState === "adding"
+      ? t.recipeAddingToCart
+      : addState === "done"
+        ? t.recipeAddedToCart
+        : t.recipeAddToCart;
 
   async function handleAddToCart() {
     if (addState !== "idle") return;
     setAddState("adding");
-    const selectedIngredients = recipe.ingredients.filter((ingredient) => checkedIds.has(ingredient.id)).map((ingredient) => ({
-      id: ingredient.id,
-      count: getRecipeIngredientCount(ingredient, portions, recipe.portions),
-    }));
+    const selectedIngredients = recipe.ingredients
+      .filter((ingredient) => checkedIds.has(ingredient.id))
+      .map((ingredient) => ({
+        id: ingredient.id,
+        count: getRecipeIngredientCount(ingredient, portions, recipe.portions),
+      }));
     try {
       await fetchJson<unknown>(`/api/recipe/${encodeURIComponent(id)}/add-to-cart`, {
         method: "POST",
@@ -599,42 +708,157 @@ export function RecipeDetailPage() {
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
-      <Link to="/cookbook" className="text-text-muted hover:text-foreground mb-6 inline-flex items-center gap-1 text-sm transition-colors">← {t.cookbookTitle}</Link>
+      <Link
+        to="/cookbook"
+        className="text-text-muted hover:text-foreground mb-6 inline-flex items-center gap-1 text-sm transition-colors"
+      >
+        ← {t.cookbookTitle}
+      </Link>
       <div className="relative mb-8 overflow-hidden rounded-2xl bg-gray-50">
-        {recipe.imageId ? <RecipeHeroImage imageId={recipe.imageId} countryCode={countryCode} alt={recipe.name} /> : <div className="aspect-video w-full bg-gray-100" />}
-        <button type="button" onClick={() => void handleToggleSaved()} disabled={isSavingRecipe} className={`absolute top-3 right-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/95 shadow-sm ${isSaved ? "text-picnic-red" : "text-text-muted"}`} aria-label={isSaved ? t.unsaveRecipe : t.saveRecipe}>
+        {recipe.imageId ? (
+          <RecipeHeroImage imageId={recipe.imageId} countryCode={countryCode} alt={recipe.name} />
+        ) : (
+          <div className="aspect-video w-full bg-gray-100" />
+        )}
+        <button
+          type="button"
+          onClick={() => void handleToggleSaved()}
+          disabled={isSavingRecipe}
+          className={`absolute top-3 right-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/95 shadow-sm ${isSaved ? "text-picnic-red" : "text-text-muted"}`}
+          aria-label={isSaved ? t.unsaveRecipe : t.saveRecipe}
+        >
           <BookmarkIcon filled={isSaved} />
         </button>
       </div>
       <h1 className="text-foreground mb-3 text-2xl leading-tight font-bold">{recipe.name}</h1>
       <div className="text-text-muted mb-6 flex flex-col gap-3 text-sm sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
         <span className="flex items-center gap-2">
-          {t.recipePortions}: <button type="button" onClick={() => setPortions((p) => Math.max(1, p - 1))} className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-300 text-xs">−</button>
+          {t.recipePortions}:{" "}
+          <button
+            type="button"
+            onClick={() => setPortions((p) => Math.max(1, p - 1))}
+            className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-300 text-xs"
+          >
+            −
+          </button>
           <span className="text-foreground mx-1 font-medium">{portions}</span>
-          <button type="button" onClick={() => setPortions((p) => p + 1)} className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-300 text-xs">+</button>
+          <button
+            type="button"
+            onClick={() => setPortions((p) => p + 1)}
+            className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-300 text-xs"
+          >
+            +
+          </button>
         </span>
-        {pricePerServing ? <span className={`leading-relaxed ${refreshing ? "opacity-40" : ""}`}><span className="text-foreground font-medium">{pricePerServing}</span> <span className="text-gray-400">{t.recipePricePerServing}</span><span className="mx-1.5 text-gray-300">·</span><span className="text-foreground font-medium">{formatEuroPrice(totalCents)}</span> <span className="text-gray-400">{t.recipePriceTotal}</span>{recipe.cookingTimeMinutes !== null ? <><span className="mx-1.5 text-gray-300">·</span><span>{recipe.cookingTimeMinutes} {t.cookingTimeMinutes}</span></> : null}</span> : null}
+        {pricePerServing ? (
+          <span className={`leading-relaxed ${refreshing ? "opacity-40" : ""}`}>
+            <span className="text-foreground font-medium">{pricePerServing}</span>{" "}
+            <span className="text-gray-400">{t.recipePricePerServing}</span>
+            <span className="mx-1.5 text-gray-300">·</span>
+            <span className="text-foreground font-medium">{formatEuroPrice(totalCents)}</span>{" "}
+            <span className="text-gray-400">{t.recipePriceTotal}</span>
+            {recipe.cookingTimeMinutes !== null ? (
+              <>
+                <span className="mx-1.5 text-gray-300">·</span>
+                <span>
+                  {recipe.cookingTimeMinutes} {t.cookingTimeMinutes}
+                </span>
+              </>
+            ) : null}
+          </span>
+        ) : null}
       </div>
-      {mainIngredients.length > 0 ? <button type="button" onClick={() => void handleAddToCart()} disabled={addState !== "idle" || refreshing || checkedIds.size === 0} className={`mb-8 w-full rounded-xl px-6 py-3 text-sm font-semibold text-white ${addState === "done" ? "bg-green-500" : "bg-picnic-red hover:bg-red-700 disabled:opacity-60"}`}>{buttonLabel}</button> : null}
+      {mainIngredients.length > 0 ? (
+        <button
+          type="button"
+          onClick={() => void handleAddToCart()}
+          disabled={addState !== "idle" || refreshing || checkedIds.size === 0}
+          className={`mb-8 w-full rounded-xl px-6 py-3 text-sm font-semibold text-white ${addState === "done" ? "bg-green-500" : "bg-picnic-red hover:bg-red-700 disabled:opacity-60"}`}
+        >
+          {buttonLabel}
+        </button>
+      ) : null}
       <div className={refreshing ? "pointer-events-none opacity-40" : ""}>
-        <IngredientSection title={t.recipeIngredients} ingredients={mainIngredients} portions={pricePortions} basePortion={recipe.portions} checkedIds={checkedIds} setCheckedIds={setCheckedIds} />
-        <IngredientSection title={t.recipeCondiments} ingredients={condiments} portions={pricePortions} basePortion={recipe.portions} checkedIds={checkedIds} setCheckedIds={setCheckedIds} muted />
-        {recipe.steps.length > 0 ? <section className="mb-6"><h2 className="text-foreground mb-3 text-base font-semibold">{t.recipeSteps}</h2>{recipe.stepsPortionWarning ? <p className="mb-3 rounded-lg bg-amber-50 px-4 py-2 text-xs text-amber-700">{recipe.stepsPortionWarning}</p> : null}<ol className="space-y-4">{recipe.steps.map((step, index) => <li key={index} className="flex gap-3"><span className="bg-picnic-red mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white">{index + 1}</span><p className="text-text-dark text-sm leading-relaxed">{renderMarkdownBold(step)}</p></li>)}</ol></section> : null}
-        {recipe.recipeNutritionRows.length > 0 ? <section className="mb-6"><h2 className="text-foreground mb-2 text-base font-semibold">{t.recipeNutrition}</h2><div className="overflow-hidden rounded-xl border border-gray-200 bg-white"><NutritionTable rows={recipe.recipeNutritionRows} /></div></section> : null}
+        <IngredientSection
+          title={t.recipeIngredients}
+          ingredients={mainIngredients}
+          portions={pricePortions}
+          basePortion={recipe.portions}
+          checkedIds={checkedIds}
+          setCheckedIds={setCheckedIds}
+        />
+        <IngredientSection
+          title={t.recipeCondiments}
+          ingredients={condiments}
+          portions={pricePortions}
+          basePortion={recipe.portions}
+          checkedIds={checkedIds}
+          setCheckedIds={setCheckedIds}
+          muted
+        />
+        {recipe.steps.length > 0 ? (
+          <section className="mb-6">
+            <h2 className="text-foreground mb-3 text-base font-semibold">{t.recipeSteps}</h2>
+            {recipe.stepsPortionWarning ? (
+              <p className="mb-3 rounded-lg bg-amber-50 px-4 py-2 text-xs text-amber-700">
+                {recipe.stepsPortionWarning}
+              </p>
+            ) : null}
+            <ol className="space-y-4">
+              {recipe.steps.map((step, index) => (
+                <li key={index} className="flex gap-3">
+                  <span className="bg-picnic-red mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white">
+                    {index + 1}
+                  </span>
+                  <p className="text-text-dark text-sm leading-relaxed">
+                    {renderMarkdownBold(step)}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          </section>
+        ) : null}
+        {recipe.recipeNutritionRows.length > 0 ? (
+          <section className="mb-6">
+            <h2 className="text-foreground mb-2 text-base font-semibold">{t.recipeNutrition}</h2>
+            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+              <NutritionTable rows={recipe.recipeNutritionRows} />
+            </div>
+          </section>
+        ) : null}
       </div>
       {recipe.allergens.confirmed.length || recipe.allergens.mayContain.length ? (
         <section className="mb-6 rounded-xl border border-gray-200 bg-white p-4">
-          <RecipeAllergenBadges allergens={recipe.allergens} confirmedLabel={t.recipeAllergens} mayContainLabel={t.recipeMayContain} />
+          <RecipeAllergenBadges
+            allergens={recipe.allergens}
+            confirmedLabel={t.recipeAllergens}
+            mayContainLabel={t.recipeMayContain}
+          />
         </section>
       ) : null}
     </main>
   );
 }
 
-function RecipeHeroImage({ imageId, countryCode, alt }: { imageId: string; countryCode: CountryCode; alt: string }) {
+function RecipeHeroImage({
+  imageId,
+  countryCode,
+  alt,
+}: {
+  imageId: string;
+  countryCode: CountryCode;
+  alt: string;
+}) {
   const [show, setShow] = useState(true);
   if (!show) return <div className="aspect-video w-full bg-gray-100" />;
-  return <img src={buildRecipeImageUrl(imageId, countryCode)} alt={alt} className="aspect-video w-full object-cover" onError={() => setShow(false)} />;
+  return (
+    <img
+      src={buildRecipeImageUrl(imageId, countryCode)}
+      alt={alt}
+      className="aspect-video w-full object-cover"
+      onError={() => setShow(false)}
+    />
+  );
 }
 
 function RecipeAllergenBadges({
@@ -693,8 +917,14 @@ function IngredientSection({
   if (!ingredients.length) return null;
   return (
     <section className="mb-6">
-      <h2 className={`${muted ? "text-text-muted text-sm" : "text-foreground text-base"} mb-2 font-semibold`}>{title}</h2>
-      <div className={`divide-y divide-gray-100 rounded-xl border ${muted ? "border-gray-100 bg-gray-50" : "border-gray-200 bg-white"} px-3 sm:px-4`}>
+      <h2
+        className={`${muted ? "text-text-muted text-sm" : "text-foreground text-base"} mb-2 font-semibold`}
+      >
+        {title}
+      </h2>
+      <div
+        className={`divide-y divide-gray-100 rounded-xl border ${muted ? "border-gray-100 bg-gray-50" : "border-gray-200 bg-white"} px-3 sm:px-4`}
+      >
         {ingredients.map((ingredient) => (
           <RecipeIngredientRow
             key={ingredient.id}
@@ -734,20 +964,61 @@ function RecipeIngredientRow({
   onToggle: () => void;
 }) {
   const countryCode = useCountryCode();
-  const [imgSrc, setImgSrc] = useState(ingredient.imageId ? buildImageUrl(ingredient.imageId, countryCode) : PLACEHOLDER);
-  const scaledNeeded = ingredient.recipeQuantityText ? scaleNeededText(ingredient.recipeQuantityText, portions, basePortion) : null;
-  const packageLabel = qty > 1 ? `${qty} × ${ingredient.recipePackageSize ?? ingredient.unitQuantity}` : ingredient.recipePackageSize ?? ingredient.unitQuantity;
-  const title = scaledNeeded ? `${scaledNeeded.replace(/^\((.*)\)$/, "$1").replace(/\s+(nodig|benötigt|benodigd|required)$/i, "")} ${ingredient.name}` : ingredient.name;
+  const [imgSrc, setImgSrc] = useState(
+    ingredient.imageId ? buildImageUrl(ingredient.imageId, countryCode) : PLACEHOLDER
+  );
+  const scaledNeeded = ingredient.recipeQuantityText
+    ? scaleNeededText(ingredient.recipeQuantityText, portions, basePortion)
+    : null;
+  const packageLabel =
+    qty > 1
+      ? `${qty} × ${ingredient.recipePackageSize ?? ingredient.unitQuantity}`
+      : (ingredient.recipePackageSize ?? ingredient.unitQuantity);
+  const title = scaledNeeded
+    ? `${scaledNeeded.replace(/^\((.*)\)$/, "$1").replace(/\s+(nodig|benötigt|benodigd|required)$/i, "")} ${ingredient.name}`
+    : ingredient.name;
   const bundleTier = ingredient.priceRanges?.filter((tier) => tier.quantity <= qty).at(-1);
   const totalPrice = (bundleTier ? bundleTier.pricePerUnit : ingredient.displayPrice) * qty;
-  const rawStrike = bundleTier ? ingredient.displayPrice * qty : ingredient.originalPrice !== null ? ingredient.originalPrice * qty : null;
+  const rawStrike = bundleTier
+    ? ingredient.displayPrice * qty
+    : ingredient.originalPrice !== null
+      ? ingredient.originalPrice * qty
+      : null;
   const strike = rawStrike !== null && rawStrike > totalPrice ? rawStrike : null;
   return (
-    <div className={`flex items-center gap-2 py-3 sm:gap-3 ${strike ? "-mx-3 rounded-lg bg-yellow-50 px-3 sm:-mx-4 sm:px-4" : ""}`}>
-      <button type="button" role="checkbox" aria-checked={checked} onClick={onToggle} className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 ${checked ? "border-picnic-red bg-picnic-red" : "border-gray-300 bg-white"}`}>{checked ? <span className="text-xs text-white">✓</span> : null}</button>
-      <img src={imgSrc} alt={ingredient.name} loading="lazy" className={`h-12 w-12 shrink-0 rounded-lg bg-gray-50 object-contain p-1 ${checked ? "" : "opacity-40"}`} onError={() => setImgSrc(PLACEHOLDER)} />
-      <div className={`min-w-0 flex-1 ${checked ? "" : "opacity-40"}`}><p className="text-text-dark line-clamp-3 text-sm font-medium break-words sm:line-clamp-2">{title}</p><p className="text-text-muted text-xs">{packageLabel}</p></div>
-      <div className={`min-w-[3.5rem] shrink-0 text-right ${checked ? "" : "opacity-40"}`}><p className={`text-sm font-medium ${strike ? "text-amber-600" : "text-text-dark"}`}>{formatEuroPrice(totalPrice)}</p>{strike ? <p className="text-xs text-gray-400 line-through">{formatEuroPrice(strike)}</p> : null}</div>
+    <div
+      className={`flex items-center gap-2 py-3 sm:gap-3 ${strike ? "-mx-3 rounded-lg bg-yellow-50 px-3 sm:-mx-4 sm:px-4" : ""}`}
+    >
+      <button
+        type="button"
+        role="checkbox"
+        aria-checked={checked}
+        onClick={onToggle}
+        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 ${checked ? "border-picnic-red bg-picnic-red" : "border-gray-300 bg-white"}`}
+      >
+        {checked ? <span className="text-xs text-white">✓</span> : null}
+      </button>
+      <img
+        src={imgSrc}
+        alt={ingredient.name}
+        loading="lazy"
+        className={`h-12 w-12 shrink-0 rounded-lg bg-gray-50 object-contain p-1 ${checked ? "" : "opacity-40"}`}
+        onError={() => setImgSrc(PLACEHOLDER)}
+      />
+      <div className={`min-w-0 flex-1 ${checked ? "" : "opacity-40"}`}>
+        <p className="text-text-dark line-clamp-3 text-sm font-medium break-words sm:line-clamp-2">
+          {title}
+        </p>
+        <p className="text-text-muted text-xs">{packageLabel}</p>
+      </div>
+      <div className={`min-w-[3.5rem] shrink-0 text-right ${checked ? "" : "opacity-40"}`}>
+        <p className={`text-sm font-medium ${strike ? "text-amber-600" : "text-text-dark"}`}>
+          {formatEuroPrice(totalPrice)}
+        </p>
+        {strike ? (
+          <p className="text-xs text-gray-400 line-through">{formatEuroPrice(strike)}</p>
+        ) : null}
+      </div>
     </div>
   );
 }

@@ -28,9 +28,9 @@ This file is the source of truth for end-to-end validation during Chunk 19 and C
 ### Preflight
 
 - Confirm `git status --short --branch` is clean or only contains the testing-plan edits being worked on.
-- Run `npm run validate`.
-- Run `npm run build:web`.
-- Start `npm run dev:api` in a temporary background process.
+- Run `pnpm validate`.
+- Run `pnpm build:web`.
+- Start `pnpm dev:api` in a temporary background process.
 - Confirm the Worker reports `Ready on http://127.0.0.1:8787`.
 - Run header smoke:
   - `/login` returns HTML, `X-Content-Type-Options: nosniff`, and a revalidatable cache header.
@@ -38,7 +38,7 @@ This file is the source of truth for end-to-end validation during Chunk 19 and C
   - A hashed `/assets/*.js` file returns `Cache-Control: public, max-age=31536000, immutable`.
   - `/api/health` returns JSON and `X-Content-Type-Options: nosniff`.
   - Unauthenticated `/api/categories` returns `401`, `TOKEN_EXPIRED`, and `Cache-Control: no-store`.
-- Run `PICNIC_WORKER_URL=http://127.0.0.1:8787 npm run smoke:api:auth`.
+- Run `PICNIC_WORKER_URL=http://127.0.0.1:8787 pnpm smoke:api:auth`.
 
 ### Playwright MCP Flow
 
@@ -96,12 +96,12 @@ Use desktop first, then one mobile pass. Batch assertions with `browser_evaluate
   - repeated `/api/cart` calls after no cart mutation,
   - repeated `/api/cookbook` calls when switching back to a recently visited cached category,
   - repeated `/api/account/payment-profile` calls when moving between cart and payment settings.
-- Record Vite bundle sizes from `npm run build:web`.
+- Record Vite bundle sizes from `pnpm build:web`.
 - Watch Worker output for unexpected unhandled errors or obviously CPU-heavy request bursts.
 
 ### Chunk 19 Acceptance
 
-- `npm run validate` passes.
+- `pnpm validate` passes.
 - Authenticated API smoke passes with restoration.
 - Playwright desktop and mobile matrix passes or has documented non-blocking skips.
 - Cart quantities, recipe saved state, and delivery slot match their initial snapshots after testing.
@@ -125,12 +125,12 @@ Chunk 20 may start only after Chunk 19 acceptance is met.
 - Replace the validation baseline so it no longer runs `next build`.
 - Confirm production app code has no `next/*` imports.
 - Run install/build checks:
-  - `npm run lint`
-  - `npm run typecheck`
-  - `npm run build:web`
-  - `npm run build:api`
+  - `pnpm lint`
+  - `pnpm typecheck`
+  - `pnpm build:web`
+  - `pnpm build:api`
 - Start the Worker and repeat the Chunk 19 header smoke.
-- Repeat `npm run smoke:api:auth`.
+- Repeat `pnpm smoke:api:auth`.
 - Repeat the Playwright MCP desktop and mobile matrix against the Worker-served Vite app.
 
 ### Chunk 20 Acceptance
@@ -183,4 +183,22 @@ Append results below while executing Chunks 19 and 20.
 
 ### Chunk 20 Results
 
-- Not run yet.
+- 2026-07-31 local Worker run after retiring the Next app.
+- Branch replacement:
+  - Removed the old Next App Router tree, Next route handlers, Next proxy/config, and unused Next-only components.
+  - Removed `next`, `eslint-config-next`, and the old import-sort Prettier plugin from the dependency set.
+  - Replaced the default scripts with Vite/Hono/Worker commands: `pnpm build` now runs `build:web` and `build:api`.
+  - Confirmed no production app/config import from `next/*` remains.
+- Upstream/package audit:
+  - `picnic-api` latest remained `4.6.0`; no broader fusion-api package replacement was found upstream.
+  - Adopted missed upstream/picnic-api-compatible behavior for promotion label matching/colors, subtitle icon metadata, 32-character recipe IDs, and product-detail request flags.
+  - Updated ESLint to `10.8.0` with `typescript-eslint`; kept TypeScript at `5.9.3` because the current `typescript-eslint` line does not support TypeScript 7.
+  - `pnpm audit --audit-level high` reported no known vulnerabilities.
+  - `pnpm peers check` reported no peer dependency issues.
+- Validation:
+  - `pnpm install` completed with the updated pnpm workspace settings.
+  - `pnpm validate` passed: lint, typecheck, Vite build, and Worker dry-run build.
+  - `PICNIC_WORKER_URL=http://127.0.0.1:8787 pnpm smoke:api:auth` passed 43 checks, with credential/2FA skipped by design.
+  - Header smoke passed for `/login`, a deep SPA route, `/api/health`, and unauthenticated `/api/categories`.
+  - Playwright MCP desktop route matrix passed for `/`, `/?q=banaan`, category/subcategory routes, `/product/s1018231`, `/cookbook`, `/recipe/68b1a6aec6c2190fcd153ab4`, `/account/payment`, and `/cart/payment-return`.
+  - Playwright MCP mobile overflow matrix passed at `390x844` for the main migrated route families.
