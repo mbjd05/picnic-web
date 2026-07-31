@@ -316,9 +316,9 @@ Open 2FA preference question:
 The installed `picnic-api` helper exposes authenticated onboarding helpers:
 
 ```ts
-client.userOnboarding.setHouseholdDetails(details)
-client.userOnboarding.setBusinessDetails(details)
-client.userOnboarding.subscribePush(topics)
+client.userOnboarding.setHouseholdDetails(details);
+client.userOnboarding.setBusinessDetails(details);
+client.userOnboarding.subscribePush(topics);
 ```
 
 Those map to:
@@ -370,6 +370,248 @@ Known business details shape:
 
 `b2b_enabled` from `check-address` can drive whether to show a business-account option.
 
+## Authenticated user settings surface
+
+Date verified read-only: 2026-07-31, using `picnic-api` `4.6.0` against API `17`.
+
+The currently confirmed user-settings surface is split across multiple API families. Address and profile data are readable as normal user/profile data, but household and business composition writes are exposed through the authenticated `user-onboarding` family.
+
+### Profile and address reads
+
+`picnic-api` exposes:
+
+```ts
+client.user.getUserDetails();
+client.user.getUserInfo();
+client.user.getProfileMenu();
+```
+
+Those map to:
+
+```text
+GET /api/17/user
+GET /api/17/user-info
+GET /api/17/profile-menu?fetch_mgm=true
+```
+
+Read-only verification showed `GET /user` includes:
+
+```json
+{
+  "user_id": "...",
+  "firstname": "...",
+  "lastname": "...",
+  "address": {
+    "id": "...",
+    "house_number": 1,
+    "house_number_ext": null,
+    "postcode": "...",
+    "street": "...",
+    "city": "..."
+  },
+  "phone": "...",
+  "contact_email": "...",
+  "feature_toggles": [],
+  "subscriptions": [],
+  "push_subscriptions": [],
+  "customer_type": "CONSUMER",
+  "household_details": {
+    "adults": 1,
+    "children": 0,
+    "cats": 0,
+    "dogs": 0,
+    "author": "USER",
+    "last_edit_ts": 1779217463882
+  },
+  "check_general_consent": false,
+  "placed_order": true,
+  "received_delivery": true,
+  "consent_decisions": {},
+  "total_deliveries": 0,
+  "completed_deliveries": 0
+}
+```
+
+`GET /user-info` is narrower and currently useful for feature flags and redacted phone display:
+
+```json
+{
+  "user_id": "...",
+  "feature_toggles": [],
+  "redacted_phone_number": "..."
+}
+```
+
+`GET /profile-menu?fetch_mgm=true` returns a profile-menu shaped response:
+
+```json
+{
+  "user": {
+    "name": "...",
+    "address": {},
+    "avatar": {}
+  },
+  "highlights": []
+}
+```
+
+The `picnic-api` types also describe optional MGM referral details on this response, but the verified account did not return `user.mgm`.
+
+### Address changes
+
+No confirmed authenticated address-change endpoint exists yet.
+
+What is confirmed:
+
+- Current delivery address is readable from `GET /user` and `GET /profile-menu?fetch_mgm=true`.
+- Public onboarding address validation/normalization uses `POST /public-api/17/user-onboarding/check-address`.
+- Public registration carries the initial address through `register` or `register-leadlist`.
+
+What remains unverified:
+
+- Whether Picnic exposes an authenticated "move house" or address-change flow through another route family.
+- Whether address changes are intentionally app/support-only after registration.
+- Whether the mobile app first creates an address-change request, checks delivery-area availability, or requires customer-service confirmation.
+
+Do not implement address editing until the authenticated route family is discovered and tested. Showing the address as read-only is currently the safe settings behavior.
+
+### Household composition
+
+Household composition is read from `GET /user.household_details`.
+
+The write candidate exposed by `picnic-api` is:
+
+```ts
+client.userOnboarding.setHouseholdDetails(details);
+```
+
+Route:
+
+```text
+POST /api/17/user-onboarding/household-details
+```
+
+Likely write payload, based on the readable user shape:
+
+```json
+{
+  "adults": 1,
+  "children": 0,
+  "cats": 0,
+  "dogs": 0
+}
+```
+
+For writes, send only user-editable counts. Do not send server-managed `author` or `last_edit_ts` unless validation proves they are required.
+
+This route has not yet been mutation-tested in this repo. Treat it as a strong candidate, not a proven production-safe settings mutation, until an authenticated test confirms:
+
+- accepted payload shape;
+- response body;
+- whether `GET /user.household_details` reflects the update immediately;
+- whether sending the current values is idempotent;
+- country parity for NL/DE/FR.
+
+### Business account details
+
+Business details are optional on `GET /user.business_details`; the verified consumer account did not include them.
+
+The write candidate exposed by `picnic-api` is:
+
+```ts
+client.userOnboarding.setBusinessDetails(details);
+```
+
+Route:
+
+```text
+POST /api/17/user-onboarding/business-details
+```
+
+Likely payload:
+
+```json
+{
+  "business_name": "Example BV",
+  "business_registration_number": "12345678",
+  "sector": "OTHER",
+  "employee_count": 10
+}
+```
+
+Use `b2b_enabled` from public `check-address` and `customer_type` / `business_details` from `GET /user` to decide whether to show this UI. Do not call this endpoint casually because it may alter account type or tax/business metadata.
+
+### Consents, privacy, and subscriptions
+
+`picnic-api` exposes:
+
+```ts
+client.consent.getConsentSettings();
+client.consent.getConsentSettings(true);
+client.consent.setConsentSettings(input);
+client.consent.getConsents(topics, strategy);
+client.consent.getGeneralConsents();
+client.consent.setGeneralConsents(input);
+```
+
+Routes:
+
+```text
+GET /api/17/consents/settings-page
+GET /api/17/consents/general/settings-page
+PUT /api/17/consents
+GET /api/17/consents?consent_topics=...&strategy=WIDE|NARROW
+GET /api/17/consents/general
+PUT /api/17/consents/general
+```
+
+Read-only verification showed:
+
+- `GET /consents/settings-page` returned an array of 8 settings.
+- `GET /consents/general/settings-page` returned an array of 5 settings.
+- Each setting included `type`, `id`, `text_id`, `text_locale`, `text`, `established_decision`, and `initial_state`.
+
+The update payload is:
+
+```json
+{
+  "consent_declarations": [
+    {
+      "consent_request_text_id": "text-id-from-setting",
+      "consent_request_locale": "nl_NL",
+      "agreement": true
+    }
+  ]
+}
+```
+
+General-consent updates additionally include `general_consent`:
+
+```json
+{
+  "general_consent": true,
+  "consent_declarations": []
+}
+```
+
+`GET /user` also exposes `subscriptions`, `push_subscriptions`, and `consent_decisions`. The older upstream Vue settings page displayed `subscriptions` read-only and mutated privacy settings via consent declarations.
+
+No direct subscription toggle endpoint has been confirmed yet. Push onboarding is exposed separately as:
+
+```text
+POST /api/17/user-onboarding/subscribe-push
+```
+
+with payload:
+
+```json
+{
+  "topics": ["..."]
+}
+```
+
+Do not treat email/list subscriptions and push subscriptions as the same feature until their route semantics are verified.
+
 ## Implementation outline
 
 1. Add a register link on the login page.
@@ -390,6 +632,7 @@ Known business details shape:
 - It is unknown whether `password` or MD5 `secret` is preferred. Both passed schema validation. Prefer `secret` only if we want parity with `login`; prefer `password` if activation/direct registration expects plaintext.
 - No authenticated address-change endpoint was found. The delivery address appears to be carried by public registration itself, then exposed by `GET /user`.
 - Phone verification endpoints exist in authenticated auth service, but public direct registration did not require phone in validation-only probes.
+- Settings implementation needs a focused authenticated mutation probe for household details, business details, consent updates, and any undiscovered address-change route. Start with read-only profile/settings UI and add mutations only after each route is proven restorable or low-risk.
 
 ## Test-account cleanup route
 
