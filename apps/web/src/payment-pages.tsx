@@ -162,7 +162,11 @@ export function PaymentAccountPage() {
           <p className="mt-1 text-sm text-gray-500">{t.paymentMethodsPageSubtitle}</p>
         </div>
         {showBackToCart ? (
-          <Link to="/cart" className="text-picnic-red text-sm font-semibold">
+          <Link
+            to="/cart"
+            search={{ returnSearch: undefined }}
+            className="text-picnic-red text-sm font-semibold"
+          >
             {t.backToCart}
           </Link>
         ) : null}
@@ -393,7 +397,11 @@ export function PaymentReturnPage() {
               {t.paymentProviderResultLabel}: {returnState.providerResult}
             </p>
           ) : null}
-          <Link to="/cart" className="text-picnic-red mt-4 inline-block text-sm font-semibold">
+          <Link
+            to="/cart"
+            search={{ returnSearch: undefined }}
+            className="text-picnic-red mt-4 inline-block text-sm font-semibold"
+          >
             {t.backToCart}
           </Link>
         </section>
@@ -431,6 +439,7 @@ export function PaymentReturnPage() {
             </button>
             <Link
               to="/cart"
+              search={{ returnSearch: undefined }}
               className="bg-picnic-red rounded-lg px-4 py-2 text-sm font-semibold text-white"
             >
               {t.backToCart}
@@ -447,7 +456,11 @@ export function PaymentReturnPage() {
               {t.paymentIdLabel}: {returnState.paymentId}
             </p>
           ) : null}
-          <Link to="/cart" className="text-picnic-red mt-4 inline-block text-sm font-semibold">
+          <Link
+            to="/cart"
+            search={{ returnSearch: undefined }}
+            className="text-picnic-red mt-4 inline-block text-sm font-semibold"
+          >
             {t.backToCart}
           </Link>
         </section>

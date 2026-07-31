@@ -198,7 +198,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
     placeholderData: (previousData, previousQuery) => {
       const previousKey = previousQuery?.queryKey;
       const previousSession = previousKey?.[1];
-      const previousTerm = previousKey?.[2];
+      const previousTerm = previousKey?.[3];
       return previousSession === suggestionSession &&
         typeof previousTerm === "string" &&
         debouncedQuery.startsWith(previousTerm)
@@ -262,6 +262,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
   }
 
   const showCartBadge = cart.totalCount > 0;
+  const activeSearchTerm = new URLSearchParams(location.searchStr).get("q")?.trim();
 
   function renderLocaleOption<TCode extends CountryCode | LanguageCode>({
     code,
@@ -298,6 +299,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
   const cartLink = (
     <Link
       to="/cart"
+      search={{ returnSearch: activeSearchTerm || undefined }}
       className="hover:text-foreground relative flex shrink-0 items-center text-gray-600 transition-colors"
       aria-label="Winkelwagen"
     >

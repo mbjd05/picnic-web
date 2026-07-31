@@ -92,6 +92,27 @@ function activeBundlePrice(
   return activePrice !== undefined && activePrice < displayPrice ? activePrice : null;
 }
 
+function estimatedLineTotal(
+  progress: BundleProgress | null,
+  quantity: number,
+  displayPrice: number
+): number {
+  if (quantity <= 0) return 0;
+  return quantity * (activeBundlePrice(progress, quantity, displayPrice) ?? displayPrice);
+}
+
+function estimatedCartPriceDelta(
+  progress: BundleProgress | null,
+  currentQuantity: number,
+  nextQuantity: number,
+  displayPrice: number
+): number {
+  return Math.abs(
+    estimatedLineTotal(progress, nextQuantity, displayPrice) -
+      estimatedLineTotal(progress, currentQuantity, displayPrice)
+  );
+}
+
 function BundleDots({ progress, quantity }: { progress: BundleProgress; quantity: number }) {
   const next = progress.thresholds.find((threshold) => threshold.quantity > quantity);
   const active = progress.thresholds.filter((threshold) => threshold.quantity <= quantity).at(-1);
@@ -137,7 +158,11 @@ function QuantityControl({
         type="button"
         onClick={(event) => {
           stop(event);
-          cart.addProduct(product.id, product.maxCount, product.displayPrice);
+          cart.addProduct(
+            product.id,
+            product.maxCount,
+            estimatedCartPriceDelta(progress, 0, 1, product.displayPrice)
+          );
         }}
         className="text-text-dark flex h-8 w-8 items-center justify-center rounded-full bg-white text-lg font-bold shadow-md hover:bg-gray-100"
         aria-label={t.addToCartAriaLabel}
@@ -152,7 +177,12 @@ function QuantityControl({
       <div className="grid w-24 grid-cols-[1.75rem_2.5rem_1.75rem] items-center rounded-full bg-white shadow-sm">
         <button
           type="button"
-          onClick={() => cart.removeProduct(product.id, product.displayPrice)}
+          onClick={() =>
+            cart.removeProduct(
+              product.id,
+              estimatedCartPriceDelta(progress, quantity, quantity - 1, product.displayPrice)
+            )
+          }
           className="text-text-muted flex h-7 w-7 items-center justify-center text-base font-semibold"
           aria-label={t.removeOneAriaLabel}
         >
@@ -164,7 +194,13 @@ function QuantityControl({
         </span>
         <button
           type="button"
-          onClick={() => cart.addProduct(product.id, product.maxCount, product.displayPrice)}
+          onClick={() =>
+            cart.addProduct(
+              product.id,
+              product.maxCount,
+              estimatedCartPriceDelta(progress, quantity, quantity + 1, product.displayPrice)
+            )
+          }
           disabled={quantity >= product.maxCount}
           className="text-text-muted flex h-7 w-7 items-center justify-center text-base font-semibold disabled:text-gray-300"
           aria-label={t.addOneAriaLabel}

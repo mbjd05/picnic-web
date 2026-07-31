@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { Link, useSearch } from "@tanstack/react-router";
 
 import { Badge } from "@/components/badge";
 import { PriceDisplay } from "@/components/price-display";
@@ -12,7 +12,7 @@ import type {
   SlotDayGroup,
 } from "@/lib/delivery-slot-types";
 import { formatTime } from "@/lib/format-delivery-window";
-import { formatPrice } from "@/lib/format-price";
+import { formatEuroPrice, formatPrice } from "@/lib/format-price";
 import { buildImageUrl } from "@/lib/image-url";
 import { getPreferredPaymentOption } from "@/lib/payment";
 import type {
@@ -75,6 +75,7 @@ export function CartPage() {
   const t = useTranslations();
   const queryClient = useQueryClient();
   const { applyVisibleCart } = useCart();
+  const search = useSearch({ from: "/authenticated/cart" });
   useDocumentTitle(t.cartTitle);
 
   const [pageState, setPageState] = useState<CartPageState>({ status: "loading" });
@@ -359,7 +360,7 @@ export function CartPage() {
           }}
         />
       ) : null}
-      {pageState.status === "empty" ? <EmptyCartView /> : null}
+      {pageState.status === "empty" ? <EmptyCartView returnSearch={search.returnSearch} /> : null}
       {pageState.status === "success" ? (
         <CartContent
           cart={pageState.cart}
@@ -386,15 +387,20 @@ export function CartPage() {
   );
 }
 
-function EmptyCartView() {
+function EmptyCartView({ returnSearch }: { returnSearch?: string }) {
   const t = useTranslations();
+  const trimmedSearch = returnSearch?.trim();
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
       <CartIcon className="text-text-muted mb-4 h-12 w-12" />
       <p className="text-foreground text-lg font-semibold">{t.emptyCartTitle}</p>
       <p className="mt-1 text-sm text-gray-500">{t.emptyCartText}</p>
-      <Link to="/" search={{}} className="text-picnic-red mt-4 text-sm hover:underline">
-        {t.goToSearch}
+      <Link
+        to="/"
+        search={trimmedSearch ? { q: trimmedSearch } : {}}
+        className="text-picnic-red mt-4 text-sm hover:underline"
+      >
+        {trimmedSearch ? t.backToSearchTerm.replace("{term}", trimmedSearch) : t.goToSearch}
       </Link>
     </div>
   );
@@ -867,8 +873,8 @@ function CheckoutCta({
       {isBelowMinimum ? (
         <p className="text-sm text-gray-600">
           {t.minimumCheckoutMessage
-            .replace("{minimum}", formatPrice(minimumOrderValue ?? 0))
-            .replace("{current}", formatPrice(totalPrice))}
+            .replace("{minimum}", formatEuroPrice(minimumOrderValue ?? 0))
+            .replace("{current}", formatEuroPrice(totalPrice))}
         </p>
       ) : null}
       {checkoutState.status === "error" ? (

@@ -23,8 +23,8 @@ type CartContextValue = {
   totalPrice: number;
   totalCount: number;
   isLoading: boolean;
-  addProduct: (productId: string, maxCount: number, unitPrice?: number) => void;
-  removeProduct: (productId: string, unitPrice?: number) => void;
+  addProduct: (productId: string, maxCount: number, priceDelta?: number) => void;
+  removeProduct: (productId: string, priceDelta?: number) => void;
   getQuantity: (productId: string) => number;
   getBundleProgress: (productId: string) => BundleProgress | null;
   registerBundleDataBatch: (entries: ReadonlyArray<readonly [string, BundleThreshold[]]>) => void;
@@ -189,14 +189,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addProduct = useCallback(
-    (productId: string, maxCount: number, unitPrice = 0) => {
+    (productId: string, maxCount: number, priceDelta = 0) => {
       const quantity = visibleQuantitiesRef.current.get(productId) ?? 0;
       if (quantity >= maxCount) return;
       const next = new Map(visibleQuantitiesRef.current);
       next.set(productId, quantity + 1);
       applyQuantities(next);
       applyTotals({
-        totalPrice: visibleTotalsRef.current.totalPrice + unitPrice,
+        totalPrice: visibleTotalsRef.current.totalPrice + priceDelta,
         totalCount: visibleTotalsRef.current.totalCount + 1,
       });
       enqueue(productId, 1);
@@ -205,7 +205,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 
   const removeProduct = useCallback(
-    (productId: string, unitPrice = 0) => {
+    (productId: string, priceDelta = 0) => {
       const quantity = visibleQuantitiesRef.current.get(productId) ?? 0;
       if (quantity === 0) return;
       const next = new Map(visibleQuantitiesRef.current);
@@ -213,7 +213,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       else next.set(productId, quantity - 1);
       applyQuantities(next);
       applyTotals({
-        totalPrice: Math.max(0, visibleTotalsRef.current.totalPrice - unitPrice),
+        totalPrice: Math.max(0, visibleTotalsRef.current.totalPrice - priceDelta),
         totalCount: Math.max(0, visibleTotalsRef.current.totalCount - 1),
       });
       enqueue(productId, -1);

@@ -79,6 +79,12 @@ const pagesRoute = createRoute({
 const cartRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/cart",
+  validateSearch: (search: Record<string, unknown>) => ({
+    returnSearch:
+      typeof search.returnSearch === "string" && search.returnSearch.trim()
+        ? search.returnSearch.trim()
+        : undefined,
+  }),
   component: CartPage,
 });
 const paymentReturnRoute = createRoute({
