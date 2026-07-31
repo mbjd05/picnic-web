@@ -615,7 +615,7 @@ function QuantityStepper({
   const isAtMax = quantity >= maxCount;
   const wheelAdjustRef = useWheelQuantityAdjust({
     canIncrement: !isAtMax,
-    canDecrement: quantity > 0,
+    canDecrement: quantity > 1,
     onIncrement,
     onDecrement,
   });
