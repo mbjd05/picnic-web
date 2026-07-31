@@ -500,9 +500,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
           className="h-5 w-[3.1rem] shrink-0 animate-pulse rounded-full bg-gray-200"
           aria-hidden="true"
         />
-      ) : (
-        <span className="w-[3.1rem] shrink-0" aria-hidden="true" />
-      )}
+      ) : null}
     </Link>
   );
   const displayLanguageOptions = [countryCode, "EN", ...SUPPORTED_LANGUAGE_CODES].filter(
@@ -602,7 +600,10 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
         </form>
 
         <nav className="order-1 ml-auto flex shrink-0 items-center gap-2 md:order-2">
-          <div className="border-card-border mr-1 flex items-center border-r pr-3">{cartLink}</div>
+          <div className="border-card-border mr-1 flex min-w-[9.9rem] items-center justify-between border-r pr-3 xl:min-w-[13.2rem]">
+            {cartLink}
+            <span aria-hidden="true" />
+          </div>
           <div ref={localeMenuRef} className="relative">
             <button
               type="button"
