@@ -431,7 +431,10 @@ function PdpStepper({
   }
 
   return (
-    <div className="quantity-control-surface flex items-center rounded-lg" ref={wheelAdjustRef}>
+    <div
+      className="quantity-control-surface flex items-center overflow-hidden rounded-lg"
+      ref={wheelAdjustRef}
+    >
       <button
         type="button"
         onClick={onDecrement}

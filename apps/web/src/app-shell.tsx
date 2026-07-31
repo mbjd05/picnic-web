@@ -429,17 +429,13 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
     <Link
       to="/cart"
       search={{ returnSearch: activeSearchTerm || undefined }}
-      className={`relative flex h-10 shrink-0 items-center gap-2 rounded-full border px-3 text-sm font-semibold transition-colors sm:px-4 ${
-        showCartBadge
-          ? "border-picnic-red bg-picnic-red hover:bg-picnic-red-dark text-white"
-          : "border-card-border bg-card-bg text-foreground hover:border-picnic-red hover:text-picnic-red"
-      }`}
+      className="border-card-border bg-card-bg text-foreground hover:border-picnic-red hover:text-picnic-red relative flex h-10 shrink-0 items-center gap-2 rounded-full border px-3 text-sm font-semibold transition-colors sm:px-4"
       aria-label={t.cartTitle}
     >
       <CartIcon />
       <span className="hidden lg:inline">{t.cartTitle}</span>
       {showCartBadge ? (
-        <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-bold text-white">
+        <span className="bg-picnic-red rounded-full px-2 py-0.5 text-xs font-bold text-white">
           {formatCartPrice(cart.totalPrice)}
         </span>
       ) : null}
