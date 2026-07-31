@@ -450,7 +450,7 @@ function EmptyCartView({ returnSearch }: { returnSearch?: string }) {
         search={trimmedSearch ? { q: trimmedSearch } : {}}
         className="text-picnic-red mt-4 text-sm hover:underline"
       >
-        {trimmedSearch ? t.backToSearchTerm.replace("{term}", trimmedSearch) : t.goToSearch}
+        {trimmedSearch ? t.backToSearchTerm.replace("{term}", trimmedSearch) : t.goToStartPage}
       </Link>
     </div>
   );
