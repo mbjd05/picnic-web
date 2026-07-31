@@ -489,7 +489,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
         <span className="hidden xl:inline">{t.cartTitle}</span>
       </span>
       {showCartBadge ? (
-        <span className="bg-picnic-red min-w-[4.75rem] rounded-full px-2 py-0.5 text-center text-xs font-bold text-white tabular-nums">
+        <span className="bg-picnic-red shrink-0 rounded-full px-2 py-0.5 text-center text-xs font-bold text-white tabular-nums">
           {formatCartPrice(cart.totalPrice)}
         </span>
       ) : null}
