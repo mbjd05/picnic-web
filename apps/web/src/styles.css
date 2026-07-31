@@ -148,6 +148,16 @@ button:disabled {
   box-shadow: var(--quantity-control-shadow);
 }
 
+.bundle-tier-active {
+  background: #d6e6cd;
+  box-shadow: 0 0 0 1px #b0cfb0;
+}
+
+:root[data-theme="dark"] .bundle-tier-active {
+  background: #263820;
+  box-shadow: 0 0 0 1px #5f7f55;
+}
+
 .section-nav-scrollbar {
   scrollbar-color: transparent transparent;
 }
