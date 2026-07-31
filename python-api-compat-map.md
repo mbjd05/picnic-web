@@ -11,32 +11,7 @@ This document does not replace profile/settings CRUD research in `src/scripts/re
 
 ## Ranked Implementation Queue
 
-### 1. Promotions Page
-
-Reference: MCP Picnic.
-
-Direct Picnic surface:
-
-```text
-GET /pages/promo-page-all-promos-redirect
-```
-
-MCP Picnic extracts promoted selling-unit tiles from this page using analytics `promotion_id`, current price, promotion label, strikethrough/original price, image ID, unit quantity, and max count.
-
-Why it makes the cut:
-
-- Real Picnic user-facing functionality.
-- Read-only and low risk.
-- Fits the current product grid/card model.
-- Likely improves the existing "Alle acties" shortcut by using the dedicated Picnic promotions page instead of treating promotions as an arbitrary products page.
-
-Recommended implementation:
-
-- Add a promotions parser/service that returns normal `Product[]` with promotion metadata.
-- Route the "Alle acties" shortcut through that service when the page ID matches the promotions page.
-- Reuse existing product cards and cart controls.
-
-### 2. Delivery Order Status And Invoice Email
+### 1. Delivery Order Status And Invoice Email
 
 Reference: MCP Picnic.
 
@@ -58,7 +33,7 @@ Recommended implementation:
 - Show order status on delivery detail when an order ID is available.
 - Add a clearly labeled "Factuur opnieuw mailen" action for completed deliveries after confirming the response shape.
 
-### 3. User-Created Recipe Scope
+### 2. User-Created Recipe Scope
 
 Reference: MCP Picnic.
 
@@ -89,7 +64,7 @@ Recommended implementation:
 - Add an own-recipes scope only when `USER_DEFINED_RECIPES` is present.
 - Prefer dynamic segment discovery over hardcoded assumptions.
 
-### 4. Wallet Transaction Reads
+### 3. Wallet Transaction Reads
 
 Reference: MCP Picnic.
 
@@ -116,7 +91,7 @@ Recommended implementation:
 - First add normalized API routes and a minimal read-only account page/section.
 - Only expand UI if response data is consistently useful.
 
-### 5. Recipe URL And Share-Link Resolution
+### 4. Recipe URL And Share-Link Resolution
 
 Reference: MCP Picnic.
 
@@ -138,7 +113,7 @@ Why it is deferred:
 - We currently do not expose a recipe URL input.
 - It should be implemented only when there is a UI flow that needs it.
 
-### 6. Delivery Rating And Cancellation
+### 5. Delivery Rating And Cancellation
 
 Reference: MCP Picnic.
 
@@ -165,7 +140,7 @@ Recommended implementation:
 - Require explicit user confirmation for cancellation.
 - Do not expose rating unless the API clearly indicates the delivery is rateable.
 
-### 7. Barcode / GTIN Product Lookup
+### 6. Barcode / GTIN Product Lookup
 
 Reference: Python fork.
 
@@ -186,7 +161,7 @@ Why it is low priority:
 - No current scanner/manual barcode UI.
 - Adds little to the current web shopping workflow unless we build barcode entry/scanning.
 
-### 8. Product Detail Category Name Resolution
+### 7. Product Detail Category Name Resolution
 
 Reference: Python fork.
 
@@ -209,6 +184,24 @@ Why it is low priority:
 - Breadcrumb/category navigation needs a small UI decision to avoid clutter.
 
 ## Already Adopted
+
+### Promotions / Acties
+
+Reference: MCP Picnic.
+
+MCP Picnic uses:
+
+```text
+GET /pages/promo-page-all-promos-redirect
+```
+
+Live comparison on 2026-07-31 showed:
+
+- `home_page_root` has an `Acties van de week` shortcut to `promo-page-all-promos-redirect`.
+- `home_page_root` has an `Alle acties` shortcut to `promo-page-root`.
+- `promo-page-root` and `promo-page-all-promos-redirect` returned the same 161 product IDs, the same 78 promotion IDs, and the same campaign sections for NL.
+
+Status: already covered by the existing shortcut/content-page flow. Do not add a separate promotions implementation unless the current parser drops promotion labels, sections, or product data.
 
 ### Product Detail Text Parsing
 
