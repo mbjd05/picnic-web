@@ -15,6 +15,11 @@ import {
 } from "@/lib/api-services/cart";
 import { getCategoriesService } from "@/lib/api-services/categories";
 import { getCookbookService, searchCookbookService } from "@/lib/api-services/cookbook";
+import {
+  getDeliveryDetailService,
+  getDeliverySummariesService,
+  getDeliveryTrackingService,
+} from "@/lib/api-services/deliveries";
 import { fetchImageService } from "@/lib/api-services/images";
 import {
   cancelCheckoutService,
@@ -308,6 +313,40 @@ app.post("/api/cart/delivery-slots", async (c) => {
   }
 
   const result = await setDeliverySlotService(token, countryCode, body);
+  return c.json(result.body, jsonStatus(result.status));
+});
+
+app.get("/api/deliveries", async (c) => {
+  const { token, countryCode } = readSession(c);
+  if (!token) {
+    return authRequiredResponse(c);
+  }
+
+  const statuses = (c.req.queries("status") ?? [])
+    .flatMap((status) => status.split(","))
+    .map((status) => status.trim().toUpperCase())
+    .filter(Boolean);
+  const result = await getDeliverySummariesService(token, countryCode, statuses);
+  return c.json(result.body, jsonStatus(result.status));
+});
+
+app.get("/api/deliveries/:deliveryId", async (c) => {
+  const { token, countryCode } = readSession(c);
+  if (!token) {
+    return authRequiredResponse(c);
+  }
+
+  const result = await getDeliveryDetailService(token, countryCode, c.req.param("deliveryId"));
+  return c.json(result.body, jsonStatus(result.status));
+});
+
+app.get("/api/deliveries/:deliveryId/tracking", async (c) => {
+  const { token, countryCode } = readSession(c);
+  if (!token) {
+    return authRequiredResponse(c);
+  }
+
+  const result = await getDeliveryTrackingService(token, countryCode, c.req.param("deliveryId"));
   return c.json(result.body, jsonStatus(result.status));
 });
 

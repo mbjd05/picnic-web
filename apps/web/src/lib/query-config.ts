@@ -7,6 +7,9 @@ export const queryStaleTime = {
   suggestions: 60 * 1000,
   cart: 30 * 1000,
   deliverySlots: 30 * 1000,
+  deliveries: 60 * 1000,
+  deliveryDetail: 60 * 1000,
+  deliveryTracking: 10 * 1000,
   cookbookCategories: 20 * 60 * 1000,
   cookbookView: 15 * 60 * 1000,
   savedRecipes: 2 * 60 * 1000,
@@ -29,6 +32,12 @@ export const queryKeys = {
     ["product-detail", productId, countryCode] as const,
   cart: () => ["cart"] as const,
   deliverySlots: () => ["delivery-slots"] as const,
+  deliveries: (filter: string, countryCode: CountryCode) =>
+    ["deliveries", filter, countryCode] as const,
+  deliveryDetail: (deliveryId: string, countryCode: CountryCode) =>
+    ["delivery-detail", deliveryId, countryCode] as const,
+  deliveryTracking: (deliveryId: string, countryCode: CountryCode) =>
+    ["delivery-tracking", deliveryId, countryCode] as const,
   paymentProfile: () => ["payment-profile"] as const,
   cookbookView: (categoryId: string | null, countryCode: CountryCode) =>
     ["cookbook", "view", categoryId ?? "__featured__", countryCode] as const,

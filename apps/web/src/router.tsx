@@ -11,6 +11,7 @@ import {
 } from "./browsing-pages";
 import { CartPage } from "./cart-page";
 import { CountryProvider } from "./country-context";
+import { DeliveriesPage } from "./delivery-pages";
 import { ApiClientError } from "./lib/api-client";
 import { LoginPage } from "./login-page";
 import { PaymentAccountPage, PaymentReturnPage } from "./payment-pages";
@@ -100,6 +101,11 @@ const cookbookRoute = createRoute({
   path: "/cookbook",
   component: CookbookPage,
 });
+const deliveriesRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: "/deliveries",
+  component: DeliveriesPage,
+});
 const paymentRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/account/payment",
@@ -129,6 +135,7 @@ const routeTree = rootRoute.addChildren([
     categoryRoute,
     subcategoryRoute,
     cookbookRoute,
+    deliveriesRoute,
     paymentRoute,
     productRoute,
     recipeRoute,

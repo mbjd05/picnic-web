@@ -277,7 +277,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
         <nav
           id="primary-navigation"
           aria-hidden={!isMobileMenuOpen}
-          className={`order-2 grid w-full grid-cols-3 items-center gap-1 overflow-hidden rounded-lg bg-gray-50 text-center transition-[max-height,opacity,padding,transform] duration-150 ease-out motion-reduce:transition-none md:hidden ${
+          className={`order-2 grid w-full grid-cols-4 items-center gap-1 overflow-hidden rounded-lg bg-gray-50 text-center transition-[max-height,opacity,padding,transform] duration-150 ease-out motion-reduce:transition-none md:hidden ${
             isMobileMenuOpen
               ? "max-h-14 translate-y-0 p-1 opacity-100"
               : "pointer-events-none max-h-0 -translate-y-1 p-0 opacity-0"
@@ -290,6 +290,14 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
             className="hover:text-foreground min-w-0 truncate rounded-md px-2 py-2 text-xs font-medium text-gray-600 transition-colors sm:text-sm"
           >
             {t.cookbookNavLink}
+          </Link>
+          <Link
+            to="/deliveries"
+            onClick={() => setIsMobileMenuOpen(false)}
+            tabIndex={isMobileMenuOpen ? undefined : -1}
+            className="hover:text-foreground min-w-0 truncate rounded-md px-2 py-2 text-xs font-medium text-gray-600 transition-colors sm:text-sm"
+          >
+            {t.deliveriesNavLink}
           </Link>
           <Link
             to="/account/payment"
@@ -388,6 +396,12 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
             className="hover:text-foreground shrink-0 text-sm text-gray-500 transition-colors"
           >
             {t.cookbookNavLink}
+          </Link>
+          <Link
+            to="/deliveries"
+            className="hover:text-foreground shrink-0 text-sm text-gray-500 transition-colors"
+          >
+            {t.deliveriesNavLink}
           </Link>
           <Link
             to="/account/payment"

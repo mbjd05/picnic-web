@@ -77,7 +77,7 @@ The Python fork exposes:
 
 Potential value: future order history and active delivery tracking screens.
 
-Reason deferred: no current app screen depends on it, and live position/scenario payloads are only meaningful during an active delivery.
+Status: adopted. The Worker exposes normalized delivery summaries/details plus live tracking payloads, and the web app has a `/deliveries` page for current/all deliveries.
 
 ### Category name resolution from product detail
 
