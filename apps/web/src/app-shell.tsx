@@ -409,6 +409,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
   }
 
   const showCartBadge = cart.totalCount > 0;
+  const showCartBadgePlaceholder = cart.isLoading && !showCartBadge;
   const activeSearchTerm = new URLSearchParams(location.searchStr).get("q")?.trim();
 
   function renderLocaleOption<TCode extends CountryCode | LanguageCode>({
@@ -489,9 +490,16 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
         <span className="hidden xl:inline">{t.cartTitle}</span>
       </span>
       {showCartBadge ? (
-        <span className="bg-picnic-red shrink-0 rounded-full px-2 py-0.5 text-center text-xs font-bold text-white tabular-nums">
-          {formatCartPrice(cart.totalPrice)}
+        <span className="inline-flex w-[3.1rem] shrink-0">
+          <span className="bg-picnic-red rounded-full px-2 py-0.5 text-center text-xs font-bold text-white tabular-nums">
+            {formatCartPrice(cart.totalPrice)}
+          </span>
         </span>
+      ) : showCartBadgePlaceholder ? (
+        <span
+          className="h-5 w-[3.1rem] shrink-0 animate-pulse rounded-full bg-gray-200"
+          aria-hidden="true"
+        />
       ) : null}
     </Link>
   );
