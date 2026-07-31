@@ -266,15 +266,18 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
 
         <nav
           id="primary-navigation"
-          className={`${
-            isMobileMenuOpen ? "order-2 grid" : "hidden"
-          } w-full grid-cols-3 items-center gap-1 rounded-lg bg-gray-50 p-1 text-center md:order-2 md:ml-auto md:flex md:w-auto md:max-w-full md:min-w-0 md:gap-3 md:overflow-x-auto md:bg-transparent md:p-0 md:text-left`}
+          aria-hidden={!isMobileMenuOpen}
+          className={`order-2 grid w-full grid-cols-3 items-center gap-1 overflow-hidden rounded-lg bg-gray-50 text-center transition-[max-height,opacity,padding,transform] duration-150 ease-out motion-reduce:transition-none md:hidden ${
+            isMobileMenuOpen
+              ? "max-h-14 translate-y-0 p-1 opacity-100"
+              : "pointer-events-none max-h-0 -translate-y-1 p-0 opacity-0"
+          }`}
         >
-          <div className="hidden md:block">{countrySwitch}</div>
           <Link
             to="/cookbook"
             onClick={() => setIsMobileMenuOpen(false)}
-            className="hover:text-foreground min-w-0 truncate rounded-md px-2 py-2 text-xs font-medium text-gray-600 transition-colors sm:text-sm md:shrink-0 md:p-0 md:font-normal md:text-gray-500"
+            tabIndex={isMobileMenuOpen ? undefined : -1}
+            className="hover:text-foreground min-w-0 truncate rounded-md px-2 py-2 text-xs font-medium text-gray-600 transition-colors sm:text-sm"
           >
             {t.cookbookNavLink}
           </Link>
@@ -282,18 +285,19 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
             to="/account/payment"
             search={{ from: undefined }}
             onClick={() => setIsMobileMenuOpen(false)}
-            className="hover:text-foreground min-w-0 truncate rounded-md px-2 py-2 text-xs font-medium text-gray-600 transition-colors sm:text-sm md:shrink-0 md:p-0 md:font-normal md:text-gray-500"
+            tabIndex={isMobileMenuOpen ? undefined : -1}
+            className="hover:text-foreground min-w-0 truncate rounded-md px-2 py-2 text-xs font-medium text-gray-600 transition-colors sm:text-sm"
           >
             {t.accountPaymentLink}
           </Link>
           <button
             type="button"
             onClick={() => void handleSignOut()}
-            className="hover:text-foreground min-w-0 truncate rounded-md px-2 py-2 text-xs font-medium text-gray-600 transition-colors sm:text-sm md:shrink-0 md:p-0 md:font-normal md:text-gray-500"
+            tabIndex={isMobileMenuOpen ? undefined : -1}
+            className="hover:text-foreground min-w-0 truncate rounded-md px-2 py-2 text-xs font-medium text-gray-600 transition-colors sm:text-sm"
           >
             {t.signOut}
           </button>
-          <div className="hidden md:block">{cartLink}</div>
         </nav>
 
         <form
@@ -367,6 +371,30 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
           </div>
         </form>
 
+        <nav className="order-2 ml-auto hidden max-w-full min-w-0 items-center gap-3 overflow-x-auto text-left md:flex">
+          {countrySwitch}
+          <Link
+            to="/cookbook"
+            className="hover:text-foreground shrink-0 text-sm text-gray-500 transition-colors"
+          >
+            {t.cookbookNavLink}
+          </Link>
+          <Link
+            to="/account/payment"
+            search={{ from: undefined }}
+            className="hover:text-foreground shrink-0 text-sm text-gray-500 transition-colors"
+          >
+            {t.accountPaymentLink}
+          </Link>
+          <button
+            type="button"
+            onClick={() => void handleSignOut()}
+            className="hover:text-foreground shrink-0 text-sm text-gray-500 transition-colors"
+          >
+            {t.signOut}
+          </button>
+          {cartLink}
+        </nav>
       </div>
       <div ref={setBottomBarHost} />
     </header>
