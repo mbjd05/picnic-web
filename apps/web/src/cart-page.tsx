@@ -32,6 +32,7 @@ import { useCart } from "./cart-context";
 import { useCountryCode, useTranslations } from "./country-context";
 import { ApiClientError, fetchJson } from "./lib/api-client";
 import { queryKeys, queryStaleTime } from "./lib/query-config";
+import { useWheelQuantityAdjust } from "./lib/use-wheel-quantity-adjust";
 
 const CART_MUTATION_DEBOUNCE_MS = 220;
 const PAYMENT_BANK_STORAGE_KEY = "picnic_payment_option_banks";
@@ -612,8 +613,17 @@ function QuantityStepper({
 }) {
   const t = useTranslations();
   const isAtMax = quantity >= maxCount;
+  const wheelAdjustRef = useWheelQuantityAdjust({
+    canIncrement: !isAtMax,
+    canDecrement: quantity > 0,
+    onIncrement,
+    onDecrement,
+  });
   return (
-    <div className="flex items-center gap-0 rounded-full bg-gray-100 px-0.5 py-0.5">
+    <div
+      ref={wheelAdjustRef}
+      className="flex items-center gap-0 rounded-full bg-gray-100 px-0.5 py-0.5"
+    >
       <button
         type="button"
         onClick={onDecrement}
