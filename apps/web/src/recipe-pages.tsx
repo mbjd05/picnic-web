@@ -85,11 +85,14 @@ export function CookbookPage() {
   useEffect(() => {
     const saved = savedRecipesQuery.data?.recipes;
     if (!saved) return;
+    /* eslint-disable react-hooks/set-state-in-effect -- Keep optimistic saved-recipe state aligned with the saved-recipes query. */
     setSavedRecipeIds(new Set(saved.map((recipe) => recipe.id)));
     setCategoryCounts((current) => ({ ...current, __saved__: saved.length }));
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [savedRecipesQuery.data]);
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- Preserve the cookbook view state machine while reflecting query status changes. */
     if (recipesQuery.isPending) {
       setRecipesState({ status: "loading" });
       return;
@@ -113,6 +116,7 @@ export function CookbookPage() {
       setSavedRecipeIds(new Set(recipes.map((recipe) => recipe.id)));
     }
     setRecipesState({ status: "success", recipes });
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [
     recipesQuery.data,
     recipesQuery.error,
@@ -480,6 +484,7 @@ export function RecipeDetailPage() {
   useDocumentTitle(pageState.status === "success" ? pageState.recipe.name : t.cookbookTitle);
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- Preserve recipe detail UI state while reflecting query status changes. */
     if (recipeQuery.isPending) {
       setPageState({ status: "loading" });
       return;
@@ -498,9 +503,11 @@ export function RecipeDetailPage() {
     setPortions(p);
     setPageState({ status: "success", recipe: recipeQuery.data });
     setCheckedIds(new Set(recipeQuery.data.ingredients.filter((ingredient) => !ingredient.isCondiment).map((ingredient) => ingredient.id)));
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [recipeQuery.data, recipeQuery.error, recipeQuery.isError, recipeQuery.isPending, t.recipeLoadError]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Keep optimistic detail bookmark state aligned with the saved-recipes query.
     setIsSaved(Boolean(detailSavedQuery.data?.recipes?.some((recipe) => recipe.id === id)));
   }, [detailSavedQuery.data, id]);
 

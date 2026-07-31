@@ -338,6 +338,7 @@ export function PaymentReturnPage() {
   }, [t.paymentStatusLoadError]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Load the provider return status once the memoized loader is ready.
     void loadStatus();
   }, [loadStatus]);
 

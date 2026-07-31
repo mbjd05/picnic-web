@@ -108,6 +108,7 @@ export function CartPage() {
   });
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- Mirror authoritative cart query state into the optimistic cart page state machine. */
     if (cartQuery.data) {
       confirmedCartRef.current = cartQuery.data;
       setPageState(
@@ -126,6 +127,7 @@ export function CartPage() {
             : "Er is iets misgegaan. Probeer het later opnieuw.",
       });
     }
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [cartQuery.data, cartQuery.error, cartQuery.isError]);
 
   const flushProductDelta = useCallback(

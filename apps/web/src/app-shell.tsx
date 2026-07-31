@@ -108,6 +108,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
   const cart = useCart();
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Keep the input synced with browser navigation.
     setQuery(new URLSearchParams(location.searchStr).get("q") ?? "");
   }, [location.searchStr]);
 

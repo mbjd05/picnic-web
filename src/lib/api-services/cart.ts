@@ -35,7 +35,7 @@ export async function getCartService(
       true
     );
 
-    return { body: parseCartResponse(rawCart) };
+    return { body: parseCartResponse(rawCart, countryCode) };
   } catch (error) {
     if (isApiTokenExpiredError(error)) {
       return {
@@ -78,7 +78,7 @@ export async function mutateCartService(
       true
     );
 
-    return { body: parseCartResponse(rawCart) };
+    return { body: parseCartResponse(rawCart, countryCode) };
   } catch (error) {
     if (isApiTokenExpiredError(error)) {
       return {
@@ -110,7 +110,7 @@ export async function getDeliverySlotsService(
       false
     );
 
-    return { body: parseDeliverySlotsPicker(rawResult) };
+    return { body: parseDeliverySlotsPicker(rawResult, countryCode) };
   } catch (error) {
     if (isApiTokenExpiredError(error)) {
       return {
@@ -150,7 +150,7 @@ export async function setDeliverySlotService(
       false
     );
 
-    return { body: parseCartResponse(rawCart) };
+    return { body: parseCartResponse(rawCart, countryCode) };
   } catch (error) {
     if (isApiTokenExpiredError(error)) {
       return {
