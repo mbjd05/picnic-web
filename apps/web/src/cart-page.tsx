@@ -758,7 +758,11 @@ function CheckoutCta({
               {bankName ? ` · ${bankName}` : ""}
             </p>
           </div>
-          <Link to="/account/payment" className="text-picnic-red text-sm font-semibold">
+          <Link
+            to="/account/payment"
+            search={{ from: "cart" }}
+            className="text-picnic-red text-sm font-semibold"
+          >
             {t.managePaymentMethods}
           </Link>
         </div>
@@ -774,7 +778,7 @@ function CheckoutCta({
       {hasKnownMissingPayment ? (
         <p className="text-sm text-gray-600">
           {t.noPreferredPaymentMethod}{" "}
-          <Link to="/account/payment" className="text-picnic-red font-semibold">
+          <Link to="/account/payment" search={{ from: "cart" }} className="text-picnic-red font-semibold">
             {t.choosePaymentMethod}
           </Link>
         </p>

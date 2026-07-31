@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -55,7 +55,9 @@ function writeStoredBankMetadata(metadata: StoredBankMetadata): void {
 export function PaymentAccountPage() {
   const t = getTranslations(useCountryCode());
   const queryClient = useQueryClient();
+  const search = useSearch({ from: "/authenticated/account/payment" });
   useDocumentTitle(t.paymentMethodsPageTitle);
+  const showBackToCart = search.from === "cart";
 
   const [selectedBank, setSelectedBank] = useState("");
   const [storedBankMetadata, setStoredBankMetadata] = useState<StoredBankMetadata>({});
@@ -150,15 +152,17 @@ export function PaymentAccountPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-8">
-      <div className="mb-6 flex items-center justify-between">
+    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-foreground text-2xl font-bold">{t.paymentMethodsPageTitle}</h1>
           <p className="mt-1 text-sm text-gray-500">{t.paymentMethodsPageSubtitle}</p>
         </div>
-        <Link to="/cart" className="text-picnic-red text-sm font-semibold">
-          {t.backToCart}
-        </Link>
+        {showBackToCart ? (
+          <Link to="/cart" className="text-picnic-red text-sm font-semibold">
+            {t.backToCart}
+          </Link>
+        ) : null}
       </div>
 
       {profileQuery.isPending ? <LoadingView /> : null}

@@ -70,6 +70,22 @@ function CartIcon() {
   );
 }
 
+function MenuIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.75}
+      stroke="currentColor"
+      className="h-5 w-5"
+      aria-hidden="true"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+    </svg>
+  );
+}
+
 function formatCartPrice(cents: number): string {
   return (cents / 100).toFixed(2);
 }
@@ -87,6 +103,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
   const [suggestionSession, setSuggestionSession] = useState(0);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const searchRef = useRef<HTMLFormElement>(null);
   const cart = useCart();
 
@@ -231,13 +248,59 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
         <div className="ml-auto flex items-center gap-2 md:hidden">
           {countrySwitch}
           {cartLink}
+          <button
+            type="button"
+            onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
+            className={`flex h-9 w-9 items-center justify-center rounded-full border transition-colors ${
+              isMobileMenuOpen
+                ? "border-picnic-red bg-picnic-red text-white"
+                : "border-card-border text-gray-600 hover:text-foreground"
+            }`}
+            aria-label="Menu"
+            aria-controls="primary-navigation"
+            aria-expanded={isMobileMenuOpen}
+          >
+            <MenuIcon />
+          </button>
         </div>
+
+        <nav
+          id="primary-navigation"
+          className={`${
+            isMobileMenuOpen ? "order-2 grid" : "hidden"
+          } w-full grid-cols-3 items-center gap-1 rounded-lg bg-gray-50 p-1 text-center md:order-2 md:ml-auto md:flex md:w-auto md:max-w-full md:min-w-0 md:gap-3 md:overflow-x-auto md:bg-transparent md:p-0 md:text-left`}
+        >
+          <div className="hidden md:block">{countrySwitch}</div>
+          <Link
+            to="/cookbook"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="hover:text-foreground min-w-0 truncate rounded-md px-2 py-2 text-xs font-medium text-gray-600 transition-colors sm:text-sm md:shrink-0 md:p-0 md:font-normal md:text-gray-500"
+          >
+            {t.cookbookNavLink}
+          </Link>
+          <Link
+            to="/account/payment"
+            search={{ from: undefined }}
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="hover:text-foreground min-w-0 truncate rounded-md px-2 py-2 text-xs font-medium text-gray-600 transition-colors sm:text-sm md:shrink-0 md:p-0 md:font-normal md:text-gray-500"
+          >
+            {t.accountPaymentLink}
+          </Link>
+          <button
+            type="button"
+            onClick={() => void handleSignOut()}
+            className="hover:text-foreground min-w-0 truncate rounded-md px-2 py-2 text-xs font-medium text-gray-600 transition-colors sm:text-sm md:shrink-0 md:p-0 md:font-normal md:text-gray-500"
+          >
+            {t.signOut}
+          </button>
+          <div className="hidden md:block">{cartLink}</div>
+        </nav>
 
         <form
           ref={searchRef}
           role="search"
           onSubmit={handleSearch}
-          className="order-2 w-full md:order-none md:flex-1"
+          className="order-3 w-full md:order-1 md:flex-1"
         >
           <div className="relative mx-auto w-full max-w-2xl">
             <input
@@ -304,29 +367,6 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
           </div>
         </form>
 
-        <nav className="order-3 grid w-full grid-cols-3 items-center gap-1 text-center md:order-none md:ml-auto md:flex md:w-auto md:max-w-full md:min-w-0 md:gap-3 md:overflow-x-auto md:text-left">
-          <div className="hidden md:block">{countrySwitch}</div>
-          <Link
-            to="/cookbook"
-            className="hover:text-foreground min-w-0 truncate rounded-md px-1 py-1 text-xs text-gray-500 transition-colors sm:text-sm md:shrink-0 md:p-0"
-          >
-            {t.cookbookNavLink}
-          </Link>
-          <Link
-            to="/account/payment"
-            className="hover:text-foreground min-w-0 truncate rounded-md px-1 py-1 text-xs text-gray-500 transition-colors sm:text-sm md:shrink-0 md:p-0"
-          >
-            {t.accountPaymentLink}
-          </Link>
-          <button
-            type="button"
-            onClick={() => void handleSignOut()}
-            className="hover:text-foreground min-w-0 truncate rounded-md px-1 py-1 text-xs text-gray-500 transition-colors sm:text-sm md:shrink-0 md:p-0"
-          >
-            {t.signOut}
-          </button>
-          <div className="hidden md:block">{cartLink}</div>
-        </nav>
       </div>
       <div ref={setBottomBarHost} />
     </header>

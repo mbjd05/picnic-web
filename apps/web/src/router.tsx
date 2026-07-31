@@ -103,6 +103,9 @@ const cookbookRoute = createRoute({
 const paymentRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/account/payment",
+  validateSearch: (search: Record<string, unknown>) => ({
+    from: search.from === "cart" ? ("cart" as const) : undefined,
+  }),
   component: PaymentAccountPage,
 });
 const productRoute = createRoute({
