@@ -269,7 +269,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       {toast ? (
         <div
           role="status"
-          className="fixed right-4 bottom-4 z-[100] max-w-sm rounded-lg bg-gray-900 px-4 py-3 text-sm text-white shadow-lg"
+          className="app-toast fixed right-4 bottom-4 z-[100] max-w-sm rounded-lg px-4 py-3 text-sm"
           onClick={() => setToast(null)}
         >
           {toast}

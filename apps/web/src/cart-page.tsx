@@ -1307,7 +1307,7 @@ function CartToast({ message, onDismiss }: { message: string | null; onDismiss: 
   return (
     <div
       role="status"
-      className="fixed right-4 bottom-4 z-[100] max-w-sm rounded-lg bg-gray-900 px-4 py-3 text-sm text-white shadow-lg"
+      className="app-toast fixed right-4 bottom-4 z-[100] max-w-sm rounded-lg px-4 py-3 text-sm"
       onClick={onDismiss}
     >
       {message}

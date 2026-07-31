@@ -33,6 +33,9 @@
   --quantity-control-bg: #ffffff;
   --quantity-control-border: #d2d2d2;
   --quantity-control-shadow: 0 1px 3px rgb(33 33 33 / 12%);
+  --toast-bg: #212121;
+  --toast-border: #212121;
+  --toast-text: #ffffff;
   color-scheme: light;
 }
 
@@ -68,6 +71,9 @@
   --quantity-control-bg: #242a23;
   --quantity-control-border: #50594d;
   --quantity-control-shadow: 0 1px 4px rgb(0 0 0 / 32%);
+  --toast-bg: #2b211f;
+  --toast-border: #66413c;
+  --toast-text: #f8faf4;
   color-scheme: dark;
 }
 
@@ -156,6 +162,17 @@ button:disabled {
 :root[data-theme="dark"] .bundle-tier-active {
   border-color: #5f7f55;
   background: #263820;
+}
+
+.app-toast {
+  border: 1px solid var(--toast-border);
+  background: var(--toast-bg);
+  color: var(--toast-text);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 18%);
+}
+
+:root[data-theme="dark"] .app-toast {
+  box-shadow: 0 8px 24px rgb(0 0 0 / 45%);
 }
 
 .section-nav-scrollbar {
