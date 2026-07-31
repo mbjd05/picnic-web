@@ -6,7 +6,6 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useState,
 } from "react";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -15,6 +14,7 @@ import type { BundleProgress, BundleThreshold, CartData } from "@/lib/types";
 
 import { fetchJson } from "./lib/api-client";
 import { queryKeys, queryStaleTime } from "./lib/query-config";
+import { quantitiesFromCart, useCartUiStore } from "./cart-ui-store";
 
 const CART_MUTATION_DEBOUNCE_MS = 220;
 
@@ -33,20 +33,21 @@ type CartContextValue = {
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
-const ToastContext = createContext<(message: string) => void>(() => undefined);
-
-function quantitiesFromCart(cart: Pick<CartData, "items">): Map<string, number> {
-  return new Map(cart.items.map((item) => [item.productId, item.quantity]));
-}
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
-  const [quantities, setQuantities] = useState<Map<string, number>>(new Map());
-  const [totalPrice, setTotalPrice] = useState(0);
-  const [totalCount, setTotalCount] = useState(0);
-  const [bundleData, setBundleData] = useState<Map<string, BundleThreshold[]>>(new Map());
-  const [isLoading, setIsLoading] = useState(true);
-  const [toast, setToast] = useState<string | null>(null);
+  const quantities = useCartUiStore((state) => state.quantities);
+  const totalPrice = useCartUiStore((state) => state.totalPrice);
+  const totalCount = useCartUiStore((state) => state.totalCount);
+  const bundleData = useCartUiStore((state) => state.bundleData);
+  const isLoading = useCartUiStore((state) => state.isLoading);
+  const toast = useCartUiStore((state) => state.toast);
+  const applyQuantities = useCartUiStore((state) => state.applyQuantities);
+  const applyTotals = useCartUiStore((state) => state.applyTotals);
+  const applyVisibleCartToStore = useCartUiStore((state) => state.applyVisibleCart);
+  const registerBundleDataBatch = useCartUiStore((state) => state.registerBundleDataBatch);
+  const setIsLoading = useCartUiStore((state) => state.setIsLoading);
+  const setToast = useCartUiStore((state) => state.setToast);
   const confirmedRef = useRef(new Map<string, number>());
   const confirmedTotalsRef = useRef({ totalPrice: 0, totalCount: 0 });
   const visibleQuantitiesRef = useRef(new Map<string, number>());
@@ -65,23 +66,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     []
   );
 
-  const applyQuantities = useCallback((next: Map<string, number>) => {
-    visibleQuantitiesRef.current = new Map(next);
-    setQuantities(next);
-  }, []);
-
-  const applyTotals = useCallback((next: { totalPrice: number; totalCount: number }) => {
-    visibleTotalsRef.current = next;
-    setTotalPrice(next.totalPrice);
-    setTotalCount(next.totalCount);
-  }, []);
-
   const applyVisibleCart = useCallback(
     (cart: Pick<CartData, "items" | "totalPrice" | "totalCount">) => {
-      applyQuantities(quantitiesFromCart(cart));
-      applyTotals({ totalPrice: cart.totalPrice, totalCount: cart.totalCount });
+      const nextQuantities = quantitiesFromCart(cart);
+      visibleQuantitiesRef.current = new Map(nextQuantities);
+      visibleTotalsRef.current = { totalPrice: cart.totalPrice, totalCount: cart.totalCount };
+      applyVisibleCartToStore(cart);
     },
-    [applyQuantities, applyTotals]
+    [applyVisibleCartToStore]
   );
 
   const reconcile = useCallback(
@@ -89,6 +81,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const next = quantitiesFromCart(cart);
       confirmedRef.current = new Map(next);
       confirmedTotalsRef.current = { totalPrice: cart.totalPrice, totalCount: cart.totalCount };
+      visibleQuantitiesRef.current = new Map(next);
+      visibleTotalsRef.current = { totalPrice: cart.totalPrice, totalCount: cart.totalCount };
       applyVisibleCart(cart);
     },
     [applyVisibleCart]
@@ -151,6 +145,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         const confirmed = confirmedRef.current.get(productId) ?? 0;
         if (confirmed === 0) next.delete(productId);
         else next.set(productId, confirmed);
+        visibleQuantitiesRef.current = new Map(next);
+        visibleTotalsRef.current = confirmedTotalsRef.current;
         applyQuantities(next);
         applyTotals(confirmedTotalsRef.current);
         setToast("Er ging iets mis. Probeer het opnieuw.");
@@ -194,11 +190,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (quantity >= maxCount) return;
       const next = new Map(visibleQuantitiesRef.current);
       next.set(productId, quantity + 1);
-      applyQuantities(next);
-      applyTotals({
+      visibleQuantitiesRef.current = new Map(next);
+      visibleTotalsRef.current = {
         totalPrice: visibleTotalsRef.current.totalPrice + priceDelta,
         totalCount: visibleTotalsRef.current.totalCount + 1,
-      });
+      };
+      applyQuantities(next);
+      applyTotals(visibleTotalsRef.current);
       enqueue(productId, 1);
     },
     [applyQuantities, applyTotals, enqueue]
@@ -211,11 +209,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const next = new Map(visibleQuantitiesRef.current);
       if (quantity <= 1) next.delete(productId);
       else next.set(productId, quantity - 1);
-      applyQuantities(next);
-      applyTotals({
+      visibleQuantitiesRef.current = new Map(next);
+      visibleTotalsRef.current = {
         totalPrice: Math.max(0, visibleTotalsRef.current.totalPrice - priceDelta),
         totalCount: Math.max(0, visibleTotalsRef.current.totalCount - 1),
-      });
+      };
+      applyQuantities(next);
+      applyTotals(visibleTotalsRef.current);
       enqueue(productId, -1);
     },
     [applyQuantities, applyTotals, enqueue]
@@ -234,22 +234,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     },
     [bundleData, quantities]
   );
-  const registerBundleDataBatch = useCallback(
-    (entries: ReadonlyArray<readonly [string, BundleThreshold[]]>) => {
-      if (entries.length === 0) return;
-      setBundleData((current) => {
-        let next: Map<string, BundleThreshold[]> | null = null;
-        for (const [productId, thresholds] of entries) {
-          if (thresholds.length === 0 || current.has(productId) || next?.has(productId)) continue;
-          next ??= new Map(current);
-          next.set(productId, thresholds);
-        }
-        return next ?? current;
-      });
-    },
-    []
-  );
-
   const value = useMemo(
     () => ({
       quantities,
@@ -281,7 +265,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   return (
     <CartContext.Provider value={value}>
-      <ToastContext.Provider value={setToast}>{children}</ToastContext.Provider>
+      {children}
       {toast ? (
         <div
           role="status"
@@ -302,5 +286,5 @@ export function useCart(): CartContextValue {
 }
 
 export function useCartToast(): (message: string) => void {
-  return useContext(ToastContext);
+  return useCartUiStore((state) => state.setToast);
 }
