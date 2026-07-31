@@ -519,6 +519,22 @@ Request method 'PATCH' is not supported
 
 `GET /bootstrap` did not expose obvious address/profile/settings navigation targets in the verified response. This makes an undiscovered address-change route less likely to be a simple first-level REST path.
 
+Additional static discovery:
+
+- Picnic's public website bundle exposes public onboarding address checks and lead-list registration, but no authenticated address-change route.
+- The public deeplink script maps broad paths such as `profile`, `settings`, and `activate`, but does not reveal an address-edit API route.
+- Authenticated `POST /deeplink/resolve` echoes unknown profile/settings/address-style deeplinks rather than resolving them to hidden page IDs.
+- `GET /bootstrap` only exposed the normal store tab configuration for the verified account, not a profile/settings page tree.
+
+Discovery caution:
+
+Broad live guessing with many address-like paths produced noisy HTML `403` responses that are not reliable route-existence signals and may temporarily affect subsequent requests from the same client context. Do not use large live sweeps as the normal research method. For the missing delivery-address update route, prefer one of:
+
+- capture the official mobile app's own request while changing address;
+- inspect a newer `picnic-api` release if it adds a user/address domain;
+- find a Fusion page/task reference in a real app response;
+- ask for explicit approval before any focused account-changing test.
+
 ### Household composition
 
 Household composition is read from `GET /user.household_details`.
@@ -753,17 +769,17 @@ These are phone verification routes, not confirmed phone-number update routes. N
 
 Current implementation target table:
 
-| Settings area                     | Read                                                              | Create/update                                                                    | Delete/clear                     | Confidence                                                                      |
-| --------------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------- | ------------------------------------------------------------------------------- |
-| Profile name/email/phone          | `GET /user`, `GET /user-info`, `GET /profile-menu?fetch_mgm=true` | no confirmed route                                                               | no confirmed route               | Read confirmed only                                                             |
-| Delivery address                  | `GET /user`, `GET /profile-menu?fetch_mgm=true`                   | no confirmed authenticated route                                                 | no confirmed route               | Read confirmed only                                                             |
-| Household composition             | `GET /user.household_details`                                     | `POST /user-onboarding/household-details`                                        | no confirmed route               | Route and payload validation confirmed; live same-value mutation still optional |
-| Business details                  | `GET /user.business_details`                                      | `POST /user-onboarding/business-details`                                         | no confirmed route               | Route and payload validation confirmed; live mutation not run                   |
-| Normal privacy/marketing consents | `GET /consents/settings-page`                                     | `PUT /consents`                                                                  | no delete; set `agreement` false | Read and update route confirmed                                                 |
-| General consents                  | `GET /consents/general`, `GET /consents/general/settings-page`    | `PUT /consents/general`                                                          | no delete; update declarations   | Read and update route confirmed                                                 |
-| Email/list subscriptions          | `GET /user.subscriptions`                                         | no confirmed route                                                               | no confirmed route               | Read confirmed only                                                             |
-| Push subscriptions                | `GET /user.push_subscriptions`                                    | `POST /user-onboarding/subscribe-push`                                           | no confirmed route               | Route exists, but device-bound and not ordinary web settings-ready              |
-| Phone verification                | none needed beyond `GET /user`/`GET /user-info`                   | `POST /user/phone_verification/generate`, `POST /user/phone_verification/verify` | n/a                              | Verification route confirmed, profile update not confirmed                      |
+| Settings area                     | Read                                                              | Create/update                                                                    | Delete/clear                     | Confidence                                                                                                     |
+| --------------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Profile name/email/phone          | `GET /user`, `GET /user-info`, `GET /profile-menu?fetch_mgm=true` | no confirmed route                                                               | no confirmed route               | Read confirmed only                                                                                            |
+| Delivery address                  | `GET /user`, `GET /profile-menu?fetch_mgm=true`                   | no confirmed authenticated route                                                 | no confirmed route               | Read confirmed only; public website/bootstrap/deeplink/static package evidence did not reveal an update target |
+| Household composition             | `GET /user.household_details`                                     | `POST /user-onboarding/household-details`                                        | no confirmed route               | Route and payload validation confirmed; live same-value mutation still optional                                |
+| Business details                  | `GET /user.business_details`                                      | `POST /user-onboarding/business-details`                                         | no confirmed route               | Route and payload validation confirmed; live mutation not run                                                  |
+| Normal privacy/marketing consents | `GET /consents/settings-page`                                     | `PUT /consents`                                                                  | no delete; set `agreement` false | Read and update route confirmed                                                                                |
+| General consents                  | `GET /consents/general`, `GET /consents/general/settings-page`    | `PUT /consents/general`                                                          | no delete; update declarations   | Read and update route confirmed                                                                                |
+| Email/list subscriptions          | `GET /user.subscriptions`                                         | no confirmed route                                                               | no confirmed route               | Read confirmed only                                                                                            |
+| Push subscriptions                | `GET /user.push_subscriptions`                                    | `POST /user-onboarding/subscribe-push`                                           | no confirmed route               | Route exists, but device-bound and not ordinary web settings-ready                                             |
+| Phone verification                | none needed beyond `GET /user`/`GET /user-info`                   | `POST /user/phone_verification/generate`, `POST /user/phone_verification/verify` | n/a                              | Verification route confirmed, profile update not confirmed                                                     |
 
 ## Implementation outline
 
