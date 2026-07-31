@@ -369,7 +369,8 @@ function BundleTierGrid({
             }`}
           >
             <span className="text-xs text-gray-500">
-              {t.bundleFromLabel} {bundle.quantity}
+              {t.bundleFromLabel} {bundle.quantity}{" "}
+              {bundle.quantity === 1 ? t.bundlePieceSingular : t.bundlePiecePlural}
             </span>
             <span
               className={`text-sm font-bold ${
