@@ -27,6 +27,7 @@ import {
 } from "./browsing-components";
 import { useCountryCode } from "./country-context";
 import { fetchJson } from "./lib/api-client";
+import { queryKeys, queryStaleTime } from "./lib/query-config";
 
 function PageLayout({ children }: { children: React.ReactNode }) {
   return <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-8">{children}</main>;
@@ -40,14 +41,16 @@ export function HomePage() {
   const query = q?.trim() ?? "";
 
   const categories = useQuery({
-    queryKey: ["categories", countryCode],
+    queryKey: queryKeys.categories(countryCode),
     queryFn: () => fetchJson<CategoriesApiResponse>("/api/categories"),
     enabled: !query,
+    staleTime: queryStaleTime.categories,
   });
   const search = useQuery({
-    queryKey: ["product-search", query, countryCode],
+    queryKey: queryKeys.productSearch(query, countryCode),
     queryFn: () => fetchJson<SearchApiResponse>(`/api/search?q=${encodeURIComponent(query)}`),
     enabled: Boolean(query),
+    staleTime: queryStaleTime.search,
   });
 
   useDocumentTitle(query ? `"${query}"` : undefined);
@@ -106,11 +109,12 @@ export function CategoryPage() {
   const countryCode = useCountryCode();
   const t = getTranslations(countryCode);
   const query = useQuery({
-    queryKey: ["subcategories", categoryId, countryCode],
+    queryKey: queryKeys.subcategories(categoryId, countryCode),
     queryFn: () =>
       fetchJson<SubcategoriesApiResponse>(
         `/api/categories/${encodeURIComponent(categoryId)}/subcategories`
       ),
+    staleTime: queryStaleTime.categories,
   });
 
   useDocumentTitle(query.data?.title);
@@ -231,6 +235,7 @@ function useProductsQuery(key: string[], url: string, enabled = true) {
     queryKey: key,
     queryFn: () => fetchJson<CategoryProductsApiResponse>(url),
     enabled,
+    staleTime: queryStaleTime.search,
   });
 }
 
@@ -242,7 +247,7 @@ export function SubcategoryProductsPage() {
   const countryCode = useCountryCode();
   const t = getTranslations(countryCode);
   const query = useProductsQuery(
-    ["category-products", subcategoryId, countryCode],
+    [...queryKeys.categoryProducts(subcategoryId, countryCode)],
     `/api/categories/${encodeURIComponent(subcategoryId)}/products`
   );
   return (
@@ -260,7 +265,7 @@ export function ShortcutProductsPage() {
   const countryCode = useCountryCode();
   const t = getTranslations(countryCode);
   const query = useProductsQuery(
-    ["shortcut-products", pageId ?? "", countryCode],
+    [...queryKeys.shortcutProducts(pageId ?? "", countryCode)],
     `/api/pages/products?pageId=${encodeURIComponent(pageId ?? "")}`,
     Boolean(pageId)
   );

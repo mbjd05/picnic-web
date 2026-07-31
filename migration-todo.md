@@ -28,7 +28,7 @@ The current Next app is the visual source of truth. Ported UI should preserve th
 - [x] Chunk 13: Port cart UI.
 - [x] Chunk 14: Port cookbook and recipe UI.
 - [x] Chunk 15: Port payment UI and payment return flow.
-- [ ] Chunk 16: Add query caching, invalidation, and request de-duplication.
+- [x] Chunk 16: Add query caching, invalidation, and request de-duplication.
 - [ ] Chunk 17: Verify feature parity against current app behavior and specs.
 - [ ] Chunk 18: Finalize Cloudflare deployment configuration.
 - [ ] Chunk 19: Stability, performance, and deployment smoke testing.
@@ -392,35 +392,27 @@ Validated:
 - `npm run smoke:api:auth` against the local Worker passed 43 checks, including authenticated payment-profile reads.
 - Payment-option mutation and real checkout-return testing remain deferred to the collaborative testing chunks because they can alter payment state or require a live provider redirect.
 
-## Remaining Chunks
-
 ### Chunk 16: Query Caching And Invalidation
 
-Goal:
+Completed in this chunk.
 
-Use TanStack Query to reduce repeated Picnic API calls while avoiding stale private data.
+Implemented:
 
-Scope:
+- Added explicit Vite query keys and stale-time policy in `apps/web/src/lib/query-config.ts`.
+- Applied deliberate stale times for categories, product search, suggestions, product detail, cart, delivery slots, cookbook views/search, saved recipes, and payment profile.
+- Moved the cart shell, cart page, delivery-slot picker, checkout payment summary, payment settings page, cookbook page, and recipe detail page onto shared TanStack Query keys where they read Picnic-backed data.
+- Wrote cart mutation, delivery-slot selection, and payment-profile mutation results back into the query cache so other mounted surfaces update without an extra fetch.
+- Invalidated cart data after recipe add-to-cart.
+- Invalidated cookbook/saved-recipe queries after save/unsave.
+- Kept caching entirely client-side; no Worker-side shared caching was added for private Picnic data.
 
-- Add route/query hooks with deliberate query keys.
-- Apply stale times:
-  - Categories: 15-30 minutes.
-  - Product detail: 10-30 minutes.
-  - Search: 1-5 minutes.
-  - Cart: 15-60 seconds.
-  - Cookbook categories: 15-30 minutes.
-  - Cookbook category views: around 15 minutes.
-  - Saved recipes: 1-5 minutes.
-  - Payment profile: 1-5 minutes.
-- Invalidate cart after cart mutations and recipe add-to-cart.
-- Invalidate saved recipes/counts after save/unsave.
-- Avoid Worker-side shared caching for private data.
+Validated:
 
-Validation:
+- `npm run validate`
+- `npm run smoke:api:auth` against the local Worker passed 43 checks, with only credential/2FA skipped by design.
+- Cache behavior was validated structurally by shared query keys plus `setQueryData`/`invalidateQueries`; deeper browser network-count testing remains part of Chunk 19.
 
-- Typecheck, lint, `build:web`, Worker dry-run build.
-- Confirm repeated navigation does not re-query unnecessarily.
-- Confirm mutations refresh affected views.
+## Remaining Chunks
 
 ### Chunk 17: Feature Parity And Spec Review
 

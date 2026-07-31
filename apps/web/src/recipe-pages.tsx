@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 
 import { NutritionTable } from "@/components/nutrition-table";
@@ -12,7 +13,6 @@ import { getRecipeIngredientCount } from "@/lib/recipe-quantity";
 import { renderMarkdownBold } from "@/lib/render-markdown-bold";
 import { DEBOUNCE_DELAY_MS } from "@/lib/types";
 import type {
-  ApiErrorResponse,
   AllergenInfo,
   CookbookApiResponse,
   CountryCode,
@@ -25,10 +25,10 @@ import type {
 import { ErrorView, LoadingView, useDocumentTitle } from "./browsing-components";
 import { useCart } from "./cart-context";
 import { useCountryCode } from "./country-context";
+import { fetchJson } from "./lib/api-client";
+import { queryKeys, queryStaleTime } from "./lib/query-config";
 
 const PAGE_SIZE = 24;
-const VIEW_CACHE_TTL_MS = 15 * 60 * 1000;
-const VIEW_CACHE_MAX_ENTRIES = 10;
 const PLACEHOLDER = "/placeholder-product.svg";
 
 type RecipesState =
@@ -36,25 +36,11 @@ type RecipesState =
   | { status: "success"; recipes: RecipeItem[] }
   | { status: "error"; message: string };
 type SearchScope = "current" | "all";
-type CachedCookbookView = {
-  recipes: RecipeItem[];
-  categories?: RecipeCategory[];
-  expiresAt: number;
-};
-
-function isApiError(value: unknown): value is ApiErrorResponse {
-  return typeof value === "object" && value !== null && "error" in value;
-}
-
-async function readJson<T>(response: Response): Promise<T> {
-  const data = (await response.json()) as T | ApiErrorResponse;
-  if (!response.ok || isApiError(data)) throw new Error(isApiError(data) ? data.error : "Request failed");
-  return data as T;
-}
 
 export function CookbookPage() {
   const countryCode = useCountryCode();
   const t = getTranslations(countryCode);
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   useDocumentTitle(t.cookbookTitle);
 
@@ -64,47 +50,17 @@ export function CookbookPage() {
   const [searchInput, setSearchInput] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [searchScope, setSearchScope] = useState<SearchScope>("all");
-  const [retryCount, setRetryCount] = useState(0);
   const [recipesState, setRecipesState] = useState<RecipesState>({ status: "loading" });
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [savedRecipeIds, setSavedRecipeIds] = useState<Set<string>>(() => new Set());
   const [savingRecipeIds, setSavingRecipeIds] = useState<Set<string>>(() => new Set());
   const [lastBrowseCategory, setLastBrowseCategory] = useState<string | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const viewCacheRef = useRef<Map<string, CachedCookbookView>>(new Map());
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(searchInput.trim()), DEBOUNCE_DELAY_MS);
     return () => clearTimeout(timer);
   }, [searchInput]);
-
-  const rememberView = useCallback((key: string, view: Omit<CachedCookbookView, "expiresAt">) => {
-    const cache = viewCacheRef.current;
-    cache.delete(key);
-    cache.set(key, { ...view, expiresAt: Date.now() + VIEW_CACHE_TTL_MS });
-    while (cache.size > VIEW_CACHE_MAX_ENTRIES) {
-      const oldest = cache.keys().next().value;
-      if (oldest === undefined) break;
-      cache.delete(oldest);
-    }
-  }, []);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    fetch("/api/cookbook?category=__saved__", { signal: controller.signal })
-      .then((response) => response.json())
-      .then((data: CookbookApiResponse & Partial<ApiErrorResponse>) => {
-        if (data.error) return;
-        const saved = data.recipes ?? [];
-        setSavedRecipeIds(new Set(saved.map((recipe) => recipe.id)));
-        setCategoryCounts((current) => ({ ...current, __saved__: saved.length }));
-        rememberView("__saved__", { recipes: saved });
-      })
-      .catch((error: unknown) => {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-      });
-    return () => controller.abort();
-  }, [rememberView]);
 
   const hasActiveQuery = debouncedQuery.length > 0;
   const useGlobalSearch = hasActiveQuery && searchScope === "all";
@@ -113,51 +69,59 @@ export function CookbookPage() {
     : selectedCategory
       ? `/api/cookbook?category=${encodeURIComponent(selectedCategory)}`
       : "/api/cookbook";
-  const viewCacheKey = useGlobalSearch ? null : (selectedCategory ?? "__featured__");
+  const savedRecipesQuery = useQuery({
+    queryKey: queryKeys.savedRecipes(countryCode),
+    queryFn: () => fetchJson<CookbookApiResponse>("/api/cookbook?category=__saved__"),
+    staleTime: queryStaleTime.savedRecipes,
+  });
+  const recipesQuery = useQuery({
+    queryKey: useGlobalSearch
+      ? queryKeys.cookbookSearch(debouncedQuery, countryCode)
+      : queryKeys.cookbookView(selectedCategory, countryCode),
+    queryFn: () => fetchJson<CookbookApiResponse>(recipesUrl),
+    staleTime: useGlobalSearch ? queryStaleTime.search : queryStaleTime.cookbookView,
+  });
 
   useEffect(() => {
-    if (viewCacheKey) {
-      const cached = viewCacheRef.current.get(viewCacheKey);
-      if (cached && cached.expiresAt > Date.now()) {
-        if (cached.categories?.length) setCategories(cached.categories);
-        setRecipesState({ status: "success", recipes: cached.recipes });
-        setVisibleCount(PAGE_SIZE);
-        return;
-      }
-      if (cached) viewCacheRef.current.delete(viewCacheKey);
-    }
+    const saved = savedRecipesQuery.data?.recipes;
+    if (!saved) return;
+    setSavedRecipeIds(new Set(saved.map((recipe) => recipe.id)));
+    setCategoryCounts((current) => ({ ...current, __saved__: saved.length }));
+  }, [savedRecipesQuery.data]);
 
-    const controller = new AbortController();
-    fetch(recipesUrl, { signal: controller.signal })
-      .then((response) => response.json())
-      .then((data: CookbookApiResponse & Partial<ApiErrorResponse>) => {
-        if (data.error) {
-          setRecipesState({ status: "error", message: data.error });
-          return;
-        }
-        if (data.categories?.length) setCategories(data.categories);
-        const recipes = Array.isArray(data.recipes) ? data.recipes : [];
-        if (!useGlobalSearch) {
-          const key = selectedCategory ?? "__featured__";
-          setCategoryCounts((current) => ({ ...current, [key]: recipes.length }));
-        }
-        if (selectedCategory === "__saved__" && !useGlobalSearch) {
-          setSavedRecipeIds(new Set(recipes.map((recipe) => recipe.id)));
-        }
-        if (viewCacheKey) {
-          rememberView(viewCacheKey, {
-            recipes,
-            categories: data.categories?.length ? data.categories : undefined,
-          });
-        }
-        setRecipesState({ status: "success", recipes });
-      })
-      .catch((error: unknown) => {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-        setRecipesState({ status: "error", message: t.cookbookLoadError });
+  useEffect(() => {
+    if (recipesQuery.isPending) {
+      setRecipesState({ status: "loading" });
+      return;
+    }
+    if (recipesQuery.isError) {
+      setRecipesState({
+        status: "error",
+        message: recipesQuery.error instanceof Error ? recipesQuery.error.message : t.cookbookLoadError,
       });
-    return () => controller.abort();
-  }, [recipesUrl, retryCount, rememberView, selectedCategory, t.cookbookLoadError, useGlobalSearch, viewCacheKey]);
+      return;
+    }
+    if (!recipesQuery.data) return;
+
+    if (recipesQuery.data.categories?.length) setCategories(recipesQuery.data.categories);
+    const recipes = Array.isArray(recipesQuery.data.recipes) ? recipesQuery.data.recipes : [];
+    if (!useGlobalSearch) {
+      const key = selectedCategory ?? "__featured__";
+      setCategoryCounts((current) => ({ ...current, [key]: recipes.length }));
+    }
+    if (selectedCategory === "__saved__" && !useGlobalSearch) {
+      setSavedRecipeIds(new Set(recipes.map((recipe) => recipe.id)));
+    }
+    setRecipesState({ status: "success", recipes });
+  }, [
+    recipesQuery.data,
+    recipesQuery.error,
+    recipesQuery.isError,
+    recipesQuery.isPending,
+    selectedCategory,
+    t.cookbookLoadError,
+    useGlobalSearch,
+  ]);
 
   const loadedRecipes = recipesState.status === "success" ? recipesState.recipes : [];
   const recipesForDisplay =
@@ -203,7 +167,6 @@ export function CookbookPage() {
     async (recipe: RecipeItem) => {
       const wasSaved = savedRecipeIds.has(recipe.id);
       const nextSaved = !wasSaved;
-      viewCacheRef.current.delete("__saved__");
       setSavingRecipeIds((current) => new Set(current).add(recipe.id));
       setSavedRecipeIds((current) => {
         const next = new Set(current);
@@ -223,10 +186,10 @@ export function CookbookPage() {
         );
       }
       try {
-        const response = await fetch(`/api/recipe/${encodeURIComponent(recipe.id)}/saved`, {
+        await fetchJson<unknown>(`/api/recipe/${encodeURIComponent(recipe.id)}/saved`, {
           method: nextSaved ? "POST" : "DELETE",
         });
-        if (!response.ok) throw new Error(t.recipeSaveError);
+        void queryClient.invalidateQueries({ queryKey: ["cookbook"] });
       } catch {
         setSavedRecipeIds((current) => {
           const next = new Set(current);
@@ -243,7 +206,7 @@ export function CookbookPage() {
         });
       }
     },
-    [savedRecipeIds, selectedCategory, t.recipeSaveError]
+    [queryClient, savedRecipeIds, selectedCategory, t.recipeSaveError]
   );
 
   const visibleRecipes = recipesForDisplay.slice(0, visibleCount);
@@ -335,7 +298,7 @@ export function CookbookPage() {
           onRetry={() => {
             setRecipesState({ status: "loading" });
             setVisibleCount(PAGE_SIZE);
-            setRetryCount((count) => count + 1);
+            void recipesQuery.refetch();
           }}
         />
       ) : null}
@@ -495,6 +458,7 @@ export function RecipeDetailPage() {
   const { id } = useParams({ from: "/authenticated/recipe/$id" });
   const t = getTranslations(useCountryCode());
   const countryCode = useCountryCode();
+  const queryClient = useQueryClient();
   const { refresh } = useCart();
   const [pageState, setPageState] = useState<RecipePageState>({ status: "loading" });
   const [portions, setPortions] = useState(2);
@@ -503,42 +467,52 @@ export function RecipeDetailPage() {
   const [addState, setAddState] = useState<AddState>("idle");
   const [isSaved, setIsSaved] = useState(false);
   const [isSavingRecipe, setIsSavingRecipe] = useState(false);
+  const recipeQuery = useQuery({
+    queryKey: queryKeys.recipeDetail(id, null, countryCode),
+    queryFn: () => fetchJson<RecipeDetail>(`/api/recipe/${encodeURIComponent(id)}`),
+    staleTime: queryStaleTime.cookbookView,
+  });
+  const detailSavedQuery = useQuery({
+    queryKey: queryKeys.savedRecipes(countryCode),
+    queryFn: () => fetchJson<CookbookApiResponse>("/api/cookbook?category=__saved__"),
+    staleTime: queryStaleTime.savedRecipes,
+  });
   useDocumentTitle(pageState.status === "success" ? pageState.recipe.name : t.cookbookTitle);
 
   useEffect(() => {
-    const controller = new AbortController();
-    fetch(`/api/recipe/${encodeURIComponent(id)}`, { signal: controller.signal })
-      .then(readJson<RecipeDetail>)
-      .then((recipe) => {
-        const p = recipe.portions ?? 2;
-        setConfirmedPortions(p);
-        setPortions(p);
-        setPageState({ status: "success", recipe });
-        setCheckedIds(new Set(recipe.ingredients.filter((ingredient) => !ingredient.isCondiment).map((ingredient) => ingredient.id)));
-      })
-      .catch((error: unknown) => {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-        setPageState({ status: "error", message: error instanceof Error ? error.message : t.recipeLoadError });
+    if (recipeQuery.isPending) {
+      setPageState({ status: "loading" });
+      return;
+    }
+    if (recipeQuery.isError) {
+      setPageState({
+        status: "error",
+        message: recipeQuery.error instanceof Error ? recipeQuery.error.message : t.recipeLoadError,
       });
-    return () => controller.abort();
-  }, [id, t.recipeLoadError]);
+      return;
+    }
+    if (!recipeQuery.data) return;
+
+    const p = recipeQuery.data.portions ?? 2;
+    setConfirmedPortions(p);
+    setPortions(p);
+    setPageState({ status: "success", recipe: recipeQuery.data });
+    setCheckedIds(new Set(recipeQuery.data.ingredients.filter((ingredient) => !ingredient.isCondiment).map((ingredient) => ingredient.id)));
+  }, [recipeQuery.data, recipeQuery.error, recipeQuery.isError, recipeQuery.isPending, t.recipeLoadError]);
 
   useEffect(() => {
-    const controller = new AbortController();
-    fetch("/api/cookbook?category=__saved__", { signal: controller.signal })
-      .then((response) => response.json())
-      .then((data: { recipes?: { id: string }[] }) => setIsSaved(Boolean(data.recipes?.some((recipe) => recipe.id === id))))
-      .catch(() => undefined);
-    return () => controller.abort();
-  }, [id]);
+    setIsSaved(Boolean(detailSavedQuery.data?.recipes?.some((recipe) => recipe.id === id)));
+  }, [detailSavedQuery.data, id]);
 
   useEffect(() => {
     if (pageState.status !== "success" || confirmedPortions === null || confirmedPortions === portions) return;
     const controller = new AbortController();
     const timer = setTimeout(() => {
-      fetch(`/api/recipe/${encodeURIComponent(id)}?portions=${portions}`, { signal: controller.signal })
-        .then(readJson<RecipeDetail>)
+      fetchJson<RecipeDetail>(`/api/recipe/${encodeURIComponent(id)}?portions=${portions}`, {
+        signal: controller.signal,
+      })
         .then((fetched) => {
+          queryClient.setQueryData(queryKeys.recipeDetail(id, portions, countryCode), fetched);
           setConfirmedPortions(portions);
           setPageState((current) =>
             current.status === "success"
@@ -563,7 +537,7 @@ export function RecipeDetailPage() {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [confirmedPortions, id, pageState.status, portions]);
+  }, [confirmedPortions, countryCode, id, pageState.status, portions, queryClient]);
 
   const handleToggleSaved = useCallback(async () => {
     if (isSavingRecipe) return;
@@ -571,17 +545,17 @@ export function RecipeDetailPage() {
     setIsSavingRecipe(true);
     setIsSaved(nextSaved);
     try {
-      const response = await fetch(`/api/recipe/${encodeURIComponent(id)}/saved`, { method: nextSaved ? "POST" : "DELETE" });
-      if (!response.ok) throw new Error(t.recipeSaveError);
+      await fetchJson<unknown>(`/api/recipe/${encodeURIComponent(id)}/saved`, { method: nextSaved ? "POST" : "DELETE" });
+      void queryClient.invalidateQueries({ queryKey: ["cookbook"] });
     } catch {
       setIsSaved(!nextSaved);
     } finally {
       setIsSavingRecipe(false);
     }
-  }, [id, isSaved, isSavingRecipe, t.recipeSaveError]);
+  }, [id, isSaved, isSavingRecipe, queryClient]);
 
   if (pageState.status === "loading") return <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-8"><LoadingView /></main>;
-  if (pageState.status === "error") return <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-8"><ErrorView message={pageState.message} onRetry={() => setPageState({ status: "loading" })} /></main>;
+  if (pageState.status === "error") return <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-8"><ErrorView message={pageState.message} onRetry={() => void recipeQuery.refetch()} /></main>;
 
   const { recipe } = pageState;
   const mainIngredients = recipe.ingredients.filter((ingredient) => !ingredient.isCondiment);
@@ -604,12 +578,10 @@ export function RecipeDetailPage() {
       count: getRecipeIngredientCount(ingredient, portions, recipe.portions),
     }));
     try {
-      const response = await fetch(`/api/recipe/${encodeURIComponent(id)}/add-to-cart`, {
+      await fetchJson<unknown>(`/api/recipe/${encodeURIComponent(id)}/add-to-cart`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ portions, selectedIngredients }),
       });
-      if (!response.ok) throw new Error("failed");
       refresh();
       setAddState("done");
       setTimeout(() => setAddState("idle"), 2500);

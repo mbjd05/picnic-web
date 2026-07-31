@@ -20,6 +20,7 @@ import { MIN_SUGGESTION_LENGTH, SUPPORTED_COUNTRY_CODES } from "@/lib/types";
 import { CartProvider, useCart } from "./cart-context";
 import { CountryProvider, useCountryCode, useSwitchCountry } from "./country-context";
 import { fetchJson } from "./lib/api-client";
+import { queryKeys, queryStaleTime } from "./lib/query-config";
 
 const HeaderBottomBarContext = createContext<HTMLElement | null>(null);
 const SUGGESTION_DEBOUNCE_MS = 150;
@@ -110,7 +111,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
   }, []);
 
   const suggestionsQuery = useQuery({
-    queryKey: ["suggestions", suggestionSession, debouncedQuery, countryCode],
+    queryKey: ["suggestions-session", suggestionSession, ...queryKeys.suggestions(debouncedQuery, countryCode)],
     queryFn: () =>
       fetchJson<SuggestionsApiResponse>(`/api/suggestions?q=${encodeURIComponent(debouncedQuery)}`),
     enabled: debouncedQuery.length >= MIN_SUGGESTION_LENGTH,
@@ -124,7 +125,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
         ? previousData
         : undefined;
     },
-    staleTime: 60_000,
+    staleTime: queryStaleTime.suggestions,
     retry: false,
   });
   const suggestions = suggestionsQuery.data?.suggestions ?? [];

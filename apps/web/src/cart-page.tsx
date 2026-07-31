@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- Vite has no Next Image component. */
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 
 import { Badge } from "@/components/badge";
@@ -27,9 +28,9 @@ import type {
 } from "@/lib/types";
 
 import { ErrorView, LoadingView, useDocumentTitle } from "./browsing-components";
-import { useCart } from "./cart-context";
 import { useCountryCode } from "./country-context";
 import { ApiClientError, fetchJson } from "./lib/api-client";
+import { queryKeys, queryStaleTime } from "./lib/query-config";
 
 const CART_MUTATION_DEBOUNCE_MS = 220;
 const PAYMENT_BANK_STORAGE_KEY = "picnic_payment_option_banks";
@@ -42,19 +43,6 @@ type CartPageState =
 
 function PageLayout({ children }: { children: React.ReactNode }) {
   return <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-8">{children}</main>;
-}
-
-async function fetchCartData(): Promise<CartPageState> {
-  try {
-    const cart = await fetchJson<CartData>("/api/cart");
-    return cart.totalCount === 0 ? { status: "empty" } : { status: "success", cart };
-  } catch (error) {
-    return {
-      status: "error",
-      message:
-        error instanceof Error ? error.message : "Er is iets misgegaan. Probeer het later opnieuw.",
-    };
-  }
 }
 
 async function postCartMutation(
@@ -71,11 +59,10 @@ async function postCartMutation(
 export function CartPage() {
   const countryCode = useCountryCode();
   const t = getTranslations(countryCode);
-  const shellCart = useCart();
+  const queryClient = useQueryClient();
   useDocumentTitle(t.cartTitle);
 
   const [pageState, setPageState] = useState<CartPageState>({ status: "loading" });
-  const [retryCount, setRetryCount] = useState(0);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const confirmedCartRef = useRef<CartData | null>(null);
@@ -94,14 +81,14 @@ export function CartPage() {
   const reconcileFromServer = useCallback(
     (cart: CartData) => {
       confirmedCartRef.current = cart;
-      shellCart.refresh();
+      queryClient.setQueryData(queryKeys.cart(), cart);
       setPageState(
         cart.totalCount === 0
           ? { status: "empty" }
           : { status: "success", cart, isReconciling: false }
       );
     },
-    [shellCart]
+    [queryClient]
   );
 
   const rollbackProduct = useCallback(() => {
@@ -114,17 +101,32 @@ export function CartPage() {
     );
   }, []);
 
+  const cartQuery = useQuery({
+    queryKey: queryKeys.cart(),
+    queryFn: () => fetchJson<CartData>("/api/cart"),
+    staleTime: queryStaleTime.cart,
+  });
+
   useEffect(() => {
-    let cancelled = false;
-    fetchCartData().then((result) => {
-      if (cancelled) return;
-      if (result.status === "success") confirmedCartRef.current = result.cart;
-      setPageState(result);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [retryCount]);
+    if (cartQuery.data) {
+      confirmedCartRef.current = cartQuery.data;
+      setPageState(
+        cartQuery.data.totalCount === 0
+          ? { status: "empty" }
+          : { status: "success", cart: cartQuery.data, isReconciling: false }
+      );
+      return;
+    }
+    if (cartQuery.isError) {
+      setPageState({
+        status: "error",
+        message:
+          cartQuery.error instanceof Error
+            ? cartQuery.error.message
+            : "Er is iets misgegaan. Probeer het later opnieuw.",
+      });
+    }
+  }, [cartQuery.data, cartQuery.error, cartQuery.isError]);
 
   const flushProductDelta = useCallback(
     async (productId: string) => {
@@ -145,6 +147,7 @@ export function CartPage() {
       let result: CartData | null = null;
       try {
         result = await postCartMutation(productId, delta > 0 ? "add" : "remove", Math.abs(delta));
+        queryClient.setQueryData(queryKeys.cart(), result);
         confirmedCartRef.current = result;
       } catch {
         rollbackProduct();
@@ -154,7 +157,7 @@ export function CartPage() {
         if (result && !hasPendingCartMutations()) reconcileFromServer(result);
       }
     },
-    [hasPendingCartMutations, reconcileFromServer, rollbackProduct, t.cartMutationError]
+    [hasPendingCartMutations, queryClient, reconcileFromServer, rollbackProduct, t.cartMutationError]
   );
 
   const enqueueDelta = useCallback(
@@ -275,7 +278,7 @@ export function CartPage() {
           message={pageState.message || t.cartLoadError}
           onRetry={() => {
             setPageState({ status: "loading" });
-            setRetryCount((count) => count + 1);
+            void cartQuery.refetch();
           }}
         />
       ) : null}
@@ -707,20 +710,13 @@ function CheckoutCta({
   const [checkoutState, setCheckoutState] = useState<
     { status: "idle" } | { status: "loading" } | { status: "error"; message: string }
   >({ status: "idle" });
-  const [paymentProfile, setPaymentProfile] = useState<PaymentProfile | null>(null);
   const [storedBankMetadata] = useState(readStoredBankMetadata);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetchJson<PaymentProfile>("/api/account/payment-profile")
-      .then((profile) => {
-        if (!cancelled) setPaymentProfile(profile);
-      })
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const paymentProfileQuery = useQuery({
+    queryKey: queryKeys.paymentProfile(),
+    queryFn: () => fetchJson<PaymentProfile>("/api/account/payment-profile"),
+    staleTime: queryStaleTime.paymentProfile,
+  });
+  const paymentProfile = paymentProfileQuery.data ?? null;
 
   const preferredOption = paymentProfile ? getPreferredPaymentOption(paymentProfile) : null;
   const hasKnownMissingPayment =
@@ -799,12 +795,6 @@ function CheckoutCta({
   );
 }
 
-type PickerState =
-  | { status: "loading" }
-  | { status: "ready"; data: DeliverySlotPickerData; dayIndex: number; selectionError?: string }
-  | { status: "selecting"; data: DeliverySlotPickerData; dayIndex: number; slotId: string }
-  | { status: "error"; message: string };
-
 function DeliverySlotPicker({
   onClose,
   onSlotSelected,
@@ -812,88 +802,66 @@ function DeliverySlotPicker({
   onClose: () => void;
   onSlotSelected: (updatedCart: CartData) => void;
 }) {
-  const [state, setState] = useState<PickerState>({ status: "loading" });
+  const queryClient = useQueryClient();
+  const [dayIndex, setDayIndex] = useState(0);
+  const [selectingSlotId, setSelectingSlotId] = useState<string | null>(null);
+  const [selectionError, setSelectionError] = useState<string | undefined>(undefined);
+  const slotsQuery = useQuery({
+    queryKey: queryKeys.deliverySlots(),
+    queryFn: () => fetchJson<DeliverySlotPickerData>("/api/cart/delivery-slots"),
+    staleTime: queryStaleTime.deliverySlots,
+  });
 
   const loadSlots = useCallback(() => {
-    setState({ status: "loading" });
-    fetchJson<DeliverySlotPickerData>("/api/cart/delivery-slots")
-      .then((data) => setState({ status: "ready", data, dayIndex: 0 }))
-      .catch((error) =>
-        setState({
-          status: "error",
-          message: error instanceof Error ? error.message : "Kan bezorgmomenten niet laden.",
-        })
-      );
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetchJson<DeliverySlotPickerData>("/api/cart/delivery-slots")
-      .then((data) => {
-        if (!cancelled) setState({ status: "ready", data, dayIndex: 0 });
-      })
-      .catch((error) => {
-        if (!cancelled) {
-          setState({
-            status: "error",
-            message: error instanceof Error ? error.message : "Kan bezorgmomenten niet laden.",
-          });
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    setSelectionError(undefined);
+    void slotsQuery.refetch();
+  }, [slotsQuery]);
 
   const handleSelectSlot = useCallback(
     (slotId: string) => {
-      setState((previous) =>
-        previous.status === "ready" ? { ...previous, status: "selecting", slotId } : previous
-      );
+      setSelectingSlotId(slotId);
+      setSelectionError(undefined);
       fetchJson<CartData>("/api/cart/delivery-slots", {
         method: "POST",
         body: JSON.stringify({ slotId }),
       })
-        .then(onSlotSelected)
+        .then((cart) => {
+          queryClient.setQueryData(queryKeys.cart(), cart);
+          void queryClient.invalidateQueries({ queryKey: queryKeys.deliverySlots() });
+          onSlotSelected(cart);
+        })
         .catch((error) => {
-          setState((previous) =>
-            previous.status === "selecting"
-              ? {
-                  status: "ready",
-                  data: previous.data,
-                  dayIndex: previous.dayIndex,
-                  selectionError:
-                    error instanceof Error ? error.message : "Kan bezorgmoment niet kiezen.",
-                }
-              : previous
-          );
+          setSelectionError(error instanceof Error ? error.message : "Kan bezorgmoment niet kiezen.");
+        })
+        .finally(() => {
+          setSelectingSlotId(null);
         });
     },
-    [onSlotSelected]
+    [onSlotSelected, queryClient]
   );
 
   const handleDayChange = useCallback((dayIndex: number) => {
-    setState((previous) =>
-      previous.status === "ready" || previous.status === "selecting"
-        ? { ...previous, status: "ready", dayIndex, selectionError: undefined }
-        : previous
-    );
+    setDayIndex(dayIndex);
+    setSelectionError(undefined);
   }, []);
+
+  const slotErrorMessage =
+    slotsQuery.error instanceof Error ? slotsQuery.error.message : "Kan bezorgmomenten niet laden.";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="flex max-h-[min(600px,90vh)] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-xl">
         <PickerHeader onClose={onClose} />
-        {state.status === "loading" ? <PickerLoading /> : null}
-        {state.status === "error" ? (
-          <PickerError message={state.message} onRetry={loadSlots} />
+        {slotsQuery.isPending ? <PickerLoading /> : null}
+        {slotsQuery.isError ? (
+          <PickerError message={slotErrorMessage} onRetry={loadSlots} />
         ) : null}
-        {state.status === "ready" || state.status === "selecting" ? (
+        {slotsQuery.data ? (
           <SlotListBody
-            data={state.data}
-            dayIndex={state.dayIndex}
-            selectingSlotId={state.status === "selecting" ? state.slotId : null}
-            selectionError={state.status === "ready" ? state.selectionError : undefined}
+            data={slotsQuery.data}
+            dayIndex={Math.min(dayIndex, Math.max(0, slotsQuery.data.dayGroups.length - 1))}
+            selectingSlotId={selectingSlotId}
+            selectionError={selectionError}
             onDayChange={handleDayChange}
             onSelectSlot={handleSelectSlot}
           />

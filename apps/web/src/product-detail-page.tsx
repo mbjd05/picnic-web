@@ -25,6 +25,7 @@ import { BackButton, ErrorView, LoadingView, useDocumentTitle } from "./browsing
 import { useCart } from "./cart-context";
 import { useCountryCode } from "./country-context";
 import { ApiClientError, fetchJson } from "./lib/api-client";
+import { queryKeys, queryStaleTime } from "./lib/query-config";
 
 const PLACEHOLDER_IMAGE = "/placeholder-product.svg";
 const GALLERY_IMAGE_SIZE = "large";
@@ -40,8 +41,9 @@ export function ProductDetailPage() {
   const countryCode = useCountryCode();
   const t = getTranslations(countryCode);
   const query = useQuery({
-    queryKey: ["product-detail", id, countryCode],
+    queryKey: queryKeys.productDetail(id, countryCode),
     queryFn: () => fetchJson<ProductDetail>(`/api/product/${encodeURIComponent(id)}`),
+    staleTime: queryStaleTime.productDetail,
   });
 
   useDocumentTitle(query.data?.name);

@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { getTranslations } from "@/lib/i18n";
 import { getPaymentDisplayName, getPreferredPaymentOption } from "@/lib/payment";
@@ -13,6 +14,7 @@ import type {
 import { ErrorView, LoadingView, useDocumentTitle } from "./browsing-components";
 import { useCountryCode } from "./country-context";
 import { ApiClientError, fetchJson } from "./lib/api-client";
+import { queryKeys, queryStaleTime } from "./lib/query-config";
 
 const PAYMENT_BANK_STORAGE_KEY = "picnic_payment_option_banks";
 
@@ -36,11 +38,6 @@ const IDEAL_BANKS: PaymentBank[] = [
   { bank_id: "BUUTNL2A", name: "BUUT" },
 ];
 
-type PaymentPageState =
-  | { status: "loading" }
-  | { status: "success"; profile: PaymentProfile }
-  | { status: "error"; message: string };
-
 type StoredBankMetadata = Record<string, { bankId: string; bankName: string }>;
 
 function readStoredBankMetadata(): StoredBankMetadata {
@@ -57,32 +54,28 @@ function writeStoredBankMetadata(metadata: StoredBankMetadata): void {
 
 export function PaymentAccountPage() {
   const t = getTranslations(useCountryCode());
+  const queryClient = useQueryClient();
   useDocumentTitle(t.paymentMethodsPageTitle);
 
-  const [pageState, setPageState] = useState<PaymentPageState>({ status: "loading" });
   const [selectedBank, setSelectedBank] = useState("");
   const [storedBankMetadata, setStoredBankMetadata] = useState<StoredBankMetadata>({});
   const [actionError, setActionError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-
-  const loadProfile = useCallback(() => {
-    setPageState({ status: "loading" });
-    fetchJson<PaymentProfile>("/api/account/payment-profile")
-      .then((profile) => setPageState({ status: "success", profile }))
-      .catch((error: unknown) =>
-        setPageState({
-          status: "error",
-          message: error instanceof ApiClientError ? error.message : t.paymentProfileLoadError,
-        })
-      );
-  }, [t.paymentProfileLoadError]);
+  const profileQuery = useQuery({
+    queryKey: queryKeys.paymentProfile(),
+    queryFn: () => fetchJson<PaymentProfile>("/api/account/payment-profile"),
+    staleTime: queryStaleTime.paymentProfile,
+  });
+  const profileErrorMessage =
+    profileQuery.error instanceof ApiClientError
+      ? profileQuery.error.message
+      : t.paymentProfileLoadError;
 
   useEffect(() => {
     setStoredBankMetadata(readStoredBankMetadata());
-    loadProfile();
-  }, [loadProfile]);
+  }, []);
 
-  const profile = pageState.status === "success" ? pageState.profile : null;
+  const profile = profileQuery.data ?? null;
   const preferredOption = profile ? getPreferredPaymentOption(profile) : null;
   const idealMethod = useMemo(
     () =>
@@ -127,7 +120,7 @@ export function PaymentAccountPage() {
         writeStoredBankMetadata(nextMetadata);
       }
 
-      setPageState({ status: "success", profile: data });
+      queryClient.setQueryData(queryKeys.paymentProfile(), data);
     } catch (error) {
       setActionError(error instanceof ApiClientError ? error.message : t.paymentOptionSaveError);
     } finally {
@@ -148,7 +141,7 @@ export function PaymentAccountPage() {
       void _removed;
       setStoredBankMetadata(nextMetadata);
       writeStoredBankMetadata(nextMetadata);
-      setPageState({ status: "success", profile: data });
+      queryClient.setQueryData(queryKeys.paymentProfile(), data);
     } catch (error) {
       setActionError(error instanceof ApiClientError ? error.message : t.paymentOptionRemoveError);
     } finally {
@@ -168,9 +161,11 @@ export function PaymentAccountPage() {
         </Link>
       </div>
 
-      {pageState.status === "loading" ? <LoadingView /> : null}
-      {pageState.status === "error" ? <ErrorView message={pageState.message} onRetry={loadProfile} /> : null}
-      {pageState.status === "success" && profile ? (
+      {profileQuery.isPending ? <LoadingView /> : null}
+      {profileQuery.isError ? (
+        <ErrorView message={profileErrorMessage} onRetry={() => void profileQuery.refetch()} />
+      ) : null}
+      {profile ? (
         <div className="space-y-6">
           <section className="border-card-border rounded-xl border bg-white p-4">
             <h2 className="text-base font-semibold text-gray-900">{t.preferredPaymentMethod}</h2>

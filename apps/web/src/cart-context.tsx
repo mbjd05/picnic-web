@@ -9,9 +9,12 @@ import {
   useState,
 } from "react";
 
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+
 import type { BundleProgress, BundleThreshold, CartData } from "@/lib/types";
 
 import { fetchJson } from "./lib/api-client";
+import { queryKeys, queryStaleTime } from "./lib/query-config";
 
 const CART_MUTATION_DEBOUNCE_MS = 220;
 
@@ -36,6 +39,7 @@ function quantitiesFromCart(cart: CartData): Map<string, number> {
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [quantities, setQuantities] = useState<Map<string, number>>(new Map());
   const [totalPrice, setTotalPrice] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
@@ -46,6 +50,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const pendingDeltasRef = useRef(new Map<string, number>());
   const pendingTimersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const requestCountRef = useRef(0);
+  const cartQuery = useQuery({
+    queryKey: queryKeys.cart(),
+    queryFn: () => fetchJson<CartData>("/api/cart"),
+    staleTime: queryStaleTime.cart,
+  });
 
   const reconcile = useCallback((cart: CartData) => {
     const next = quantitiesFromCart(cart);
@@ -56,13 +65,24 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refresh = useCallback(() => {
-    void fetchJson<CartData>("/api/cart")
-      .then(reconcile)
+    void queryClient.invalidateQueries({ queryKey: queryKeys.cart() });
+    void cartQuery
+      .refetch()
+      .then((result) => {
+        if (result.data) reconcile(result.data);
+      })
       .catch(() => undefined)
       .finally(() => setIsLoading(false));
-  }, [reconcile]);
+  }, [cartQuery, queryClient, reconcile]);
 
-  useEffect(refresh, [refresh]);
+  useEffect(() => {
+    if (cartQuery.data) {
+      reconcile(cartQuery.data);
+      setIsLoading(false);
+    } else if (cartQuery.isError) {
+      setIsLoading(false);
+    }
+  }, [cartQuery.data, cartQuery.isError, reconcile]);
 
   const flush = useCallback(
     async (productId: string) => {
@@ -81,6 +101,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
             count: Math.abs(delta),
           }),
         });
+        queryClient.setQueryData(queryKeys.cart(), cart);
         confirmedRef.current = quantitiesFromCart(cart);
         if (pendingDeltasRef.current.size === 0 && requestCountRef.current === 1) reconcile(cart);
       } catch {
@@ -97,7 +118,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         requestCountRef.current -= 1;
       }
     },
-    [reconcile, refresh]
+    [queryClient, reconcile, refresh]
   );
 
   const enqueue = useCallback(
