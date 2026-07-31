@@ -26,6 +26,8 @@ const VIEWPORT_FOCUS_RATIO = 0.45;
 const INITIAL_PRODUCT_IMAGE_PRELOAD_COUNT = 12;
 const PRODUCT_IMAGE_PRELOAD_TIMEOUT_MS = 1200;
 const SECTION_SCROLL_GAP_PX = 12;
+const MAX_LOADED_PRODUCT_IMAGE_URLS = 500;
+const loadedProductImageUrls = new Set<string>();
 
 export function LoadingView() {
   return (
@@ -386,10 +388,15 @@ function useInitialProductImagesReady(products: Product[], countryCode: CountryC
       );
     return [...new Set(urls)].join("\n");
   }, [countryCode, products]);
-  const [readySignature, setReadySignature] = useState(imageSignature ? "" : imageSignature);
+  const [readySignature, setReadySignature] = useState(() =>
+    areProductImagesLoaded(imageSignature) ? imageSignature : ""
+  );
 
   useEffect(() => {
-    if (!imageSignature) return;
+    if (!imageSignature || areProductImagesLoaded(imageSignature)) {
+      setReadySignature(imageSignature);
+      return;
+    }
 
     let cancelled = false;
     const urls = imageSignature.split("\n");
@@ -413,9 +420,14 @@ function useInitialProductImagesReady(products: Product[], countryCode: CountryC
 
 function preloadImage(src: string) {
   return new Promise<void>((resolve) => {
+    if (loadedProductImageUrls.has(src)) {
+      resolve();
+      return;
+    }
     const image = new Image();
     image.decoding = "async";
     image.onload = () => {
+      markProductImageLoaded(src);
       if (image.decode) {
         image.decode().then(resolve, resolve);
         return;
@@ -424,7 +436,26 @@ function preloadImage(src: string) {
     };
     image.onerror = () => resolve();
     image.src = src;
+    if (image.complete) {
+      markProductImageLoaded(src);
+      resolve();
+    }
   });
+}
+
+function markProductImageLoaded(src: string) {
+  if (loadedProductImageUrls.has(src)) return;
+  if (loadedProductImageUrls.size >= MAX_LOADED_PRODUCT_IMAGE_URLS) {
+    const oldest = loadedProductImageUrls.values().next().value;
+    if (oldest) loadedProductImageUrls.delete(oldest);
+  }
+  loadedProductImageUrls.add(src);
+}
+
+function areProductImagesLoaded(imageSignature: string) {
+  return (
+    !imageSignature || imageSignature.split("\n").every((url) => loadedProductImageUrls.has(url))
+  );
 }
 
 export function ResultsView({

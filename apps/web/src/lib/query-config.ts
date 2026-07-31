@@ -3,7 +3,7 @@ import type { CountryCode } from "@/lib/types";
 export const queryStaleTime = {
   categories: 20 * 60 * 1000,
   productDetail: 15 * 60 * 1000,
-  search: 2 * 60 * 1000,
+  search: 10 * 60 * 1000,
   suggestions: 60 * 1000,
   cart: 30 * 1000,
   deliverySlots: 30 * 1000,
@@ -15,6 +15,11 @@ export const queryStaleTime = {
   cookbookView: 15 * 60 * 1000,
   savedRecipes: 2 * 60 * 1000,
   paymentProfile: 2 * 60 * 1000,
+} as const;
+
+export const queryGcTime = {
+  productLists: 30 * 60 * 1000,
+  search: 30 * 60 * 1000,
 } as const;
 
 export const queryKeys = {

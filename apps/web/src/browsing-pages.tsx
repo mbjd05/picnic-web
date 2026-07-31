@@ -25,7 +25,7 @@ import {
 } from "./browsing-components";
 import { useCountryCode, useTranslations } from "./country-context";
 import { fetchJson } from "./lib/api-client";
-import { queryKeys, queryStaleTime } from "./lib/query-config";
+import { queryGcTime, queryKeys, queryStaleTime } from "./lib/query-config";
 
 function PageLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -51,6 +51,7 @@ export function HomePage() {
     queryFn: () => fetchJson<SearchApiResponse>(`/api/search?q=${encodeURIComponent(query)}`),
     enabled: Boolean(query),
     staleTime: queryStaleTime.search,
+    gcTime: queryGcTime.search,
   });
 
   useDocumentTitle(query ? `"${query}"` : undefined);
@@ -245,6 +246,7 @@ function useProductsQuery(key: string[], url: string, enabled = true) {
     queryFn: () => fetchJson<CategoryProductsApiResponse>(url),
     enabled,
     staleTime: queryStaleTime.search,
+    gcTime: queryGcTime.productLists,
   });
 }
 
