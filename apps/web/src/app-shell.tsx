@@ -146,6 +146,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
   const searchRef = useRef<HTMLFormElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const localeMenuRef = useRef<HTMLDivElement>(null);
+  const lastNonEmptySuggestionsRef = useRef<SuggestionsApiResponse["suggestions"]>([]);
   const cart = useCart();
 
   useEffect(() => {
@@ -210,6 +211,20 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
   });
   const suggestions = suggestionsQuery.data?.suggestions ?? [];
   const canShowSuggestions = query.trim().length >= MIN_SUGGESTION_LENGTH;
+  const displayedSuggestions =
+    suggestions.length > 0
+      ? suggestions
+      : suggestionsQuery.isFetching && canShowSuggestions
+        ? lastNonEmptySuggestionsRef.current
+        : [];
+
+  useEffect(() => {
+    if (suggestions.length > 0) lastNonEmptySuggestionsRef.current = suggestions;
+  }, [suggestions]);
+
+  useEffect(() => {
+    if (activeSuggestionIndex >= displayedSuggestions.length) setActiveSuggestionIndex(-1);
+  }, [activeSuggestionIndex, displayedSuggestions.length]);
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -238,17 +253,19 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
       setActiveSuggestionIndex(-1);
       return;
     }
-    if (!showSuggestions || suggestions.length === 0) return;
+    if (!showSuggestions || displayedSuggestions.length === 0) return;
 
     if (event.key === "ArrowDown") {
       event.preventDefault();
-      setActiveSuggestionIndex((index) => (index + 1) % suggestions.length);
+      setActiveSuggestionIndex((index) => (index + 1) % displayedSuggestions.length);
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
-      setActiveSuggestionIndex((index) => (index <= 0 ? suggestions.length - 1 : index - 1));
+      setActiveSuggestionIndex((index) =>
+        index <= 0 ? displayedSuggestions.length - 1 : index - 1
+      );
     } else if (event.key === "Enter" && activeSuggestionIndex >= 0) {
       event.preventDefault();
-      const suggestion = suggestions[activeSuggestionIndex];
+      const suggestion = displayedSuggestions[activeSuggestionIndex];
       if (suggestion) selectSuggestion(suggestion.suggestion);
     }
   }
@@ -356,7 +373,9 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
               role="combobox"
               aria-autocomplete="list"
               aria-controls="product-search-suggestions"
-              aria-expanded={showSuggestions && canShowSuggestions && suggestions.length > 0}
+              aria-expanded={
+                showSuggestions && canShowSuggestions && displayedSuggestions.length > 0
+              }
               aria-activedescendant={
                 activeSuggestionIndex >= 0
                   ? `product-search-suggestion-${activeSuggestionIndex}`
@@ -371,13 +390,13 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
             >
               <SearchIcon />
             </button>
-            {showSuggestions && canShowSuggestions && suggestions.length ? (
+            {showSuggestions && canShowSuggestions && displayedSuggestions.length ? (
               <ul
                 id="product-search-suggestions"
                 role="listbox"
                 className="border-card-border bg-card-bg absolute top-full left-0 z-50 mt-1 w-full overflow-hidden rounded-lg border shadow-lg"
               >
-                {suggestions.map((suggestion, index) => (
+                {displayedSuggestions.map((suggestion, index) => (
                   <li
                     id={`product-search-suggestion-${index}`}
                     key={suggestion.id}
