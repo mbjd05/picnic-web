@@ -148,7 +148,38 @@ Append results below while executing Chunks 19 and 20.
 
 ### Chunk 19 Results
 
-- Not run yet.
+- 2026-07-31 local Worker run against `http://127.0.0.1:8787`.
+- Environment:
+  - Auth token loaded from local `.env`; token validation passed with SHA-256 prefix `5afc34a2771d1311`.
+  - Playwright MCP initially lacked a Chrome executable; installed Playwright Chromium with `pnpm dlx playwright install chromium` and bridged the expected user-local Chrome path to it.
+- Preflight:
+  - `git status --short --branch` was clean before testing.
+  - `npm run validate` passed: lint, typecheck, `build:web`, Worker dry-run build, and current Next build.
+  - Header smoke passed for `/login`, deep SPA fallback, hashed immutable assets, `/api/health`, and unauthenticated `/api/categories` `401`/`TOKEN_EXPIRED`/`no-store`.
+  - `PICNIC_WORKER_URL=http://127.0.0.1:8787 npm run smoke:api:auth` passed 43 checks with credential/2FA smoke skipped by design.
+- Playwright MCP desktop:
+  - Unauthenticated `/cart` redirected to `/login?expired=true&redirect=%2Fcart`.
+  - Authenticated header, cart link, cookbook link, payment link, logout button, and private `/api/categories` access were present.
+  - Search for `banaan` passed: URL persistence, result-count spacing, `Alle resultaten voor "banaan"` header, suggestions after typing, and no stale suggestions after clearing.
+  - Search result section pills passed for the available `Alle resultaten` and `Bekijk ook` sections without hash/history pollution.
+  - Home category navigation, subcategory product listing, and `Alle acties` shortcut navigation passed.
+  - PLP add-to-cart UI mutation passed and restored original cart quantity/count.
+  - PDP `/product/s1012386` passed for title, imagery, price, bundle tiers, description, cart control, and similar products.
+  - Cart page passed for item rows, remove-all controls, one-step controls, summary, checkout CTA, payment-management link, and delivery picker visibility. Delivery slot was not changed.
+  - Cookbook browse, saved-recipes view/count, and cookbook-specific search passed. A first search attempt hit the global product search because the global header search has the broader selector; rerun with the recipe placeholder selector passed.
+  - Recipe detail `/recipe/68b1a6aec6c2190fcd153ab4` passed for hero image, bookmark button, portion controls, ingredients with product names, condiments, steps, nutrition, allergens, and the previous ingredient-title regression check.
+  - Recipe bookmark UI mutation passed and restored saved count from `0` back to `0`.
+  - Payment settings passed, including payment profile read, stored method display, bank selector, and `iDEAL | Wero` label.
+  - `/cart/payment-return` without a transaction showed the missing-active-payment state.
+- Mobile pass:
+  - `390x844` overflow checks passed for `/`, `/?q=banaan`, `/categories/21724/21745`, `/cart`, `/cookbook`, and `/recipe/68b1a6aec6c2190fcd153ab4`.
+- Performance/stability:
+  - Browser resource counts after mobile pass showed no obvious request explosion: `/api/cart` 2, `/api/cookbook` 2, and searched/browsed routes 1 each in the sampled navigation set.
+  - Worker stderr log was empty.
+  - Worker stdout showed normal successful API traffic; repeated `/api/categories` and `/api/cart` calls occurred mostly after explicit full navigations/reloads during testing.
+- Follow-up findings:
+  - Top-level category route `/categories/21724` loads correctly but sets the document title to `21724 - Picnic Web` instead of the category name.
+  - On the large `Alle acties` shortcut page, far section-pill clicks are clickable and history-safe, but visible headings after long jumps did not always align tightly with the clicked pill. This needs a focused sync/active-state pass before calling the section-navigation work fully polished.
 
 ### Chunk 20 Results
 
