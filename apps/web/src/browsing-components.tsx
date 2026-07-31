@@ -7,6 +7,7 @@ import { PriceDisplay } from "@/components/price-display";
 import { estimatedProgressPriceDelta } from "@/lib/cart-price-estimates";
 import type { CategoryItem, ShortcutItem } from "@/lib/category-types";
 import { buildImageUrl } from "@/lib/image-url";
+import { localizeApiSectionTitle } from "@/lib/localize-api-label";
 import type {
   BundleProgress,
   BundleThreshold,
@@ -309,6 +310,7 @@ export function ProductGrid({
 }) {
   const { registerBundleDataBatch } = useCart();
   const countryCode = useCountryCode();
+  const t = useTranslations();
   const gridProducts = useMemo(
     () => (sections?.length ? sections.flatMap((section) => section.products) : (products ?? [])),
     [products, sections]
@@ -341,7 +343,9 @@ export function ProductGrid({
             id={buildSectionId(index)}
             className="scroll-mt-36"
           >
-            <h2 className="text-foreground mb-3 text-lg font-semibold">{section.title}</h2>
+            <h2 className="text-foreground mb-3 text-lg font-semibold">
+              {localizeApiSectionTitle(section.title, t)}
+            </h2>
             <ProductTiles products={section.products} priorityProductIds={priorityProductIds} />
           </section>
         ))}
@@ -560,6 +564,7 @@ export function BackButton({ onClick }: { onClick: () => void }) {
 }
 
 export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
+  const t = useTranslations();
   const [active, setActive] = useState(0);
   const navRef = useRef<HTMLElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -704,7 +709,7 @@ export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
             aria-current={active === index ? "true" : undefined}
             className={`shrink-0 rounded-full px-3 py-1 text-sm font-medium whitespace-nowrap ${active === index ? "bg-picnic-red text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
           >
-            {section.title}
+            {localizeApiSectionTitle(section.title, t)}
           </button>
         ))}
       </div>

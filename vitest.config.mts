@@ -14,7 +14,12 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
-      include: ["src/lib/cart-price-estimates.ts", "src/lib/format-price.ts", "src/lib/payment.ts"],
+      include: [
+        "src/lib/cart-price-estimates.ts",
+        "src/lib/format-price.ts",
+        "src/lib/localize-api-label.ts",
+        "src/lib/payment.ts",
+      ],
       thresholds: {
         lines: 90,
         functions: 90,

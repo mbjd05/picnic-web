@@ -17,6 +17,7 @@ const translations = {
     resultSingular: "resultaat",
     resultPlural: "resultaten",
     allResultsFor: "Alle resultaten voor",
+    seeAlso: "Bekijk ook",
 
     // Login page
     loginTitle: "Inloggen",
@@ -309,6 +310,7 @@ const translations = {
     resultSingular: "Ergebnis",
     resultPlural: "Ergebnisse",
     allResultsFor: "Alle Ergebnisse für",
+    seeAlso: "Siehe auch",
 
     // Login page
     loginTitle: "Anmelden",
@@ -596,6 +598,7 @@ const translations = {
     resultSingular: "résultat",
     resultPlural: "résultats",
     allResultsFor: "Tous les résultats pour",
+    seeAlso: "Voir aussi",
     loginTitle: "Connexion",
     sessionExpired: "Votre session a expiré. Veuillez vous reconnecter.",
     enter2FACode: "Saisissez le code de vérification",
@@ -842,6 +845,7 @@ const englishTranslations: Translations = {
   resultSingular: "result",
   resultPlural: "results",
   allResultsFor: "All results for",
+  seeAlso: "See also",
   loginTitle: "Sign in",
   sessionExpired: "Your session has expired. Sign in again.",
   enter2FACode: "Enter the verification code",
