@@ -54,6 +54,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const visibleTotalsRef = useRef({ totalPrice: 0, totalCount: 0 });
   const pendingDeltasRef = useRef(new Map<string, number>());
   const pendingTimersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const mutationChainRef = useRef(Promise.resolve());
   const requestCountRef = useRef(0);
   const cartQuery = useQuery({
     queryKey: queryKeys.cart(),
@@ -158,6 +159,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [queryClient, reconcile, refresh]
   );
 
+  const scheduleFlush = useCallback(
+    (productId: string) => {
+      mutationChainRef.current = mutationChainRef.current
+        .catch(() => undefined)
+        .then(() => flush(productId));
+      void mutationChainRef.current;
+    },
+    [flush]
+  );
+
   const enqueue = useCallback(
     (productId: string, delta: number) => {
       pendingDeltasRef.current.set(
@@ -168,10 +179,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (currentTimer) clearTimeout(currentTimer);
       pendingTimersRef.current.set(
         productId,
-        setTimeout(() => void flush(productId), CART_MUTATION_DEBOUNCE_MS)
+        setTimeout(() => scheduleFlush(productId), CART_MUTATION_DEBOUNCE_MS)
       );
     },
-    [flush]
+    [scheduleFlush]
   );
 
   useEffect(() => {

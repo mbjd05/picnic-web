@@ -37,6 +37,34 @@ import { ThemeProvider, type ThemePreference, useTheme } from "./theme-context";
 
 const HeaderBottomBarContext = createContext<HTMLElement | null>(null);
 const SUGGESTION_DEBOUNCE_MS = 150;
+const SEARCH_HISTORY_STORAGE_KEY = "picnic_search_history";
+const MAX_SEARCH_HISTORY_ITEMS = 6;
+
+type SearchPopupItem = {
+  id: string;
+  label: string;
+};
+
+function readSearchHistory(): string[] {
+  try {
+    const value = localStorage.getItem(SEARCH_HISTORY_STORAGE_KEY);
+    if (!value) return [];
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeSearchHistory(searches: string[]) {
+  try {
+    localStorage.setItem(SEARCH_HISTORY_STORAGE_KEY, JSON.stringify(searches));
+  } catch {
+    // Search history is a convenience only; ignore storage failures.
+  }
+}
 
 export function HeaderBottomBar({ children }: { children: ReactNode }) {
   const host = useContext(HeaderBottomBarContext);
@@ -213,6 +241,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
   const [suggestionSession, setSuggestionSession] = useState(0);
+  const [recentSearches, setRecentSearches] = useState(readSearchHistory);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLocaleMenuOpen, setIsLocaleMenuOpen] = useState(false);
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
@@ -288,41 +317,66 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
     retry: false,
   });
   const suggestions = suggestionsQuery.data?.suggestions ?? [];
-  const canShowSuggestions = query.trim().length >= MIN_SUGGESTION_LENGTH;
+  const trimmedQuery = query.trim();
+  const canShowSuggestions = trimmedQuery.length >= MIN_SUGGESTION_LENGTH;
   const displayedSuggestions =
     suggestions.length > 0
       ? suggestions
       : suggestionsQuery.isFetching && canShowSuggestions
         ? lastNonEmptySuggestionsRef.current
         : [];
+  const popupItems: SearchPopupItem[] = canShowSuggestions
+    ? displayedSuggestions.map((suggestion) => ({
+        id: `suggestion-${suggestion.id}`,
+        label: suggestion.suggestion,
+      }))
+    : trimmedQuery.length === 0
+      ? recentSearches.map((search) => ({ id: `history-${search}`, label: search }))
+      : [];
+  const popupHeading = canShowSuggestions ? t.searchSuggestionsLabel : t.searchHistoryLabel;
+  const canShowSearchPopup = showSuggestions && popupItems.length > 0;
 
   useEffect(() => {
     if (suggestions.length > 0) lastNonEmptySuggestionsRef.current = suggestions;
   }, [suggestions]);
 
   useEffect(() => {
-    if (activeSuggestionIndex >= displayedSuggestions.length) setActiveSuggestionIndex(-1);
-  }, [activeSuggestionIndex, displayedSuggestions.length]);
+    if (activeSuggestionIndex >= popupItems.length) setActiveSuggestionIndex(-1);
+  }, [activeSuggestionIndex, popupItems.length]);
+
+  function saveSearchTerm(term: string) {
+    const trimmed = term.trim();
+    if (!trimmed) return;
+    setRecentSearches((current) => {
+      const next = [
+        trimmed,
+        ...current.filter((item) => item.toLocaleLowerCase() !== trimmed.toLocaleLowerCase()),
+      ].slice(0, MAX_SEARCH_HISTORY_ITEMS);
+      writeSearchHistory(next);
+      return next;
+    });
+  }
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const trimmed = query.trim();
-    if (!trimmed) {
+    if (!trimmedQuery) {
       setShowSuggestions(false);
       setActiveSuggestionIndex(-1);
       void navigate({ to: "/", search: {} });
       return;
     }
+    saveSearchTerm(trimmedQuery);
     setShowSuggestions(false);
     setActiveSuggestionIndex(-1);
-    void navigate({ to: "/", search: { q: trimmed } });
+    void navigate({ to: "/", search: { q: trimmedQuery } });
   }
 
-  function selectSuggestion(suggestion: string) {
-    setQuery(suggestion);
+  function selectSearchTerm(term: string) {
+    saveSearchTerm(term);
+    setQuery(term);
     setShowSuggestions(false);
     setActiveSuggestionIndex(-1);
-    void navigate({ to: "/", search: { q: suggestion } });
+    void navigate({ to: "/", search: { q: term } });
   }
 
   function handleSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
@@ -331,20 +385,18 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
       setActiveSuggestionIndex(-1);
       return;
     }
-    if (!showSuggestions || displayedSuggestions.length === 0) return;
+    if (!showSuggestions || popupItems.length === 0) return;
 
     if (event.key === "ArrowDown") {
       event.preventDefault();
-      setActiveSuggestionIndex((index) => (index + 1) % displayedSuggestions.length);
+      setActiveSuggestionIndex((index) => (index + 1) % popupItems.length);
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
-      setActiveSuggestionIndex((index) =>
-        index <= 0 ? displayedSuggestions.length - 1 : index - 1
-      );
+      setActiveSuggestionIndex((index) => (index <= 0 ? popupItems.length - 1 : index - 1));
     } else if (event.key === "Enter" && activeSuggestionIndex >= 0) {
       event.preventDefault();
-      const suggestion = displayedSuggestions[activeSuggestionIndex];
-      if (suggestion) selectSuggestion(suggestion.suggestion);
+      const item = popupItems[activeSuggestionIndex];
+      if (item) selectSearchTerm(item.label);
     }
   }
 
@@ -429,13 +481,15 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
     <Link
       to="/cart"
       search={{ returnSearch: activeSearchTerm || undefined }}
-      className="border-card-border bg-card-bg text-foreground hover:border-picnic-red hover:text-picnic-red relative flex h-10 shrink-0 items-center gap-2 rounded-full border px-3 text-sm font-semibold transition-colors sm:px-4"
+      className="border-card-border bg-card-bg text-foreground hover:border-picnic-red hover:text-picnic-red relative flex h-10 shrink-0 items-center gap-2 rounded-full border px-3 text-sm font-semibold transition-colors sm:px-4 lg:w-[11.5rem] lg:justify-between"
       aria-label={t.cartTitle}
     >
-      <CartIcon />
-      <span className="hidden lg:inline">{t.cartTitle}</span>
+      <span className="flex items-center gap-2">
+        <CartIcon />
+        <span className="hidden lg:inline">{t.cartTitle}</span>
+      </span>
       {showCartBadge ? (
-        <span className="bg-picnic-red rounded-full px-2 py-0.5 text-xs font-bold text-white">
+        <span className="bg-picnic-red min-w-[4.75rem] rounded-full px-2 py-0.5 text-center text-xs font-bold text-white tabular-nums">
           {formatCartPrice(cart.totalPrice)}
         </span>
       ) : null}
@@ -486,9 +540,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
               role="combobox"
               aria-autocomplete="list"
               aria-controls="product-search-suggestions"
-              aria-expanded={
-                showSuggestions && canShowSuggestions && displayedSuggestions.length > 0
-              }
+              aria-expanded={canShowSearchPopup}
               aria-activedescendant={
                 activeSuggestionIndex >= 0
                   ? `product-search-suggestion-${activeSuggestionIndex}`
@@ -503,28 +555,34 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
             >
               <SearchIcon />
             </button>
-            {showSuggestions && canShowSuggestions && displayedSuggestions.length ? (
+            {canShowSearchPopup ? (
               <ul
                 id="product-search-suggestions"
                 role="listbox"
                 className="border-card-border bg-card-bg absolute top-full left-0 z-50 mt-1 w-full overflow-hidden rounded-lg border shadow-lg"
               >
-                {displayedSuggestions.map((suggestion, index) => (
+                <li
+                  role="presentation"
+                  className="border-card-border border-b px-4 py-2 text-xs font-bold tracking-wide text-gray-500 uppercase"
+                >
+                  {popupHeading}
+                </li>
+                {popupItems.map((item, index) => (
                   <li
                     id={`product-search-suggestion-${index}`}
-                    key={suggestion.id}
+                    key={item.id}
                     role="option"
                     aria-selected={index === activeSuggestionIndex}
                   >
                     <button
                       type="button"
-                      onClick={() => selectSuggestion(suggestion.suggestion)}
+                      onClick={() => selectSearchTerm(item.label)}
                       onMouseEnter={() => setActiveSuggestionIndex(index)}
                       className={`text-foreground w-full px-4 py-2.5 text-left text-sm focus:outline-none ${
                         index === activeSuggestionIndex ? "bg-gray-100" : "hover:bg-gray-100"
                       }`}
                     >
-                      {suggestion.suggestion}
+                      {item.label}
                     </button>
                   </li>
                 ))}

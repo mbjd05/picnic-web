@@ -6,6 +6,8 @@ const translations = {
     searchPlaceholder: "Zoek producten...",
     searchAriaLabel: "Zoek producten",
     searchButtonAriaLabel: "Zoeken",
+    searchHistoryLabel: "Recent",
+    searchSuggestionsLabel: "Suggesties",
 
     // Home page errors
     searchError: "Er is iets misgegaan. Probeer het later opnieuw.",
@@ -306,6 +308,8 @@ const translations = {
     searchPlaceholder: "Produkte suchen...",
     searchAriaLabel: "Produkte suchen",
     searchButtonAriaLabel: "Suchen",
+    searchHistoryLabel: "Zuletzt gesucht",
+    searchSuggestionsLabel: "Vorschläge",
 
     // Home page errors
     searchError: "Ein Fehler ist aufgetreten. Bitte versuche es später erneut.",
@@ -605,6 +609,8 @@ const translations = {
     searchPlaceholder: "Rechercher des produits...",
     searchAriaLabel: "Rechercher des produits",
     searchButtonAriaLabel: "Rechercher",
+    searchHistoryLabel: "Récent",
+    searchSuggestionsLabel: "Suggestions",
     searchError: "Une erreur s'est produite. Veuillez réessayer plus tard.",
     categoriesLoadError: "Impossible de charger les catégories.",
     noResultsFor: "Aucun résultat trouvé pour",
@@ -859,6 +865,8 @@ const englishTranslations: Translations = {
   searchPlaceholder: "Search products...",
   searchAriaLabel: "Search products",
   searchButtonAriaLabel: "Search",
+  searchHistoryLabel: "Recent",
+  searchSuggestionsLabel: "Suggestions",
   searchError: "Something went wrong. Please try again later.",
   categoriesLoadError: "Could not load categories.",
   noResultsFor: "No results found for",
