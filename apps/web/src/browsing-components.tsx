@@ -215,7 +215,12 @@ export function ProductCard({
   const countryCode = useCountryCode();
   const cart = useCart();
   const quantity = cart.getQuantity(product.id);
-  const progress = cart.getBundleProgress(product.id);
+  const registeredProgress = cart.getBundleProgress(product.id);
+  const progress =
+    registeredProgress ??
+    (product.priceRanges?.length
+      ? { productId: product.id, thresholds: product.priceRanges, currentQuantity: quantity }
+      : null);
   const bundlePrice = activeBundlePrice(progress, quantity, product.displayPrice);
 
   return (

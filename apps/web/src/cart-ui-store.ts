@@ -6,6 +6,7 @@ type CartTotals = Pick<CartData, "totalPrice" | "totalCount">;
 type StoredCartSummary = CartTotals & { hasStoredSummary: boolean };
 
 const CART_SUMMARY_STORAGE_KEY = "picnic_cart_summary_v1";
+const CART_QUANTITIES_STORAGE_KEY = "picnic_cart_quantities_v1";
 
 function readCartSummary(): StoredCartSummary {
   try {
@@ -31,6 +32,34 @@ function writeCartSummary(totals: CartTotals) {
   }
 }
 
+function readCartQuantities(): Map<string, number> {
+  try {
+    const value = sessionStorage.getItem(CART_QUANTITIES_STORAGE_KEY);
+    if (!value) return new Map();
+    const parsed = JSON.parse(value);
+    if (!Array.isArray(parsed)) return new Map();
+    return new Map(
+      parsed.filter(
+        (entry): entry is [string, number] =>
+          Array.isArray(entry) &&
+          typeof entry[0] === "string" &&
+          Number.isInteger(entry[1]) &&
+          entry[1] > 0
+      )
+    );
+  } catch {
+    return new Map();
+  }
+}
+
+function writeCartQuantities(quantities: Map<string, number>) {
+  try {
+    sessionStorage.setItem(CART_QUANTITIES_STORAGE_KEY, JSON.stringify([...quantities]));
+  } catch {
+    // Per-tab quantities only prevent reload flicker; ignore storage failures.
+  }
+}
+
 type CartUiStore = {
   quantities: Map<string, number>;
   totalPrice: number;
@@ -52,24 +81,31 @@ export function quantitiesFromCart(cart: Pick<CartData, "items">): Map<string, n
 }
 
 const initialCartSummary = readCartSummary();
+const initialQuantities = readCartQuantities();
 
 export const useCartUiStore = create<CartUiStore>((set) => ({
-  quantities: new Map(),
+  quantities: initialQuantities,
   totalPrice: initialCartSummary.totalPrice,
   totalCount: initialCartSummary.totalCount,
   hasStoredSummary: initialCartSummary.hasStoredSummary,
   bundleData: new Map(),
   isLoading: true,
   toast: null,
-  applyQuantities: (next) => set({ quantities: new Map(next) }),
+  applyQuantities: (next) => {
+    const quantities = new Map(next);
+    writeCartQuantities(quantities);
+    set({ quantities });
+  },
   applyTotals: (next) => {
     writeCartSummary(next);
     set({ totalPrice: next.totalPrice, totalCount: next.totalCount, hasStoredSummary: true });
   },
   applyVisibleCart: (cart) => {
+    const quantities = quantitiesFromCart(cart);
     writeCartSummary(cart);
+    writeCartQuantities(quantities);
     set({
-      quantities: quantitiesFromCart(cart),
+      quantities,
       totalPrice: cart.totalPrice,
       totalCount: cart.totalCount,
       hasStoredSummary: true,
