@@ -148,7 +148,7 @@ function QuantityControl({
       ),
     [cart, product.displayPrice, product.id, progress, quantity]
   );
-  const handleWheelAdjust = useWheelQuantityAdjust({
+  const wheelAdjustRef = useWheelQuantityAdjust({
     canIncrement: quantity < product.maxCount,
     canDecrement: quantity > 0,
     onIncrement: increment,
@@ -167,7 +167,7 @@ function QuantityControl({
           stop(event);
           increment();
         }}
-        onWheel={handleWheelAdjust}
+        ref={wheelAdjustRef}
         className="text-text-dark flex h-8 w-8 items-center justify-center rounded-full bg-white text-lg font-bold shadow-md hover:bg-gray-100"
         aria-label={t.addToCartAriaLabel}
       >
@@ -177,7 +177,7 @@ function QuantityControl({
   }
 
   return (
-    <div className="flex flex-col items-center gap-1" onClick={stop} onWheel={handleWheelAdjust}>
+    <div className="flex flex-col items-center gap-1" ref={wheelAdjustRef} onClick={stop}>
       <div className="grid w-24 grid-cols-[1.75rem_2.5rem_1.75rem] items-center rounded-full bg-white shadow-sm">
         <button
           type="button"

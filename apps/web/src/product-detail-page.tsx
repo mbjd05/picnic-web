@@ -409,7 +409,7 @@ function PdpStepper({
   addLabel: string;
   inCartLabel: string;
 }) {
-  const handleWheelAdjust = useWheelQuantityAdjust({
+  const wheelAdjustRef = useWheelQuantityAdjust({
     canIncrement: quantity < maxCount,
     canDecrement: quantity > 0,
     onIncrement,
@@ -421,7 +421,7 @@ function PdpStepper({
       <button
         type="button"
         onClick={onIncrement}
-        onWheel={handleWheelAdjust}
+        ref={wheelAdjustRef}
         disabled={maxCount <= 0}
         className="border-card-border text-foreground w-full rounded-lg border bg-white py-3 text-center text-sm font-semibold transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
       >
@@ -433,7 +433,7 @@ function PdpStepper({
   return (
     <div
       className="border-card-border flex items-center rounded-lg border bg-white"
-      onWheel={handleWheelAdjust}
+      ref={wheelAdjustRef}
     >
       <button
         type="button"
