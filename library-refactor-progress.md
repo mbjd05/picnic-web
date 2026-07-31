@@ -7,7 +7,7 @@
 - [x] Phase 3: TanStack Form login/payment/rating forms
 - [x] Phase 4: Ky-backed API client wrapper
 - [x] Phase 5: TanStack Virtual performance spike
-- [x] Phase 6: Persistent cache decision: no persistent cache vs no library vs in-memory query only vs Dexie vs idb
+- [x] Phase 6: Persistent cache decision: idb for reload-persistent product browsing
 
 ## Current Status
 
@@ -21,7 +21,14 @@ Moved the existing browser `fetchJson` implementation onto Ky while preserving i
 
 Rejected TanStack Virtual for the current product grids. The app's main product views use responsive CSS grids plus section headers that drive the sticky section navigation. Virtualizing those rows now would make section DOM positions synthetic and would risk regressions in active-section highlighting, scroll restoration, and browser back behavior. Revisit only if profiling shows rendering, not API/image loading, is the bottleneck and after replacing section tracking with virtualization-aware measurements.
 
-Kept caching on TanStack Query only. Private Picnic data should not be persisted by default, and current search/category caching already targets the main pain point without stale cross-session data. If offline or reload-persistent product browsing becomes a requirement later, prefer `idb` over Dexie for this app's likely key-value cache shape; Dexie is only worth the extra abstraction if we need relational indexes, table migrations, or complex client-side queries.
+Added a small `idb` persistence layer for reload-persistent product browsing only. It hydrates before React renders and persists only categories, subcategories, product search results, category product pages, and shortcut product pages. It explicitly excludes cart, payment profile, deliveries, saved recipes, recipe detail, and other private or fast-changing account data. Cache entries are discarded after 30 minutes.
+
+Measured in the local Worker build on `/?q=banaan`:
+
+- Without persisted cache: one `/api/search` request after reload; results ready after about `2876 ms`.
+- With warmed `idb` cache: zero `/api/search` requests after reload; results ready after about `1102 ms`.
+
+The added implementation is one isolated module plus startup installation and tests. Bundle impact was `+6.77 kB` minified and `+2.26 kB` gzip versus the pre-`idb` build. Dexie remains unnecessary because this is a simple key-value persisted query snapshot, not a relational/indexed local database.
 
 ## SOLID Pass
 
@@ -40,4 +47,5 @@ Kept caching on TanStack Query only. Private Picnic data should not be persisted
 - Phase 2 repeated `pnpm format:check`, `pnpm typecheck`, and `pnpm test:unit`.
 - Phase 3 repeated `pnpm format:check`, `pnpm typecheck`, and `pnpm lint`.
 - Phase 4 repeated `pnpm typecheck`, `pnpm lint`, and `pnpm test:unit`.
-- Phase 5/6 decision: no code adoption for TanStack Virtual, Dexie, or `idb` yet; avoid dependencies until profiling or product requirements justify them.
+- Phase 5 decision: no code adoption for TanStack Virtual yet; avoid until profiling shows render work is the bottleneck.
+- Phase 6 decision: keep `idb` because the measured reload benefit is clear and the implementation remains narrowly scoped.
