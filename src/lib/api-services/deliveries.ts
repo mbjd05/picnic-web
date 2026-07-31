@@ -114,8 +114,18 @@ export async function getDeliveryTrackingService(
   try {
     const client = buildPicnicClient(authToken, countryCode) as unknown as SendRequestClient;
     const [scenario, position] = await Promise.all([
-      client.sendRequest("GET", `/deliveries/${encodeURIComponent(deliveryId)}/scenario`, null, false),
-      client.sendRequest("GET", `/deliveries/${encodeURIComponent(deliveryId)}/position`, null, false),
+      client.sendRequest(
+        "GET",
+        `/deliveries/${encodeURIComponent(deliveryId)}/scenario`,
+        null,
+        false
+      ),
+      client.sendRequest(
+        "GET",
+        `/deliveries/${encodeURIComponent(deliveryId)}/position`,
+        null,
+        false
+      ),
     ]);
 
     return { body: { scenario, position } };

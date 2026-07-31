@@ -125,7 +125,9 @@ async function generate2FACodeWithDebug(authKey, channel = "SMS") {
   }
 
   if (!response.ok) {
-    throw new Error(`2FA generate failed: ${response.status} ${response.statusText}${body ? ` - ${body}` : ""}`);
+    throw new Error(
+      `2FA generate failed: ${response.status} ${response.statusText}${body ? ` - ${body}` : ""}`
+    );
   }
 
   return body ? JSON.parse(body) : null;
@@ -222,8 +224,8 @@ async function runTokenMode() {
 async function runLoginMode() {
   const rl = createInterface({ input, output });
   try {
-    const email = (process.env.PICNIC_EMAIL ?? await rl.question("Email: ")).trim();
-    const password = process.env.PICNIC_PASSWORD ?? await promptHidden(rl, "Password: ");
+    const email = (process.env.PICNIC_EMAIL ?? (await rl.question("Email: "))).trim();
+    const password = process.env.PICNIC_PASSWORD ?? (await promptHidden(rl, "Password: "));
 
     const client = createClient();
     const loginResult = await client.auth.login(email, password);

@@ -316,8 +316,15 @@ function parseAllergensFromMarkdowns(markdowns: string[]): AllergenInfo {
     }
 
     if (/^(zutaten|ingrediënten|so wird|bereiding|schritt|stap)\b/i.test(clean)) break;
-    if (/zutaten.*enthalten|ingrediënten.*bevatten/i.test(clean)) { afterIngredientHeader = true; continue; }
-    if (mayContainHeadingPattern.test(clean)) { inMayContain = true; afterIngredientHeader = true; continue; }
+    if (/zutaten.*enthalten|ingrediënten.*bevatten/i.test(clean)) {
+      afterIngredientHeader = true;
+      continue;
+    }
+    if (mayContainHeadingPattern.test(clean)) {
+      inMayContain = true;
+      afterIngredientHeader = true;
+      continue;
+    }
     if (/keine allergene|geen allergenen|enthält keine|bevat geen/i.test(clean)) continue;
     if (!clean || clean.length > 40) continue;
 
@@ -362,7 +369,10 @@ function buildIngredientTileNameMap(rawPage: unknown): Map<string, string> {
 
   function getMarkdowns(obj: unknown, acc: string[]): void {
     if (!obj || typeof obj !== "object") return;
-    if (Array.isArray(obj)) { obj.forEach((v) => getMarkdowns(v, acc)); return; }
+    if (Array.isArray(obj)) {
+      obj.forEach((v) => getMarkdowns(v, acc));
+      return;
+    }
     const o = obj as PmlRecord;
     if (typeof o.markdown === "string") acc.push(o.markdown);
     for (const v of Object.values(o)) getMarkdowns(v, acc);
@@ -370,7 +380,10 @@ function buildIngredientTileNameMap(rawPage: unknown): Map<string, string> {
 
   function walk(obj: unknown, depth: number): void {
     if (depth > 60 || !obj || typeof obj !== "object") return;
-    if (Array.isArray(obj)) { obj.forEach((v) => walk(v, depth + 1)); return; }
+    if (Array.isArray(obj)) {
+      obj.forEach((v) => walk(v, depth + 1));
+      return;
+    }
     const o = obj as PmlRecord;
     if (o.type === "PML" && o.analytics && o.pml) {
       const ctxs = (o.analytics as { contexts?: unknown[] }).contexts ?? [];
@@ -383,7 +396,7 @@ function buildIngredientTileNameMap(rawPage: unknown): Map<string, string> {
           typeof ((c as PmlRecord).data as PmlRecord | undefined)?.product_id === "string"
       );
       if (productCtx) {
-        const productId = ((productCtx.data as PmlRecord).product_id as string);
+        const productId = (productCtx.data as PmlRecord).product_id as string;
         const markdowns: string[] = [];
         getMarkdowns(o.pml, markdowns);
         const clean = markdowns
@@ -474,7 +487,7 @@ export function parseRecipeDetail(rawPage: unknown, recipeId: string): RecipeDet
 
   // ── 5. Parse sections from the flat markdown stream ───────────────────────
   const allMarkdowns = collectMarkdowns(rawPage);
-const steps = parseStepsFromMarkdowns(allMarkdowns);
+  const steps = parseStepsFromMarkdowns(allMarkdowns);
   const stepsPortionWarning = parseStepsWarningFromMarkdowns(allMarkdowns);
   const recipeNutritionRows = parseNutritionFromMarkdowns(allMarkdowns);
   const allergens = parseAllergensFromMarkdowns(allMarkdowns);

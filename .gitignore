@@ -36,6 +36,7 @@ Thumbs.db
 
 # debug
 *.log
+repomix-output*.xml
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

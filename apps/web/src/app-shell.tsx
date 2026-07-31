@@ -472,7 +472,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
         <div
           id="primary-navigation"
           aria-hidden={!isMenuOpen}
-          className={`border-card-border bg-card-bg order-4 z-50 w-full origin-top overflow-hidden rounded-lg border text-left shadow-lg transition-[max-height,opacity,transform] duration-150 ease-out motion-reduce:transition-none md:absolute md:top-full md:right-6 md:mt-2 md:w-72 md:max-w-[calc(100vw-1.5rem)] md:origin-top-right ${
+          className={`border-card-border bg-card-bg z-50 order-4 w-full origin-top overflow-hidden rounded-lg border text-left shadow-lg transition-[max-height,opacity,transform] duration-150 ease-out motion-reduce:transition-none md:absolute md:top-full md:right-6 md:mt-2 md:w-72 md:max-w-[calc(100vw-1.5rem)] md:origin-top-right ${
             isMenuOpen
               ? "max-h-72 translate-y-0 opacity-100"
               : "pointer-events-none max-h-0 -translate-y-1 opacity-0 md:max-h-72"

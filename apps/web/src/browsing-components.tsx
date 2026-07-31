@@ -5,7 +5,6 @@ import { Link } from "@tanstack/react-router";
 import { Badge } from "@/components/badge";
 import { PriceDisplay } from "@/components/price-display";
 import type { CategoryItem, ShortcutItem } from "@/lib/category-types";
-import { getTranslations } from "@/lib/i18n";
 import { buildImageUrl } from "@/lib/image-url";
 import type {
   BundleProgress,
@@ -17,7 +16,7 @@ import type {
 import { buildSectionId } from "@/lib/types";
 
 import { useCart } from "./cart-context";
-import { useCountryCode } from "./country-context";
+import { useCountryCode, useTranslations } from "./country-context";
 
 const PLACEHOLDER_IMAGE = "/placeholder-product.svg";
 const STICKY_HEADER_OFFSET_PX = 144;
@@ -35,7 +34,7 @@ export function LoadingView() {
 }
 
 export function ErrorView({ message, onRetry }: { message: string; onRetry?: () => void }) {
-  const t = getTranslations(useCountryCode());
+  const t = useTranslations();
   return (
     <div className="py-16 text-center">
       <p className="text-sm text-red-600" role="alert">
@@ -122,7 +121,7 @@ function QuantityControl({
   progress: BundleProgress | null;
 }) {
   const cart = useCart();
-  const t = getTranslations(useCountryCode());
+  const t = useTranslations();
   const stop = (event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
@@ -413,7 +412,7 @@ export function ResultsView({
   products: Product[];
   sections: SearchSection[];
 }) {
-  const t = getTranslations(useCountryCode());
+  const t = useTranslations();
   if (!products.length) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -486,7 +485,7 @@ export function CategoryBrowser({
   onCategory: (item: CategoryItem) => void;
   onShortcut: (item: ShortcutItem) => void;
 }) {
-  const t = getTranslations(useCountryCode());
+  const t = useTranslations();
   return (
     <>
       {shortcuts.length ? (
@@ -528,7 +527,7 @@ function List({ title, children }: { title: string; children: ReactNode }) {
 }
 
 export function BackButton({ onClick }: { onClick: () => void }) {
-  const t = getTranslations(useCountryCode());
+  const t = useTranslations();
   return (
     <button
       type="button"

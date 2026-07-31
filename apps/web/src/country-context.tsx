@@ -10,6 +10,7 @@ import {
   SUPPORTED_LANGUAGE_CODES,
   SUPPORTED_COUNTRY_CODES,
 } from "@/lib/types";
+import { getTranslations } from "@/lib/i18n";
 
 const COUNTRY_COOKIE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 const CountryContext = createContext<CountryCode>(DEFAULT_COUNTRY_CODE);
@@ -88,4 +89,8 @@ export function useLanguageCode(): LanguageCode {
 
 export function useSwitchLanguage(): (code: LanguageCode) => void {
   return useContext(SwitchLanguageContext);
+}
+
+export function useTranslations() {
+  return getTranslations(useLanguageCode());
 }

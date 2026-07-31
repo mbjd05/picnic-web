@@ -2,13 +2,10 @@ import { useEffect } from "react";
 
 import { Link } from "@tanstack/react-router";
 
-import { getTranslations } from "@/lib/i18n";
-
-import { useCountryCode } from "./country-context";
+import { useCountryCode, useTranslations } from "./country-context";
 
 export function LoadingSurface({ title }: { title?: string }) {
-  const countryCode = useCountryCode();
-  const t = getTranslations(countryCode);
+  const t = useTranslations();
 
   useEffect(() => {
     document.title = title ? `${title} - Picnic Web` : "Picnic Web";
@@ -26,8 +23,7 @@ export function LoadingSurface({ title }: { title?: string }) {
 }
 
 export function ErrorSurface({ error, onRetry }: { error: Error; onRetry?: () => void }) {
-  const countryCode = useCountryCode();
-  const t = getTranslations(countryCode);
+  const t = useTranslations();
 
   return (
     <main className="flex min-h-screen flex-1 flex-col items-center justify-center p-8 text-center">

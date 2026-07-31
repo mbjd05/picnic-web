@@ -9,7 +9,14 @@ import { formatBannerText } from "@/lib/format-delivery-window";
 import { getTranslations } from "@/lib/i18n";
 import { parseSelectedSlot } from "@/lib/parse-delivery-slots";
 import { asArray, asNumber, asString, isObject } from "@/lib/type-guards";
-import type { Badge, CartData, CartItem, CountryCode, DepositEntry, SliderProduct } from "@/lib/types";
+import type {
+  Badge,
+  CartData,
+  CartItem,
+  CountryCode,
+  DepositEntry,
+  SliderProduct,
+} from "@/lib/types";
 
 // ─── Decorator helpers ────────────────────────────────────────────────────────
 

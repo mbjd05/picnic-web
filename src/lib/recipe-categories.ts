@@ -1,10 +1,11 @@
 import { cleanMarkdown, collectMarkdowns } from "./pml-helpers";
 import type { CountryCode, RecipeCategory } from "./types";
 
-const MEALS_CATEGORY_PAGE_RE = /app\.picnic:\/\/store\/page;id=meals-category-page,category_id=([0-9a-f-]+)/i;
-const MEALS_CATEGORY_GROUP_RE = /app\.picnic:\/\/store\/page;id=meals-category-group-page,group_name=([^,&]+)/i;
-const MEALS_CATEGORY_UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const MEALS_CATEGORY_PAGE_RE =
+  /app\.picnic:\/\/store\/page;id=meals-category-page,category_id=([0-9a-f-]+)/i;
+const MEALS_CATEGORY_GROUP_RE =
+  /app\.picnic:\/\/store\/page;id=meals-category-group-page,group_name=([^,&]+)/i;
+const MEALS_CATEGORY_UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const LEGACY_CATEGORY_ID_RE = /^recipe-cattree-[\w-]+$/;
 
 const IGNORED_LABELS = new Set([

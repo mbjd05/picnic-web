@@ -10,7 +10,6 @@ import { ProductHighlights } from "@/components/product-highlights";
 import { ProductInfoHeader } from "@/components/product-info-header";
 import { ProductLabels } from "@/components/product-labels";
 import { formatPrice } from "@/lib/format-price";
-import { getTranslations } from "@/lib/i18n";
 import { buildImageUrl } from "@/lib/image-url";
 import type {
   AllergenInfo,
@@ -22,7 +21,7 @@ import type {
 
 import { BackButton, ErrorView, LoadingView, useDocumentTitle } from "./browsing-components";
 import { useCart } from "./cart-context";
-import { useCountryCode } from "./country-context";
+import { useCountryCode, useTranslations } from "./country-context";
 import { ApiClientError, fetchJson } from "./lib/api-client";
 import { queryKeys, queryStaleTime } from "./lib/query-config";
 
@@ -38,7 +37,7 @@ export function ProductDetailPage() {
   const { id } = useParams({ from: "/authenticated/product/$id" });
   const navigate = useNavigate();
   const countryCode = useCountryCode();
-  const t = getTranslations(countryCode);
+  const t = useTranslations();
   const query = useQuery({
     queryKey: queryKeys.productDetail(id, countryCode),
     queryFn: () => fetchJson<ProductDetail>(`/api/product/${encodeURIComponent(id)}`),
@@ -84,7 +83,7 @@ function NotFoundView() {
 
 function ProductDetailContent({ product }: { product: ProductDetail }) {
   const countryCode = useCountryCode();
-  const t = getTranslations(countryCode);
+  const t = useTranslations();
   const cart = useCart();
   const cartQuantity = cart.getQuantity(product.id);
   const hasAllergens =
@@ -255,7 +254,7 @@ function ProductPriceSection({
   onDecrement: () => void;
   onSetQuantity: (quantity: number) => void;
 }) {
-  const t = getTranslations(useCountryCode());
+  const t = useTranslations();
   const hasDiscount = originalPrice !== null && originalPrice > displayPrice;
 
   return (
@@ -311,7 +310,7 @@ function BundleTierGrid({
   cartQuantity: number;
   onSetQuantity: (quantity: number) => void;
 }) {
-  const t = getTranslations(useCountryCode());
+  const t = useTranslations();
   const activeTierIndex = findActiveTierIndex(bundles, cartQuantity);
 
   return (
@@ -406,7 +405,7 @@ function PdpStepper({
 }
 
 function AllergenBadges({ allergens }: { allergens: AllergenInfo }) {
-  const t = getTranslations(useCountryCode());
+  const t = useTranslations();
 
   return (
     <div className="space-y-3">

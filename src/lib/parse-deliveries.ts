@@ -81,7 +81,9 @@ function parseOrderLine(rawLine: unknown): DeliveryLineItem | null {
   const article = asArray(rawLine["items"]).find(isObject);
   if (!article) return null;
 
-  const imageId = asArray(article["image_ids"]).find((value): value is string => typeof value === "string") ?? null;
+  const imageId =
+    asArray(article["image_ids"]).find((value): value is string => typeof value === "string") ??
+    null;
 
   return {
     id: stringOrNull(rawLine["id"]),
@@ -107,7 +109,9 @@ export function parseDeliverySummary(rawDelivery: unknown): DeliverySummary | nu
     status: stringOrNull(rawDelivery["status"]),
     slot: parseSlot(rawDelivery["slot"]),
     eta: parseEta(rawDelivery["eta2"]),
-    orders: asArray(rawDelivery["orders"]).map(parseOrder).filter((order): order is DeliveryOrderSummary => order !== null),
+    orders: asArray(rawDelivery["orders"])
+      .map(parseOrder)
+      .filter((order): order is DeliveryOrderSummary => order !== null),
   };
 }
 

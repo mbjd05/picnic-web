@@ -33,9 +33,10 @@ function parseAmount(text: string | null): ParsedAmount | null {
     .replace(/\s+(nodig|benötigt|benodigd|required)$/i, "")
     .trim();
 
-  const multiMatch = new RegExp(`^(\\d+)\\s*[x×]\\s*(\\d+(?:[.,]\\d+)?)\\s*${UNIT_RE}\\b`, "i").exec(
-    cleaned
-  );
+  const multiMatch = new RegExp(
+    `^(\\d+)\\s*[x×]\\s*(\\d+(?:[.,]\\d+)?)\\s*${UNIT_RE}\\b`,
+    "i"
+  ).exec(cleaned);
   const singleMatch =
     multiMatch ?? new RegExp(`^(\\d+(?:[.,]\\d+)?)\\s*${UNIT_RE}\\b`, "i").exec(cleaned);
 

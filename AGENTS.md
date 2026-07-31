@@ -1,49 +1,42 @@
 # picnic-web Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-04-20
+## Current Architecture
 
-## Active Technologies
+- TypeScript 5.9
+- Node.js `>=26.5.1 <27`
+- pnpm 11
+- `apps/web`: Vite, React 19, Tailwind CSS 4, TanStack Router, TanStack Query
+- `apps/api`: Hono on Cloudflare Workers, serving API routes and static Vite assets
+- `src/lib`: shared Picnic API services, parsers, domain types, formatting helpers, and pure utilities
+- `src/components`: shared React presentation components
 
-- TypeScript 5, Node.js 20.9+ + Next.js 16.2.1, React 19.2.4, Tailwind CSS 4, picnic-api ^4.1.0 (002-search-url-sections)
-- N/A (no persistent storage; search state is URL + client memory) (002-search-url-sections)
-- N/A (no persistent storage; all state is ephemeral client-side) (003-section-nav-badges)
-- HTTP-only cookie (`picnic_auth_token`) — browser-managed, server-readable (004-auth-token-gate)
-- N/A (no persistent storage; read-only product data from API) (005-product-detail-page)
-- N/A (no persistent storage; cart state lives in the Picnic API) (006-cart-page)
-- N/A (no persistent storage; cart state is URL + client memory) (007-plp-cart-actions)
-- N/A (no persistent storage; pure CSS layout change) (010-product-card-polish)
-- TypeScript 5.9.3, Node.js 20.9+ + Next.js 16.2.1 (App Router), React 19.2.4, Tailwind CSS 4.2.2, picnic-api ^4.1.0 (011-dynamic-page-title)
-- N/A (no persistent storage; title state is ephemeral client-side) (011-dynamic-page-title)
-- TypeScript 5, Node.js 20.9+ + Next.js 16.2.1 (App Router), React 19.2.4, Tailwind CSS 4, picnic-api ^4.1.0 (012-cart-credit-summary)
-- N/A (no persistent storage; cart state comes from Picnic API) (012-cart-credit-summary)
-- N/A (no persistent storage; category data is fetched on demand from Picnic API) (014-search-categories)
-- N/A (no persistent storage; navigation state is ephemeral client-side) (015-subcategory-navigation)
-- N/A (no persistent storage; product data fetched on demand from Picnic API) (016-subcategory-products)
-- TypeScript 5, Node.js 20.9+ + Next.js 16.2.1 (App Router), React 19.2.4, Tailwind CSS 4, picnic-api ^4.1.0 → ^4.3.0 (018-bundle-discount-ui)
-
-- TypeScript 5, Node.js 20.9+ + Next.js 16, React 19, Tailwind CSS 4, picnic-api (004-product-search)
-
-## Project Structure
-
-```text
-backend/
-frontend/
-tests/
-```
+The legacy Next.js app has been retired. Do not add new `next/*` imports or Next route handlers.
 
 ## Commands
 
-npm test && npm run lint
+```powershell
+pnpm install
+pnpm dev:web
+pnpm dev:api
+pnpm validate
+pnpm format:check
+pnpm smoke:api:auth
+```
+
+`pnpm validate` runs lint, typecheck, Vite build, and Worker dry-run build.
 
 ## Code Style
 
-TypeScript 5, Node.js 20.9+: Follow standard conventions
+- Prefer shared parser/service functions in `src/lib` over route-specific logic.
+- Keep Picnic API region (`CountryCode`) separate from display language (`LanguageCode`).
+- Use `useCountryCode()` for API query keys, image URLs, region-specific date formatting, and Picnic endpoint behavior.
+- Use `useTranslations()` for authenticated UI labels.
+- Keep private Picnic data out of caches that could be shared between users.
+- Keep auth tokens in HTTP-only cookies; do not store tokens in browser-visible storage.
+- Avoid logging tokens, passwords, email addresses, request bodies, or raw Picnic payloads in production code.
 
-## Recent Changes
+## Public-Repo Hygiene
 
-- 018-bundle-discount-ui: Added TypeScript 5, Node.js 20.9+ + Next.js 16.2.1 (App Router), React 19.2.4, Tailwind CSS 4, picnic-api ^4.1.0 → ^4.3.0
-- 017-snel-naar-navigation: Added [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
-- 016-subcategory-products: Added TypeScript 5, Node.js 20.9+ + Next.js 16.2.1 (App Router), React 19.2.4, Tailwind CSS 4, picnic-api ^4.1.0
-
-<!-- MANUAL ADDITIONS START -->
-<!-- MANUAL ADDITIONS END -->
+- Never commit `.env`, tokens, credentials, local logs, generated repo dumps, build output, or Playwright artifacts.
+- Keep `.env.example` placeholder-only.
+- Run `pnpm format` before large cleanup commits and `pnpm validate` before pushing.

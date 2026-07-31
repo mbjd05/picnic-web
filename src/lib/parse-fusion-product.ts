@@ -150,9 +150,7 @@ function extractMainContainerInfo(page: unknown): {
   const fallbackUnitPrice = texts[3] ? stripColorTags(texts[3]) : "";
   const unitPrice =
     roles.unitPrice ??
-    (fallbackUnitPrice && CURRENCY_PREFIXES.has(fallbackUnitPrice[0])
-      ? fallbackUnitPrice
-      : null);
+    (fallbackUnitPrice && CURRENCY_PREFIXES.has(fallbackUnitPrice[0]) ? fallbackUnitPrice : null);
   const categoryTag = extractCategoryTagFromTexts(texts, [name, brand, unitQuantity, unitPrice]);
 
   return { name, brand, unitQuantity, unitPrice, categoryTag };
@@ -163,7 +161,9 @@ function extractCategoryIds(page: unknown): ProductDetail["categoryIds"] {
   if (!button) return null;
 
   const onPressTargets = collectPropertyValues(button, "onPress")
-    .filter((value): value is Record<string, unknown> => typeof value === "object" && value !== null)
+    .filter(
+      (value): value is Record<string, unknown> => typeof value === "object" && value !== null
+    )
     .map((value) => value.target)
     .filter((target): target is string => typeof target === "string");
 
@@ -334,7 +334,15 @@ export function extractProductNutritionRows(rawPage: unknown): NutritionRow[] {
 export function extractProductTileData(
   rawPage: unknown,
   productId: string
-): { name: string; unitQuantity: string; imageId: string; displayPrice: number; maxCount: number; originalPrice: number | null; priceRanges: BundleThreshold[] | null } {
+): {
+  name: string;
+  unitQuantity: string;
+  imageId: string;
+  displayPrice: number;
+  maxCount: number;
+  originalPrice: number | null;
+  priceRanges: BundleThreshold[] | null;
+} {
   const page = (rawPage as Record<string, unknown>)?.body ?? rawPage;
 
   const mainContainer = findNodeById(page, PRODUCT_MAIN_CONTAINER_ID);
@@ -355,14 +363,16 @@ export function extractProductTileData(
   const unitImageId = (unit?.image_id as string | undefined) ?? "";
 
   // Image fallback: gallery container (same as parseProductDetailPage uses)
-  const imageId = unitImageId || (() => {
-    const gallery = findNodeById(page, PRODUCT_GALLERY_CONTAINER_ID);
-    const ids = collectPropertyValues(gallery, "source")
-      .filter((s): s is Record<string, unknown> => typeof s === "object" && s !== null)
-      .map((s) => s.id)
-      .filter((id): id is string => typeof id === "string");
-    return ids[0] ?? "";
-  })();
+  const imageId =
+    unitImageId ||
+    (() => {
+      const gallery = findNodeById(page, PRODUCT_GALLERY_CONTAINER_ID);
+      const ids = collectPropertyValues(gallery, "source")
+        .filter((s): s is Record<string, unknown> => typeof s === "object" && s !== null)
+        .map((s) => s.id)
+        .filter((id): id is string => typeof id === "string");
+      return ids[0] ?? "";
+    })();
 
   // Price resolution with multiple fallbacks
   let displayPrice = resolveDisplayPrice(page, productId, rawPrice);

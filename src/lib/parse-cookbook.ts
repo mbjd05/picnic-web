@@ -127,7 +127,10 @@ export function parseCookbookPage(rawPage: unknown): RecipeItem[] {
     seen.add(recipeId);
 
     if (!name) {
-      name = collectMarkdowns(node).map(cleanMarkdown).find((m) => m.length > 3) ?? "";
+      name =
+        collectMarkdowns(node)
+          .map(cleanMarkdown)
+          .find((m) => m.length > 3) ?? "";
     }
 
     if (!name) continue;

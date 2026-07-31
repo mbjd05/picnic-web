@@ -9,7 +9,6 @@ import type {
   ShortcutItem,
   SubcategoriesApiResponse,
 } from "@/lib/category-types";
-import { getTranslations } from "@/lib/i18n";
 import { parsePageIdFromDeepLink } from "@/lib/parse-deep-link";
 import type { CategoryProductsApiResponse, SearchApiResponse, SearchSection } from "@/lib/types";
 
@@ -24,7 +23,7 @@ import {
   SectionNavBar,
   useDocumentTitle,
 } from "./browsing-components";
-import { useCountryCode } from "./country-context";
+import { useCountryCode, useTranslations } from "./country-context";
 import { fetchJson } from "./lib/api-client";
 import { queryKeys, queryStaleTime } from "./lib/query-config";
 
@@ -38,7 +37,7 @@ export function HomePage() {
   const { q } = useSearch({ from: "/authenticated/" });
   const navigate = useNavigate();
   const countryCode = useCountryCode();
-  const t = getTranslations(countryCode);
+  const t = useTranslations();
   const query = q?.trim() ?? "";
 
   const categories = useQuery({
@@ -108,7 +107,7 @@ export function CategoryPage() {
   const { categoryId } = useParams({ from: "/authenticated/categories/$categoryId" });
   const navigate = useNavigate();
   const countryCode = useCountryCode();
-  const t = getTranslations(countryCode);
+  const t = useTranslations();
   const categories = useQuery({
     queryKey: queryKeys.categories(countryCode),
     queryFn: () => fetchJson<CategoriesApiResponse>("/api/categories"),
@@ -204,8 +203,7 @@ function ProductsPageView({
   fallbackTitle: string;
   back: () => void;
 }) {
-  const countryCode = useCountryCode();
-  const t = getTranslations(countryCode);
+  const t = useTranslations();
   const sections = useMemo<SearchSection[]>(() => query.data?.sections ?? [], [query.data]);
   useDocumentTitle(query.data?.title ?? fallbackTitle);
 
@@ -256,7 +254,7 @@ export function SubcategoryProductsPage() {
   });
   const navigate = useNavigate();
   const countryCode = useCountryCode();
-  const t = getTranslations(countryCode);
+  const t = useTranslations();
   const query = useProductsQuery(
     [...queryKeys.categoryProducts(subcategoryId, countryCode)],
     `/api/categories/${encodeURIComponent(subcategoryId)}/products`
@@ -274,7 +272,7 @@ export function ShortcutProductsPage() {
   const { pageId, title } = useSearch({ from: "/authenticated/pages" });
   const navigate = useNavigate();
   const countryCode = useCountryCode();
-  const t = getTranslations(countryCode);
+  const t = useTranslations();
   const query = useProductsQuery(
     [...queryKeys.shortcutProducts(pageId ?? "", countryCode)],
     `/api/pages/products?pageId=${encodeURIComponent(pageId ?? "")}`,

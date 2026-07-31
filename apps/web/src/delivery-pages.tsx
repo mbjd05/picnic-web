@@ -11,11 +11,10 @@ import type {
   DeliveryTrackingApiResponse,
 } from "@/lib/delivery-types";
 import { formatPrice } from "@/lib/format-price";
-import { getTranslations } from "@/lib/i18n";
 import { buildImageUrl } from "@/lib/image-url";
 
 import { ErrorView, LoadingView, useDocumentTitle } from "./browsing-components";
-import { useCountryCode } from "./country-context";
+import { useCountryCode, useTranslations } from "./country-context";
 import { ApiClientError, fetchJson } from "./lib/api-client";
 import { queryKeys, queryStaleTime } from "./lib/query-config";
 
@@ -23,7 +22,7 @@ type DeliveryFilter = "current" | "all";
 
 export function DeliveriesPage() {
   const countryCode = useCountryCode();
-  const t = getTranslations(countryCode);
+  const t = useTranslations();
   const [filter, setFilter] = useState<DeliveryFilter>("current");
   const [selectedDeliveryId, setSelectedDeliveryId] = useState<string | null>(null);
   useDocumentTitle(t.deliveriesTitle);
@@ -44,7 +43,10 @@ export function DeliveriesPage() {
       setSelectedDeliveryId(null);
       return;
     }
-    if (!selectedDeliveryId || !deliveries.some((delivery) => delivery.deliveryId === selectedDeliveryId)) {
+    if (
+      !selectedDeliveryId ||
+      !deliveries.some((delivery) => delivery.deliveryId === selectedDeliveryId)
+    ) {
       setSelectedDeliveryId(deliveries[0]?.deliveryId ?? null);
     }
   }, [deliveries, selectedDeliveryId]);
@@ -66,7 +68,8 @@ export function DeliveriesPage() {
     queryKey: selectedDeliveryId
       ? queryKeys.deliveryTracking(selectedDeliveryId, countryCode)
       : ["delivery-tracking", "none", countryCode],
-    queryFn: () => fetchJson<DeliveryTrackingApiResponse>(`/api/deliveries/${selectedDeliveryId}/tracking`),
+    queryFn: () =>
+      fetchJson<DeliveryTrackingApiResponse>(`/api/deliveries/${selectedDeliveryId}/tracking`),
     enabled: Boolean(selectedDeliveryId && isCurrentDelivery),
     staleTime: queryStaleTime.deliveryTracking,
     retry: false,
@@ -77,7 +80,9 @@ export function DeliveriesPage() {
       ? summariesQuery.error.message
       : t.deliveriesLoadError;
   const detailError =
-    detailQuery.error instanceof ApiClientError ? detailQuery.error.message : t.deliveryDetailLoadError;
+    detailQuery.error instanceof ApiClientError
+      ? detailQuery.error.message
+      : t.deliveryDetailLoadError;
 
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
@@ -148,7 +153,7 @@ function DeliveryList({
   onSelect: (deliveryId: string) => void;
 }) {
   const countryCode = useCountryCode();
-  const t = getTranslations(countryCode);
+  const t = useTranslations();
 
   return (
     <div className="space-y-2">
@@ -196,7 +201,7 @@ function DeliveryDetailPanel({
   trackingError: string | null;
 }) {
   const countryCode = useCountryCode();
-  const t = getTranslations(countryCode);
+  const t = useTranslations();
   const queryClient = useQueryClient();
   const order = delivery.orders[0] ?? null;
   const [rating, setRating] = useState("10");
@@ -234,10 +239,9 @@ function DeliveryDetailPanel({
 
   const invoiceEmailMutation = useMutation({
     mutationFn: () =>
-      fetchJson<DeliveryActionApiResponse>(
-        `/api/deliveries/${delivery.deliveryId}/invoice-email`,
-        { method: "POST" }
-      ),
+      fetchJson<DeliveryActionApiResponse>(`/api/deliveries/${delivery.deliveryId}/invoice-email`, {
+        method: "POST",
+      }),
   });
 
   const ratingMutation = useMutation({
@@ -285,9 +289,18 @@ function DeliveryDetailPanel({
 
         <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
           <InfoItem label={t.deliveryOrder} value={order?.id ?? "-"} />
-          <InfoItem label={t.deliveryCreated} value={formatDateTime(delivery.creationTime, countryCode)} />
-          <InfoItem label={t.deliveryWindow} value={formatWindow(delivery.slot?.windowStart, delivery.slot?.windowEnd, countryCode)} />
-          <InfoItem label={t.deliveryEta} value={formatWindow(delivery.eta?.start, delivery.eta?.end, countryCode)} />
+          <InfoItem
+            label={t.deliveryCreated}
+            value={formatDateTime(delivery.creationTime, countryCode)}
+          />
+          <InfoItem
+            label={t.deliveryWindow}
+            value={formatWindow(delivery.slot?.windowStart, delivery.slot?.windowEnd, countryCode)}
+          />
+          <InfoItem
+            label={t.deliveryEta}
+            value={formatWindow(delivery.eta?.start, delivery.eta?.end, countryCode)}
+          />
           <InfoItem label={t.deliverySavings} value={formatNullablePrice(order?.totalSavings)} />
           <InfoItem label={t.deliveryDeposit} value={formatNullablePrice(order?.totalDeposit)} />
           <InfoItem
@@ -406,7 +419,11 @@ function DeliveryDetailPanel({
             {delivery.lineItems.map((item) => (
               <div key={item.id ?? item.productId ?? item.name} className="flex gap-3 py-3">
                 <img
-                  src={item.imageId ? buildImageUrl(item.imageId, countryCode, "small") : "/placeholder-product.svg"}
+                  src={
+                    item.imageId
+                      ? buildImageUrl(item.imageId, countryCode, "small")
+                      : "/placeholder-product.svg"
+                  }
                   alt=""
                   className="h-14 w-14 shrink-0 rounded-md object-contain"
                   loading="lazy"

@@ -2,7 +2,6 @@ import { Link, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { getTranslations } from "@/lib/i18n";
 import { getPaymentDisplayName, getPreferredPaymentOption } from "@/lib/payment";
 import type {
   CheckoutCancelResponse,
@@ -12,7 +11,7 @@ import type {
 } from "@/lib/types";
 
 import { ErrorView, LoadingView, useDocumentTitle } from "./browsing-components";
-import { useCountryCode } from "./country-context";
+import { useTranslations } from "./country-context";
 import { ApiClientError, fetchJson } from "./lib/api-client";
 import { queryKeys, queryStaleTime } from "./lib/query-config";
 
@@ -53,7 +52,7 @@ function writeStoredBankMetadata(metadata: StoredBankMetadata): void {
 }
 
 export function PaymentAccountPage() {
-  const t = getTranslations(useCountryCode());
+  const t = useTranslations();
   const queryClient = useQueryClient();
   const search = useSearch({ from: "/authenticated/account/payment" });
   useDocumentTitle(t.paymentMethodsPageTitle);
@@ -287,7 +286,7 @@ function describeStatus(status: CheckoutStatusResponse): string {
 }
 
 export function PaymentReturnPage() {
-  const t = getTranslations(useCountryCode());
+  const t = useTranslations();
   useDocumentTitle(t.paymentReturnTitle);
 
   const [returnState, setReturnState] = useState<ReturnState>({ status: "loading" });

@@ -6,7 +6,6 @@ import { Link, useNavigate, useParams } from "@tanstack/react-router";
 
 import { NutritionTable } from "@/components/nutrition-table";
 import { formatEuroPrice } from "@/lib/format-price";
-import { getTranslations } from "@/lib/i18n";
 import { buildImageUrl, buildRecipeImageUrl } from "@/lib/image-url";
 import { getRecipeIngredientCount } from "@/lib/recipe-quantity";
 import { renderMarkdownBold } from "@/lib/render-markdown-bold";
@@ -23,7 +22,7 @@ import type {
 
 import { ErrorView, LoadingView, useDocumentTitle } from "./browsing-components";
 import { useCart } from "./cart-context";
-import { useCountryCode } from "./country-context";
+import { useCountryCode, useTranslations } from "./country-context";
 import { fetchJson } from "./lib/api-client";
 import { queryKeys, queryStaleTime } from "./lib/query-config";
 
@@ -38,7 +37,7 @@ type SearchScope = "current" | "all";
 
 export function CookbookPage() {
   const countryCode = useCountryCode();
-  const t = getTranslations(countryCode);
+  const t = useTranslations();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   useDocumentTitle(t.cookbookTitle);
@@ -358,7 +357,7 @@ function RecipeCard({
   onToggleSaved: (recipe: RecipeItem) => void;
 }) {
   const countryCode = useCountryCode();
-  const t = getTranslations(countryCode);
+  const t = useTranslations();
   const [imageSrc, setImageSrc] = useState(
     recipe.imageId ? buildRecipeImageUrl(recipe.imageId, countryCode) : PLACEHOLDER
   );
@@ -529,8 +528,8 @@ type AddState = "idle" | "adding" | "done";
 
 export function RecipeDetailPage() {
   const { id } = useParams({ from: "/authenticated/recipe/$id" });
-  const t = getTranslations(useCountryCode());
   const countryCode = useCountryCode();
+  const t = useTranslations();
   const queryClient = useQueryClient();
   const { refresh } = useCart();
   const [pageState, setPageState] = useState<RecipePageState>({ status: "loading" });

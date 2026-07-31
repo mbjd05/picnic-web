@@ -13,7 +13,6 @@ import type {
 } from "@/lib/delivery-slot-types";
 import { formatTime } from "@/lib/format-delivery-window";
 import { formatPrice } from "@/lib/format-price";
-import { getTranslations } from "@/lib/i18n";
 import { buildImageUrl } from "@/lib/image-url";
 import { getPreferredPaymentOption } from "@/lib/payment";
 import type {
@@ -27,7 +26,7 @@ import type {
 } from "@/lib/types";
 
 import { ErrorView, LoadingView, useDocumentTitle } from "./browsing-components";
-import { useCountryCode } from "./country-context";
+import { useCountryCode, useTranslations } from "./country-context";
 import { ApiClientError, fetchJson } from "./lib/api-client";
 import { queryKeys, queryStaleTime } from "./lib/query-config";
 
@@ -57,7 +56,7 @@ async function postCartMutation(
 
 export function CartPage() {
   const countryCode = useCountryCode();
-  const t = getTranslations(countryCode);
+  const t = useTranslations();
   const queryClient = useQueryClient();
   useDocumentTitle(t.cartTitle);
 
@@ -315,7 +314,7 @@ export function CartPage() {
 }
 
 function EmptyCartView() {
-  const t = getTranslations(useCountryCode());
+  const t = useTranslations();
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
       <CartIcon className="text-text-muted mb-4 h-12 w-12" />
@@ -343,7 +342,7 @@ function CartContent({
   onRemoveAll: (productId: string) => void;
   onOpenPicker: () => void;
 }) {
-  const t = getTranslations(useCountryCode());
+  const t = useTranslations();
   return (
     <div className="space-y-6">
       <h1 className="text-foreground text-2xl font-bold">{t.cartTitle}</h1>
@@ -391,7 +390,7 @@ function CartItemCard({
   onRemoveAll?: () => void;
 }) {
   const countryCode = useCountryCode();
-  const t = getTranslations(countryCode);
+  const t = useTranslations();
   const [imgError, setImgError] = useState(false);
   const imageSrc =
     imgError || !item.imageId
@@ -482,7 +481,7 @@ function QuantityStepper({
   onIncrement: () => void;
   onDecrement: () => void;
 }) {
-  const t = getTranslations(useCountryCode());
+  const t = useTranslations();
   const isAtMax = quantity >= maxCount;
   return (
     <div className="flex items-center gap-0 rounded-full bg-gray-100 px-0.5 py-0.5">
@@ -521,7 +520,7 @@ function DeliverySlotBanner({
   isExplicit: boolean;
   onTap: () => void;
 }) {
-  const t = getTranslations(useCountryCode());
+  const t = useTranslations();
   return (
     <button
       type="button"
@@ -566,7 +565,7 @@ function OrderSummary({
   minimumOrderValue: number | null;
   isUpdating: boolean;
 }) {
-  const t = getTranslations(useCountryCode());
+  const t = useTranslations();
   if (totalCount === 0) return null;
 
   function depositLabel(type: string): string {
@@ -711,7 +710,7 @@ function CheckoutCta({
   totalPrice: number;
   minimumOrderValue: number | null;
 }) {
-  const t = getTranslations(useCountryCode());
+  const t = useTranslations();
   const [checkoutState, setCheckoutState] = useState<
     { status: "idle" } | { status: "loading" } | { status: "error"; message: string }
   >({ status: "idle" });
@@ -885,7 +884,7 @@ function DeliverySlotPicker({
 }
 
 function PickerHeader({ onClose }: { onClose: () => void }) {
-  const t = getTranslations(useCountryCode());
+  const t = useTranslations();
   return (
     <div className="border-b border-gray-200 px-4 pt-4 pb-3">
       <div className="flex items-start justify-between">
@@ -915,7 +914,7 @@ function PickerLoading() {
 }
 
 function PickerError({ message, onRetry }: { message: string; onRetry: () => void }) {
-  const t = getTranslations(useCountryCode());
+  const t = useTranslations();
   return (
     <div className="flex min-h-[200px] flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
       <p className="text-sm text-gray-600">{message}</p>
@@ -945,7 +944,7 @@ function SlotListBody({
   onDayChange: (index: number) => void;
   onSelectSlot: (slotId: string) => void;
 }) {
-  const t = getTranslations(useCountryCode());
+  const t = useTranslations();
   if (data.dayGroups.length === 0) {
     return (
       <div className="flex min-h-[200px] flex-1 items-center justify-center px-6 text-center">
@@ -1029,7 +1028,7 @@ function SelectedDayView({
   selectingSlotId: string | null;
   onSelectSlot: (slotId: string) => void;
 }) {
-  const t = getTranslations(useCountryCode());
+  const t = useTranslations();
   return (
     <>
       <SectionHeader text={t.selectedSectionLabel} />
@@ -1068,7 +1067,7 @@ function DefaultDayView({
   selectingSlotId: string | null;
   onSelectSlot: (slotId: string) => void;
 }) {
-  const t = getTranslations(useCountryCode());
+  const t = useTranslations();
   return (
     <>
       {day.greenSlots.length > 0 ? (

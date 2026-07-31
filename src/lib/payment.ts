@@ -15,15 +15,11 @@ export function isEmptyJsonResponseError(error: unknown): boolean {
   return getErrorMessage(error).includes("Unexpected end of JSON input");
 }
 
-export function getPreferredPaymentOption(
-  profile: PaymentProfile
-): StoredPaymentOption | null {
+export function getPreferredPaymentOption(profile: PaymentProfile): StoredPaymentOption | null {
   const preferredId = profile.preferred_payment_option_id;
   if (!preferredId) return null;
 
-  return (
-    profile.stored_payment_options?.find((option) => option.id === preferredId) ?? null
-  );
+  return profile.stored_payment_options?.find((option) => option.id === preferredId) ?? null;
 }
 
 export function getPreferredPaymentOptionForMethod(
@@ -41,9 +37,8 @@ export function getAvailablePaymentMethod(
   paymentMethod: string
 ): AvailablePaymentMethod | null {
   return (
-    profile.available_payment_methods?.find(
-      (method) => method.payment_method === paymentMethod
-    ) ?? null
+    profile.available_payment_methods?.find((method) => method.payment_method === paymentMethod) ??
+    null
   );
 }
 
@@ -51,20 +46,13 @@ export function getPaymentMethodDetails(
   profile: PaymentProfile,
   paymentMethod: string
 ): PaymentMethod | null {
-  return (
-    profile.payment_methods?.find((method) => method.payment_method === paymentMethod) ??
-    null
-  );
+  return profile.payment_methods?.find((method) => method.payment_method === paymentMethod) ?? null;
 }
 
-export function getPaymentDisplayName(
-  profile: PaymentProfile,
-  paymentMethod: string
-): string {
+export function getPaymentDisplayName(profile: PaymentProfile, paymentMethod: string): string {
   if (paymentMethod === "IDEAL") {
     return "iDEAL | Wero";
   }
 
   return getPaymentMethodDetails(profile, paymentMethod)?.display_name ?? paymentMethod;
 }
-

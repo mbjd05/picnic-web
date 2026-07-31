@@ -1,4 +1,4 @@
-import { LANGUAGE_COOKIE_NAME, type LanguageCode, SUPPORTED_LANGUAGE_CODES } from "./types";
+import type { LanguageCode } from "./types";
 
 const translations = {
   NL: {
@@ -79,8 +79,7 @@ const translations = {
     checkoutDeepLinkCountry: "nl",
     checkoutStarting: "Betaling starten...",
     checkoutStartError: "Kan betaling niet starten. Probeer het opnieuw.",
-    minimumCheckoutMessage:
-      "Je kunt afrekenen vanaf {minimum}. Je winkelwagen is nu {current}.",
+    minimumCheckoutMessage: "Je kunt afrekenen vanaf {minimum}. Je winkelwagen is nu {current}.",
     paymentMethodTitle: "Betaalmethode",
     managePaymentMethods: "Betaalmethoden beheren",
     choosePaymentMethod: "Kies een betaalmethode",
@@ -1060,22 +1059,7 @@ const englishTranslations: Translations = {
   allergenTitle: "Allergens",
 };
 
-function readBrowserLanguageCode(): LanguageCode | null {
-  if (typeof document === "undefined") return null;
-
-  const cookie = document.cookie
-    .split(";")
-    .map((part) => part.trim())
-    .find((part) => part.startsWith(`${LANGUAGE_COOKIE_NAME}=`));
-  const value = cookie ? decodeURIComponent(cookie.slice(LANGUAGE_COOKIE_NAME.length + 1)).toUpperCase() : null;
-
-  return value && (SUPPORTED_LANGUAGE_CODES as readonly string[]).includes(value)
-    ? (value as LanguageCode)
-    : null;
-}
-
 export function getTranslations(languageCode: LanguageCode): Translations {
-  const resolvedLanguageCode = readBrowserLanguageCode() ?? languageCode;
-  if (resolvedLanguageCode === "EN") return englishTranslations;
-  return translations[resolvedLanguageCode];
+  if (languageCode === "EN") return englishTranslations;
+  return translations[languageCode];
 }

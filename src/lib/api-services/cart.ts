@@ -17,8 +17,7 @@ type SendRequestClient = {
 };
 
 type CartMutationValidation =
-  | { ok: true; body: CartMutationRequest }
-  | { ok: false; error: string };
+  { ok: true; body: CartMutationRequest } | { ok: false; error: string };
 
 type DeliverySlotValidation = { ok: true; slotId: string } | { ok: false; error: string };
 
