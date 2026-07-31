@@ -54,6 +54,21 @@ async function postCartMutation(
   });
 }
 
+function estimateLineUnitPrice(item: CartItem): number {
+  return item.quantity > 0 ? Math.round(item.displayPrice / item.quantity) : item.displayPrice;
+}
+
+function estimateLineUnitDiscount(item: CartItem): number {
+  if (
+    item.originalPrice === null ||
+    item.originalPrice <= item.displayPrice ||
+    item.quantity <= 0
+  ) {
+    return 0;
+  }
+  return Math.round((item.originalPrice - item.displayPrice) / item.quantity);
+}
+
 export function CartPage() {
   const countryCode = useCountryCode();
   const t = useTranslations();
@@ -200,14 +215,30 @@ export function CartPage() {
 
       setPageState((previous) => {
         if (previous.status !== "success") return previous;
+        const previousItem = previous.cart.items.find((line) => line.productId === productId);
+        if (!previousItem || previousItem.quantity >= previousItem.maxCount) return previous;
+        const unitPrice = estimateLineUnitPrice(previousItem);
+        const unitDiscount = estimateLineUnitDiscount(previousItem);
         return {
           status: "success",
           isReconciling: true,
           cart: {
             ...previous.cart,
+            totalPrice: previous.cart.totalPrice + unitPrice,
             totalCount: previous.cart.totalCount + 1,
+            totalDiscount: previous.cart.totalDiscount + unitDiscount,
             items: previous.cart.items.map((line) =>
-              line.productId === productId ? { ...line, quantity: line.quantity + 1 } : line
+              line.productId === productId
+                ? {
+                    ...line,
+                    displayPrice: line.displayPrice + unitPrice,
+                    originalPrice:
+                      line.originalPrice === null
+                        ? null
+                        : line.originalPrice + unitPrice + unitDiscount,
+                    quantity: line.quantity + 1,
+                  }
+                : line
             ),
           },
         };
@@ -228,20 +259,40 @@ export function CartPage() {
         if (previous.status !== "success") return previous;
         const previousItem = previous.cart.items.find((line) => line.productId === productId);
         if (!previousItem || previousItem.quantity <= 0) return previous;
+        const unitPrice = estimateLineUnitPrice(previousItem);
+        const unitDiscount = estimateLineUnitDiscount(previousItem);
         const nextQuantity = previousItem.quantity - 1;
         const nextItems =
           nextQuantity === 0
             ? previous.cart.items.filter((line) => line.productId !== productId)
             : previous.cart.items.map((line) =>
-                line.productId === productId ? { ...line, quantity: nextQuantity } : line
+                line.productId === productId
+                  ? {
+                      ...line,
+                      displayPrice: Math.max(0, line.displayPrice - unitPrice),
+                      originalPrice:
+                        line.originalPrice === null
+                          ? null
+                          : Math.max(0, line.originalPrice - unitPrice - unitDiscount),
+                      quantity: nextQuantity,
+                    }
+                  : line
               );
         const nextCount = Math.max(0, previous.cart.totalCount - 1);
+        const nextTotalPrice = Math.max(0, previous.cart.totalPrice - unitPrice);
+        const nextTotalDiscount = Math.max(0, previous.cart.totalDiscount - unitDiscount);
         return nextCount === 0 || nextItems.length === 0
           ? { status: "empty" }
           : {
               status: "success",
               isReconciling: true,
-              cart: { ...previous.cart, totalCount: nextCount, items: nextItems },
+              cart: {
+                ...previous.cart,
+                totalPrice: nextTotalPrice,
+                totalCount: nextCount,
+                totalDiscount: nextTotalDiscount,
+                items: nextItems,
+              },
             };
       });
       enqueueDelta(productId, -1);
@@ -262,11 +313,7 @@ export function CartPage() {
         if (!previousItem || previousItem.quantity <= 0) return previous;
         const nextItems = previous.cart.items.filter((line) => line.productId !== productId);
         const nextCount = Math.max(0, previous.cart.totalCount - previousItem.quantity);
-        const lineDiscount =
-          previousItem.originalPrice !== null &&
-          previousItem.originalPrice > previousItem.displayPrice
-            ? previousItem.originalPrice - previousItem.displayPrice
-            : 0;
+        const lineDiscount = estimateLineUnitDiscount(previousItem) * previousItem.quantity;
         const nextTotalPrice = Math.max(0, previous.cart.totalPrice - previousItem.displayPrice);
         const nextTotalDiscount = Math.max(0, previous.cart.totalDiscount - lineDiscount);
         return nextCount === 0 || nextItems.length === 0
