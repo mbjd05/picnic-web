@@ -71,7 +71,7 @@ function CartIcon() {
       viewBox="0 0 24 24"
       strokeWidth={1.75}
       stroke="currentColor"
-      className="h-5 w-5"
+      className="h-5 w-5 shrink-0"
       aria-hidden="true"
     >
       <path
@@ -429,12 +429,17 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
     <Link
       to="/cart"
       search={{ returnSearch: activeSearchTerm || undefined }}
-      className="hover:text-foreground relative flex shrink-0 items-center text-gray-600 transition-colors"
-      aria-label="Winkelwagen"
+      className={`relative flex h-10 shrink-0 items-center gap-2 rounded-full border px-3 text-sm font-semibold shadow-sm transition-colors sm:px-4 ${
+        showCartBadge
+          ? "border-picnic-red bg-picnic-red hover:bg-picnic-red-dark text-white"
+          : "border-card-border bg-card-bg text-foreground hover:border-picnic-red hover:text-picnic-red"
+      }`}
+      aria-label={t.cartTitle}
     >
       <CartIcon />
+      <span className="hidden lg:inline">{t.cartTitle}</span>
       {showCartBadge ? (
-        <span className="bg-picnic-red ml-1 rounded-full px-2 py-0.5 text-xs font-semibold text-white">
+        <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-bold text-white">
           {formatCartPrice(cart.totalPrice)}
         </span>
       ) : null}
@@ -533,6 +538,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
         </form>
 
         <nav className="order-1 ml-auto flex shrink-0 items-center gap-2 md:order-2">
+          {cartLink}
           <div ref={localeMenuRef} className="relative">
             <button
               type="button"
@@ -627,7 +633,6 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
               </div>
             </div>
           </div>
-          {cartLink}
           <div className="relative">
             <button
               type="button"
