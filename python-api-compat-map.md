@@ -11,7 +11,9 @@ This document does not replace profile/settings CRUD research in `src/scripts/re
 
 ## Ranked Implementation Queue
 
-### 1. Delivery Order Status And Cancellation
+The previous delivery-related entries are intentionally merged into one first chunk, because they touch the same delivery detail/service area.
+
+### 1. Delivery Management Actions
 
 Reference: MCP Picnic.
 
@@ -20,6 +22,8 @@ Direct Picnic surfaces through `picnic-api`:
 ```text
 cart.getOrderStatus(orderId)
 delivery.cancelDelivery(deliveryId)
+delivery.setDeliveryRating(deliveryId, rating)
+delivery.sendDeliveryInvoiceEmail(deliveryId)
 ```
 
 Why it makes the cut:
@@ -27,12 +31,15 @@ Why it makes the cut:
 - Complements the already-adopted `/deliveries` page.
 - `getOrderStatus` is read-only.
 - Cancellation is high-impact but core order-management functionality.
+- Rating and invoice email belong naturally on completed delivery details.
 
 Recommended implementation:
 
 - Show order status on delivery detail when an order ID is available.
 - Expose cancellation only when Picnic marks the order/delivery cancellable.
 - Require explicit user confirmation for cancellation.
+- Add invoice resend where it naturally fits completed delivery details.
+- Do not expose rating unless the API clearly indicates the delivery is rateable.
 
 ### 2. Wallet Transaction Reads
 
@@ -156,33 +163,6 @@ Why it is lowest priority:
 - We already parse product page `categoryIds`.
 - The current product detail UI has the product's category tag.
 - Breadcrumb/category navigation needs a small UI decision to avoid clutter.
-
-### Deferred Delivery Extras
-
-Reference: MCP Picnic.
-
-Direct Picnic surfaces through `picnic-api`:
-
-```text
-delivery.setDeliveryRating(deliveryId, rating)
-delivery.sendDeliveryInvoiceEmail(deliveryId)
-```
-
-Why it makes the cut:
-
-- Real Picnic delivery-management functionality.
-- Invoice resend is an explicit account action but low-risk and reversible.
-
-Why it is deliberately lower-ranked:
-
-- Rating should match Picnic's expected UX constraints and timing.
-- Invoice email is useful but less central than status/cancellation.
-
-Recommended implementation:
-
-- Add only after order status/detail data tells us when each action is available.
-- Do not expose rating unless the API clearly indicates the delivery is rateable.
-- Add invoice resend where it naturally fits completed delivery details.
 
 ## Already Adopted
 
