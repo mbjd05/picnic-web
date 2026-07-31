@@ -1,3 +1,5 @@
+import ky, { type Options } from "ky";
+
 import type { ApiErrorResponse } from "@/lib/types";
 
 type ErrorPayload = Partial<ApiErrorResponse> & Record<string, unknown>;
@@ -37,10 +39,11 @@ export async function fetchJson<T>(input: string | URL, init: RequestInit = {}):
     headers.set("Content-Type", "application/json");
   }
 
-  const response = await fetch(input, {
-    ...init,
+  const response = await ky(input, {
+    ...(init as Options),
     credentials: "same-origin",
     headers,
+    throwHttpErrors: false,
   });
 
   const text = await response.text();

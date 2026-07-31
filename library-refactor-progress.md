@@ -5,7 +5,7 @@
 - [x] Phase 1: Valibot request/input validation
 - [x] Phase 2: Zustand client-only cart/UI state
 - [x] Phase 3: TanStack Form login/payment/rating forms
-- [ ] Phase 4: Ky-backed API client wrapper
+- [x] Phase 4: Ky-backed API client wrapper
 - [ ] Phase 5: TanStack Virtual performance spike
 - [ ] Phase 6: Persistent cache decision: no persistent cache vs no library vs in-memory query only vs Dexie vs idb
 
@@ -17,6 +17,8 @@ Moved visible cart UI state to a small Zustand store while keeping server state 
 
 Moved login, payment-bank selection, and delivery-rating submit controls to TanStack Form without changing visible UI or request payloads.
 
+Moved the existing browser `fetchJson` implementation onto Ky while preserving its public API, same-origin credentials, JSON parsing, expired-session redirect behavior, and non-`ApiClientError` network failures.
+
 ## Validation Log
 
 - `pnpm format:check`
@@ -25,3 +27,4 @@ Moved login, payment-bank selection, and delivery-rating submit controls to TanS
 - `pnpm test:unit`
 - Phase 2 repeated `pnpm format:check`, `pnpm typecheck`, and `pnpm test:unit`.
 - Phase 3 repeated `pnpm format:check`, `pnpm typecheck`, and `pnpm lint`.
+- Phase 4 repeated `pnpm typecheck`, `pnpm lint`, and `pnpm test:unit`.
