@@ -145,7 +145,7 @@ function QuantityControl({
 
   return (
     <div className="flex flex-col items-center gap-1" onClick={stop}>
-      <div className="flex items-center rounded-full bg-white shadow-sm">
+      <div className="grid w-24 grid-cols-[1.75rem_2.5rem_1.75rem] items-center rounded-full bg-white shadow-sm">
         <button
           type="button"
           onClick={() => cart.removeProduct(product.id)}
@@ -154,7 +154,7 @@ function QuantityControl({
         >
           −
         </button>
-        <span className="flex min-w-5 flex-col items-center text-sm leading-none font-bold">
+        <span className="flex w-10 flex-col items-center text-sm leading-none font-bold">
           {quantity}
           {progress ? <BundleDots progress={progress} quantity={quantity} /> : null}
         </span>
