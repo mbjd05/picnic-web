@@ -30,7 +30,7 @@ import { fetchJson } from "./lib/api-client";
 import { queryKeys, queryStaleTime } from "./lib/query-config";
 
 function PageLayout({ children }: { children: React.ReactNode }) {
-  return <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-8">{children}</main>;
+  return <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 sm:py-8">{children}</main>;
 }
 
 export function HomePage() {
@@ -108,6 +108,11 @@ export function CategoryPage() {
   const navigate = useNavigate();
   const countryCode = useCountryCode();
   const t = getTranslations(countryCode);
+  const categories = useQuery({
+    queryKey: queryKeys.categories(countryCode),
+    queryFn: () => fetchJson<CategoriesApiResponse>("/api/categories"),
+    staleTime: queryStaleTime.categories,
+  });
   const query = useQuery({
     queryKey: queryKeys.subcategories(categoryId, countryCode),
     queryFn: () =>
@@ -116,14 +121,16 @@ export function CategoryPage() {
       ),
     staleTime: queryStaleTime.categories,
   });
+  const categoryName = categories.data?.categories.find((category) => category.id === categoryId)?.name;
+  const title = query.data?.title && query.data.title !== categoryId ? query.data.title : categoryName;
 
-  useDocumentTitle(query.data?.title);
+  useDocumentTitle(title);
 
   return (
     <PageLayout>
       <BackButton onClick={() => void navigate({ to: "/", search: {} })} />
       <h2 className="text-foreground mb-3 text-lg font-semibold">
-        {query.data?.title ?? t.categoryFallbackTitle}
+        {title ?? t.categoryFallbackTitle}
       </h2>
       {query.isPending ? (
         <LoadingView />

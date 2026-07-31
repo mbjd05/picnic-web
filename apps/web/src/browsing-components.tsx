@@ -25,6 +25,7 @@ const STICKY_HEADER_OFFSET_PX = 144;
 const VIEWPORT_FOCUS_RATIO = 0.45;
 const INITIAL_PRODUCT_IMAGE_PRELOAD_COUNT = 12;
 const PRODUCT_IMAGE_PRELOAD_TIMEOUT_MS = 1200;
+const SECTION_SCROLL_GAP_PX = 12;
 
 export function LoadingView() {
   return (
@@ -95,7 +96,7 @@ function BundleDots({ progress, quantity }: { progress: BundleProgress; quantity
   const total = next?.quantity ?? active?.quantity ?? 0;
   if (total <= 0) return null;
   return (
-    <span className="flex gap-1" aria-label={`Voortgang tot ${total} producten`}>
+    <span className="flex max-w-10 flex-wrap justify-center gap-0.5" aria-label={`Voortgang tot ${total} producten`}>
       {Array.from({ length: total }, (_, index) => (
         <span
           key={index}
@@ -152,7 +153,7 @@ function QuantityControl({
         >
           −
         </button>
-        <span className="flex min-w-5 flex-col items-center text-sm font-bold">
+        <span className="flex min-w-5 flex-col items-center text-sm leading-none font-bold">
           {quantity}
           {progress ? <BundleDots progress={progress} quantity={quantity} /> : null}
         </span>
@@ -185,8 +186,8 @@ export function ProductCard({
 
   return (
     <div className="group relative h-full">
-      <article className="border-card-border bg-card-bg relative flex h-full flex-col rounded-lg border p-4 shadow-sm transition-shadow group-hover:shadow-md">
-        <div className="relative mb-3 flex h-32 items-center justify-center">
+      <article className="border-card-border bg-card-bg relative flex h-full flex-col rounded-lg border p-3 shadow-sm transition-shadow group-hover:shadow-md sm:p-4">
+        <div className="relative mb-3 flex h-28 items-center justify-center sm:h-32">
           <ProductImage
             src={product.imageId ? buildImageUrl(product.imageId, countryCode) : PLACEHOLDER_IMAGE}
             alt={product.name}
@@ -211,7 +212,7 @@ export function ProductCard({
         {product.subtitle ? (
           <p className="text-text-muted mb-0.5 truncate text-xs">{product.subtitle}</p>
         ) : null}
-        <h3 className="text-text-dark mb-0.5 line-clamp-2 text-sm leading-snug font-medium">
+        <h3 className="text-text-dark mb-0.5 line-clamp-2 text-sm leading-snug font-medium break-words">
           {product.namePrefix ? (
             <span className="text-text-bio-green font-bold">{product.namePrefix} </span>
           ) : null}
@@ -326,7 +327,7 @@ function ProductTiles({
   priorityProductIds: Set<string>;
 }) {
   return (
-    <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
       {products.map((product) => (
         <ProductCard
           key={product.id}
@@ -530,6 +531,22 @@ export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const badgeRefs = useRef(new Map<number, HTMLButtonElement>());
   const manualSectionRef = useRef<number | null>(null);
+  const sectionSignature = useMemo(
+    () => sections.map((section) => section.title).join("\n"),
+    [sections]
+  );
+
+  function stickyOffset() {
+    const navBottom = navRef.current?.getBoundingClientRect().bottom;
+    return (navBottom && navBottom > 0 ? navBottom : STICKY_HEADER_OFFSET_PX) + SECTION_SCROLL_GAP_PX;
+  }
+
+  useEffect(() => {
+    manualSectionRef.current = null;
+    containerRef.current?.scrollTo({ left: 0 });
+    const frame = requestAnimationFrame(() => setActive(0));
+    return () => cancelAnimationFrame(frame);
+  }, [sectionSignature]);
 
   useEffect(() => {
     let frame: number | null = null;
@@ -539,7 +556,7 @@ export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
         setActive(manualSectionRef.current);
         return;
       }
-      const focusY = Math.max(STICKY_HEADER_OFFSET_PX, window.innerHeight * VIEWPORT_FOCUS_RATIO);
+      const focusY = Math.max(stickyOffset(), window.innerHeight * VIEWPORT_FOCUS_RATIO);
       if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2) {
         setActive(sections.length - 1);
         return;
@@ -623,7 +640,10 @@ export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
 
     manualSectionRef.current = index;
     setActive(index);
-    section.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.scrollTo({
+      top: section.getBoundingClientRect().top + window.scrollY - stickyOffset(),
+      behavior: "smooth",
+    });
   }
 
   return (

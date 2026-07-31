@@ -395,7 +395,7 @@ function CartItemCard({
 
   return (
     <div className={`border-card-border border-b py-2${item.isUnavailable ? "bg-gray-50" : ""}`}>
-      <div className="flex gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row">
         <Link
           to="/product/$id"
           params={{ id: item.productId }}
@@ -427,7 +427,7 @@ function CartItemCard({
           </div>
         </Link>
 
-        <div className="flex shrink-0 flex-col items-end justify-center gap-1">
+        <div className="flex shrink-0 flex-row items-center justify-between gap-2 sm:flex-col sm:items-end sm:justify-center sm:gap-1">
           {!item.isUnavailable && onIncrement && onDecrement && onRemoveAll ? (
             <>
               <div className="flex items-center gap-1">
@@ -521,7 +521,7 @@ function DeliverySlotBanner({
     <button
       type="button"
       onClick={onTap}
-      className="group flex w-full items-center gap-3.5 rounded-2xl bg-gray-100 px-5 py-4 text-left transition-all hover:bg-gray-200 hover:shadow-md active:scale-[0.99]"
+      className="group flex w-full items-center gap-3 rounded-2xl bg-gray-100 px-4 py-3 text-left transition-all hover:bg-gray-200 hover:shadow-md active:scale-[0.99] sm:gap-3.5 sm:px-5 sm:py-4"
     >
       <div className="relative shrink-0 rounded-xl bg-white p-2 shadow-sm">
         <TruckIcon />
@@ -529,7 +529,7 @@ function DeliverySlotBanner({
           <ClockIcon />
         </div>
       </div>
-      <div className="flex flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col">
         <span
           className={`text-sm ${isExplicit ? "text-foreground font-semibold" : "font-medium text-gray-500"}`}
         >

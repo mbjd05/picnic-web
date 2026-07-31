@@ -554,8 +554,8 @@ export function RecipeDetailPage() {
     }
   }, [id, isSaved, isSavingRecipe, queryClient]);
 
-  if (pageState.status === "loading") return <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-8"><LoadingView /></main>;
-  if (pageState.status === "error") return <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-8"><ErrorView message={pageState.message} onRetry={() => void recipeQuery.refetch()} /></main>;
+  if (pageState.status === "loading") return <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 sm:px-6 sm:py-8"><LoadingView /></main>;
+  if (pageState.status === "error") return <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 sm:px-6 sm:py-8"><ErrorView message={pageState.message} onRetry={() => void recipeQuery.refetch()} /></main>;
 
   const { recipe } = pageState;
   const mainIngredients = recipe.ingredients.filter((ingredient) => !ingredient.isCondiment);
@@ -591,7 +591,7 @@ export function RecipeDetailPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-8">
+    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
       <Link to="/cookbook" className="text-text-muted hover:text-foreground mb-6 inline-flex items-center gap-1 text-sm transition-colors">← {t.cookbookTitle}</Link>
       <div className="relative mb-8 overflow-hidden rounded-2xl bg-gray-50">
         {recipe.imageId ? <RecipeHeroImage imageId={recipe.imageId} countryCode={countryCode} alt={recipe.name} /> : <div className="aspect-video w-full bg-gray-100" />}
@@ -599,14 +599,14 @@ export function RecipeDetailPage() {
           <BookmarkIcon filled={isSaved} />
         </button>
       </div>
-      <h1 className="text-foreground mb-3 text-2xl font-bold">{recipe.name}</h1>
-      <div className="text-text-muted mb-6 flex flex-wrap items-center gap-4 text-sm">
+      <h1 className="text-foreground mb-3 text-2xl leading-tight font-bold">{recipe.name}</h1>
+      <div className="text-text-muted mb-6 flex flex-col gap-3 text-sm sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
         <span className="flex items-center gap-2">
           {t.recipePortions}: <button type="button" onClick={() => setPortions((p) => Math.max(1, p - 1))} className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-300 text-xs">−</button>
           <span className="text-foreground mx-1 font-medium">{portions}</span>
           <button type="button" onClick={() => setPortions((p) => p + 1)} className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-300 text-xs">+</button>
         </span>
-        {pricePerServing ? <span className={refreshing ? "opacity-40" : ""}><span className="text-foreground font-medium">{pricePerServing}</span> <span className="text-gray-400">{t.recipePricePerServing}</span><span className="mx-1.5 text-gray-300">·</span><span className="text-foreground font-medium">{formatEuroPrice(totalCents)}</span> <span className="text-gray-400">{t.recipePriceTotal}</span>{recipe.cookingTimeMinutes !== null ? <><span className="mx-1.5 text-gray-300">·</span><span>{recipe.cookingTimeMinutes} {t.cookingTimeMinutes}</span></> : null}</span> : null}
+        {pricePerServing ? <span className={`leading-relaxed ${refreshing ? "opacity-40" : ""}`}><span className="text-foreground font-medium">{pricePerServing}</span> <span className="text-gray-400">{t.recipePricePerServing}</span><span className="mx-1.5 text-gray-300">·</span><span className="text-foreground font-medium">{formatEuroPrice(totalCents)}</span> <span className="text-gray-400">{t.recipePriceTotal}</span>{recipe.cookingTimeMinutes !== null ? <><span className="mx-1.5 text-gray-300">·</span><span>{recipe.cookingTimeMinutes} {t.cookingTimeMinutes}</span></> : null}</span> : null}
       </div>
       {mainIngredients.length > 0 ? <button type="button" onClick={() => void handleAddToCart()} disabled={addState !== "idle" || refreshing || checkedIds.size === 0} className={`mb-8 w-full rounded-xl px-6 py-3 text-sm font-semibold text-white ${addState === "done" ? "bg-green-500" : "bg-picnic-red hover:bg-red-700 disabled:opacity-60"}`}>{buttonLabel}</button> : null}
       <div className={refreshing ? "pointer-events-none opacity-40" : ""}>
@@ -687,7 +687,7 @@ function IngredientSection({
   return (
     <section className="mb-6">
       <h2 className={`${muted ? "text-text-muted text-sm" : "text-foreground text-base"} mb-2 font-semibold`}>{title}</h2>
-      <div className={`divide-y divide-gray-100 rounded-xl border ${muted ? "border-gray-100 bg-gray-50" : "border-gray-200 bg-white"} px-4`}>
+      <div className={`divide-y divide-gray-100 rounded-xl border ${muted ? "border-gray-100 bg-gray-50" : "border-gray-200 bg-white"} px-3 sm:px-4`}>
         {ingredients.map((ingredient) => (
           <RecipeIngredientRow
             key={ingredient.id}
@@ -736,11 +736,11 @@ function RecipeIngredientRow({
   const rawStrike = bundleTier ? ingredient.displayPrice * qty : ingredient.originalPrice !== null ? ingredient.originalPrice * qty : null;
   const strike = rawStrike !== null && rawStrike > totalPrice ? rawStrike : null;
   return (
-    <div className={`flex items-center gap-3 py-3 ${strike ? "-mx-4 rounded-lg bg-yellow-50 px-4" : ""}`}>
+    <div className={`flex items-center gap-2 py-3 sm:gap-3 ${strike ? "-mx-3 rounded-lg bg-yellow-50 px-3 sm:-mx-4 sm:px-4" : ""}`}>
       <button type="button" role="checkbox" aria-checked={checked} onClick={onToggle} className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 ${checked ? "border-picnic-red bg-picnic-red" : "border-gray-300 bg-white"}`}>{checked ? <span className="text-xs text-white">✓</span> : null}</button>
       <img src={imgSrc} alt={ingredient.name} loading="lazy" className={`h-12 w-12 shrink-0 rounded-lg bg-gray-50 object-contain p-1 ${checked ? "" : "opacity-40"}`} onError={() => setImgSrc(PLACEHOLDER)} />
-      <div className={`min-w-0 flex-1 ${checked ? "" : "opacity-40"}`}><p className="text-text-dark line-clamp-2 text-sm font-medium">{title}</p><p className="text-text-muted text-xs">{packageLabel}</p></div>
-      <div className={`shrink-0 text-right ${checked ? "" : "opacity-40"}`}><p className={`text-sm font-medium ${strike ? "text-amber-600" : "text-text-dark"}`}>{formatEuroPrice(totalPrice)}</p>{strike ? <p className="text-xs text-gray-400 line-through">{formatEuroPrice(strike)}</p> : null}</div>
+      <div className={`min-w-0 flex-1 ${checked ? "" : "opacity-40"}`}><p className="text-text-dark line-clamp-3 text-sm font-medium break-words sm:line-clamp-2">{title}</p><p className="text-text-muted text-xs">{packageLabel}</p></div>
+      <div className={`min-w-[3.5rem] shrink-0 text-right ${checked ? "" : "opacity-40"}`}><p className={`text-sm font-medium ${strike ? "text-amber-600" : "text-text-dark"}`}>{formatEuroPrice(totalPrice)}</p>{strike ? <p className="text-xs text-gray-400 line-through">{formatEuroPrice(strike)}</p> : null}</div>
     </div>
   );
 }
