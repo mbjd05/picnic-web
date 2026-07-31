@@ -11,7 +11,7 @@ This document does not replace profile/settings CRUD research in `src/scripts/re
 
 ## Ranked Implementation Queue
 
-### 1. Delivery Order Status And Invoice Email
+### 1. Delivery Order Status And Cancellation
 
 Reference: MCP Picnic.
 
@@ -19,21 +19,92 @@ Direct Picnic surfaces through `picnic-api`:
 
 ```text
 cart.getOrderStatus(orderId)
-delivery.sendDeliveryInvoiceEmail(deliveryId)
+delivery.cancelDelivery(deliveryId)
 ```
 
 Why it makes the cut:
 
 - Complements the already-adopted `/deliveries` page.
 - `getOrderStatus` is read-only.
-- Invoice resend is an explicit account action but low-risk and reversible.
+- Cancellation is high-impact but core order-management functionality.
 
 Recommended implementation:
 
 - Show order status on delivery detail when an order ID is available.
-- Add a clearly labeled "Factuur opnieuw mailen" action for completed deliveries after confirming the response shape.
+- Expose cancellation only when Picnic marks the order/delivery cancellable.
+- Require explicit user confirmation for cancellation.
 
-### 2. User-Created Recipe Scope
+### 2. Wallet Transaction Reads
+
+Reference: MCP Picnic.
+
+Direct Picnic surfaces through `picnic-api`:
+
+```text
+payment.getWalletTransactions(pageNumber)
+payment.getWalletTransactionDetails(transactionId)
+```
+
+Why it makes the cut:
+
+- Direct Picnic account/payment functionality.
+- Read-only.
+- Useful for grocery spending and Picnic credit visibility.
+
+Why it ranks below delivery status/cancellation:
+
+- Needs response-shape inspection across NL/DE/FR.
+- Needs a considered UI location under account/payment without cluttering payment-method management.
+
+Recommended implementation:
+
+- First add normalized API routes and a minimal read-only account page/section.
+- Only expand UI if response data is consistently useful.
+
+### 3. Recipe URL And Share-Link Resolution
+
+Reference: MCP Picnic.
+
+Direct Picnic behavior:
+
+- Bare recipe/selling-group IDs.
+- Canonical Picnic recipe URLs.
+- `selling_group_id` or legacy `recipe_id` query/deeplink parameters.
+- Picnic short share links resolving through HTTPS `picnic.app`.
+
+Why it makes the cut:
+
+- Maps external Picnic URLs to actual `selling_group_id` values.
+- Useful if we add a direct "open recipe URL" flow.
+- MCP Picnic has good safety constraints: allow only HTTPS `picnic.app` hosts and re-check redirect targets.
+
+Why it is deferred:
+
+- We currently do not expose a recipe URL input.
+- It should be implemented only when there is a UI flow that needs it.
+
+### 4. Barcode / GTIN Product Lookup
+
+Reference: Python fork.
+
+Direct Picnic behavior:
+
+```text
+https://picnic.app/{country}/qr/gtin/{ean}
+```
+
+The Python fork follows Picnic redirects to discover a product ID, then fetches the product detail.
+
+Why it makes the cut:
+
+- Direct Picnic product lookup behavior.
+
+Why it is lower priority:
+
+- No current scanner/manual barcode UI.
+- Adds little to the current web shopping workflow unless we build barcode entry/scanning.
+
+### 5. User-Created Recipe Scope
 
 Reference: MCP Picnic.
 
@@ -64,104 +135,7 @@ Recommended implementation:
 - Add an own-recipes scope only when `USER_DEFINED_RECIPES` is present.
 - Prefer dynamic segment discovery over hardcoded assumptions.
 
-### 3. Wallet Transaction Reads
-
-Reference: MCP Picnic.
-
-Direct Picnic surfaces through `picnic-api`:
-
-```text
-payment.getWalletTransactions(pageNumber)
-payment.getWalletTransactionDetails(transactionId)
-```
-
-Why it makes the cut:
-
-- Direct Picnic account/payment functionality.
-- Read-only.
-- Useful for grocery spending and Picnic credit visibility.
-
-Why it ranks below deliveries/recipes:
-
-- Needs response-shape inspection across NL/DE/FR.
-- Needs a considered UI location under account/payment without cluttering payment-method management.
-
-Recommended implementation:
-
-- First add normalized API routes and a minimal read-only account page/section.
-- Only expand UI if response data is consistently useful.
-
-### 4. Recipe URL And Share-Link Resolution
-
-Reference: MCP Picnic.
-
-Direct Picnic behavior:
-
-- Bare recipe/selling-group IDs.
-- Canonical Picnic recipe URLs.
-- `selling_group_id` or legacy `recipe_id` query/deeplink parameters.
-- Picnic short share links resolving through HTTPS `picnic.app`.
-
-Why it makes the cut:
-
-- Maps external Picnic URLs to actual `selling_group_id` values.
-- Useful if we add a direct "open recipe URL" flow.
-- MCP Picnic has good safety constraints: allow only HTTPS `picnic.app` hosts and re-check redirect targets.
-
-Why it is deferred:
-
-- We currently do not expose a recipe URL input.
-- It should be implemented only when there is a UI flow that needs it.
-
-### 5. Delivery Rating And Cancellation
-
-Reference: MCP Picnic.
-
-Direct Picnic surfaces through `picnic-api`:
-
-```text
-delivery.setDeliveryRating(deliveryId, rating)
-delivery.cancelDelivery(deliveryId)
-```
-
-Why it makes the cut:
-
-- Real Picnic delivery-management functionality.
-
-Why it is deliberately lower-ranked:
-
-- Both mutate account/order state.
-- Cancellation has obvious consequences.
-- Rating should match Picnic's expected UX constraints and timing.
-
-Recommended implementation:
-
-- Add only after order status/detail data tells us when each action is available.
-- Require explicit user confirmation for cancellation.
-- Do not expose rating unless the API clearly indicates the delivery is rateable.
-
-### 6. Barcode / GTIN Product Lookup
-
-Reference: Python fork.
-
-Direct Picnic behavior:
-
-```text
-https://picnic.app/{country}/qr/gtin/{ean}
-```
-
-The Python fork follows Picnic redirects to discover a product ID, then fetches the product detail.
-
-Why it makes the cut:
-
-- Direct Picnic product lookup behavior.
-
-Why it is low priority:
-
-- No current scanner/manual barcode UI.
-- Adds little to the current web shopping workflow unless we build barcode entry/scanning.
-
-### 7. Product Detail Category Name Resolution
+### 6. Product Detail Category Name Resolution
 
 Reference: Python fork.
 
@@ -177,11 +151,38 @@ Why it makes the cut:
 
 - Direct Picnic category metadata.
 
-Why it is low priority:
+Why it is lowest priority:
 
 - We already parse product page `categoryIds`.
 - The current product detail UI has the product's category tag.
 - Breadcrumb/category navigation needs a small UI decision to avoid clutter.
+
+### Deferred Delivery Extras
+
+Reference: MCP Picnic.
+
+Direct Picnic surfaces through `picnic-api`:
+
+```text
+delivery.setDeliveryRating(deliveryId, rating)
+delivery.sendDeliveryInvoiceEmail(deliveryId)
+```
+
+Why it makes the cut:
+
+- Real Picnic delivery-management functionality.
+- Invoice resend is an explicit account action but low-risk and reversible.
+
+Why it is deliberately lower-ranked:
+
+- Rating should match Picnic's expected UX constraints and timing.
+- Invoice email is useful but less central than status/cancellation.
+
+Recommended implementation:
+
+- Add only after order status/detail data tells us when each action is available.
+- Do not expose rating unless the API clearly indicates the delivery is rateable.
+- Add invoice resend where it naturally fits completed delivery details.
 
 ## Already Adopted
 
