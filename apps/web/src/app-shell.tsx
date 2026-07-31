@@ -424,7 +424,10 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
           <div ref={localeMenuRef} className="relative">
             <button
               type="button"
-              onClick={() => setIsLocaleMenuOpen((isOpen) => !isOpen)}
+              onClick={() => {
+                setIsLocaleMenuOpen((isOpen) => !isOpen);
+                setIsMenuOpen(false);
+              }}
               className={`flex h-9 items-center justify-center gap-1.5 rounded-full border px-2.5 text-sm font-medium transition-colors sm:px-3 ${
                 isLocaleMenuOpen
                   ? "border-picnic-red bg-picnic-red text-white"
@@ -474,7 +477,10 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
           <div className="relative">
             <button
               type="button"
-              onClick={() => setIsMenuOpen((isOpen) => !isOpen)}
+              onClick={() => {
+                setIsMenuOpen((isOpen) => !isOpen);
+                setIsLocaleMenuOpen(false);
+              }}
               className={`flex h-9 items-center justify-center gap-2 rounded-full border px-2.5 text-sm font-medium transition-colors sm:px-3 ${
                 isMenuOpen
                   ? "border-picnic-red bg-picnic-red text-white"
