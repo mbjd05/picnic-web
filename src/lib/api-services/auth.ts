@@ -1,6 +1,6 @@
 import { is2FAError, isApiAuthError } from "@/lib/api-error";
 import { buildPicnicClient, buildPicnicClientAnonymous } from "@/lib/picnic-client";
-import type { AuthApiResponse, CountryCode } from "@/lib/types";
+import type { AuthApiResponse, CountryCode, TwoFactorChannel } from "@/lib/types";
 import { SUPPORTED_COUNTRY_CODES } from "@/lib/types";
 
 import type { ApiServiceResult } from "./types";
@@ -19,7 +19,8 @@ export function resolveAuthCountryCode(rawCode: unknown, fallback: CountryCode):
 
 export async function loginWithTokenService(
   token: string | undefined,
-  countryCode: CountryCode
+  countryCode: CountryCode,
+  twoFactorChannel: TwoFactorChannel = "SMS"
 ): Promise<AuthServiceResult> {
   if (!token || token.trim() === "") {
     return { body: { success: false, error: "TOKEN_INVALID" } };
@@ -40,7 +41,7 @@ export async function loginWithTokenService(
     const partialClient = buildPicnicClient(trimmedToken, countryCode);
 
     try {
-      await partialClient.auth.generate2FACode("SMS");
+      await partialClient.auth.generate2FACode(twoFactorChannel);
 
       return {
         body: {
@@ -65,7 +66,8 @@ export async function loginWithTokenService(
 export async function loginWithCredentialsService(
   email: string | undefined,
   password: string | undefined,
-  countryCode: CountryCode
+  countryCode: CountryCode,
+  twoFactorChannel: TwoFactorChannel = "SMS"
 ): Promise<AuthServiceResult> {
   if (!email || email.trim() === "" || !password || password.trim() === "") {
     return { body: { success: false, error: "CREDENTIALS_INVALID" } };
@@ -82,7 +84,7 @@ export async function loginWithCredentialsService(
 
     if (result.second_factor_authentication_required) {
       try {
-        await client.auth.generate2FACode("SMS");
+        await client.auth.generate2FACode(twoFactorChannel);
       } catch (error) {
         if (!canContinueAfter2FAGenerationError(error)) {
           return { body: { success: false, error: "API_UNREACHABLE" } };
@@ -114,6 +116,10 @@ export async function loginWithCredentialsService(
 
     return { body: { success: false, error: "API_UNREACHABLE" } };
   }
+}
+
+export function resolveTwoFactorChannel(rawChannel: unknown): TwoFactorChannel {
+  return rawChannel === "EMAIL" ? "EMAIL" : "SMS";
 }
 
 export async function verify2FAService(

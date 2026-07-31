@@ -4,6 +4,7 @@ import {
   loginWithCredentialsService,
   loginWithTokenService,
   resolveAuthCountryCode,
+  resolveTwoFactorChannel,
   verify2FAService,
 } from "@/lib/api-services/auth";
 import {
@@ -72,7 +73,8 @@ app.post("/api/auth/login", async (c) => {
   const { countryCode } = readSession(c);
   const result = await loginWithTokenService(
     typeof body?.token === "string" ? body.token : undefined,
-    resolveAuthCountryCode(body?.countryCode, countryCode)
+    resolveAuthCountryCode(body?.countryCode, countryCode),
+    resolveTwoFactorChannel(body?.twoFactorChannel)
   );
 
   applyAuthResultCookies(c, result);
@@ -85,7 +87,8 @@ app.post("/api/auth/login-credentials", async (c) => {
   const result = await loginWithCredentialsService(
     typeof body?.email === "string" ? body.email : undefined,
     typeof body?.password === "string" ? body.password : undefined,
-    resolveAuthCountryCode(body?.countryCode, countryCode)
+    resolveAuthCountryCode(body?.countryCode, countryCode),
+    resolveTwoFactorChannel(body?.twoFactorChannel)
   );
 
   applyAuthResultCookies(c, result);

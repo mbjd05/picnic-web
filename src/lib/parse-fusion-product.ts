@@ -36,6 +36,7 @@ import type {
 import {
   PRODUCT_ACCORDION_ID,
   PRODUCT_ALLERGIES_ID,
+  PRODUCT_CATEGORY_BUTTON_ID,
   PRODUCT_DESCRIPTION_ID,
   PRODUCT_GALLERY_CONTAINER_ID,
   PRODUCT_HIGHLIGHTS_ID,
@@ -44,6 +45,92 @@ import {
 } from "./types";
 
 // ─── Internal extraction helpers ─────────────────────────────────────────────
+
+const CURRENCY_PREFIXES = new Set(["€", "$", "£"]);
+const CATEGORY_DEEPLINK_PATTERN = /^app\.picnic:\/\/categories\/(\d+)\/l2\/(\d+)\/l3\/(\d+)/;
+
+function walkRecords(node: unknown): Record<string, unknown>[] {
+  const results: Record<string, unknown>[] = [];
+  if (typeof node !== "object" || node === null) return results;
+
+  if (Array.isArray(node)) {
+    for (const item of node) {
+      results.push(...walkRecords(item));
+    }
+    return results;
+  }
+
+  const record = node as Record<string, unknown>;
+  results.push(record);
+  for (const value of Object.values(record)) {
+    results.push(...walkRecords(value));
+  }
+  return results;
+}
+
+function getRawText(node: Record<string, unknown>): string | null {
+  if (typeof node.markdown === "string") return node.markdown;
+  if (typeof node.text === "string") return node.text;
+  return null;
+}
+
+function extractMainTextRoles(container: unknown): {
+  name: string | null;
+  brand: string | null;
+  unitQuantity: string | null;
+  unitPrice: string | null;
+} {
+  let name: string | null = null;
+  let brand: string | null = null;
+  let unitQuantity: string | null = null;
+  let unitPrice: string | null = null;
+  let fallbackName: string | null = null;
+
+  for (const node of walkRecords(container)) {
+    const raw = getRawText(node);
+    if (!raw) continue;
+
+    const text = cleanMarkdown(raw);
+    if (!text) continue;
+
+    fallbackName ??= text;
+    if (node.textType === "HEADER1" && name === null) {
+      name = text;
+      continue;
+    }
+
+    const first = text[0];
+    const colorCoded = raw.includes("#(");
+    if (CURRENCY_PREFIXES.has(first)) {
+      unitPrice ??= text;
+    } else if (colorCoded && /\d/.test(first)) {
+      unitQuantity ??= text;
+    } else if (!colorCoded && brand === null && text !== fallbackName) {
+      brand = text;
+    }
+  }
+
+  return { name: name ?? fallbackName, brand, unitQuantity, unitPrice };
+}
+
+function extractCategoryTagFromTexts(
+  texts: string[],
+  knownValues: Array<string | null>
+): { text: string; color: string } | null {
+  const known = new Set(knownValues.filter((value): value is string => Boolean(value)));
+
+  for (const raw of texts) {
+    const text = cleanMarkdown(raw);
+    if (!text || known.has(text)) continue;
+
+    const color = extractInnerColor(raw);
+    if (color) {
+      return { text, color };
+    }
+  }
+
+  return null;
+}
 
 /** Extract name, brand, unitQuantity, unitPrice, and category tag from the main container. */
 function extractMainContainerInfo(page: unknown): {
@@ -55,24 +142,43 @@ function extractMainContainerInfo(page: unknown): {
 } {
   const mainContainer = findNodeById(page, PRODUCT_MAIN_CONTAINER_ID);
   const texts = collectMarkdowns(mainContainer).map((md) => md);
+  const roles = extractMainTextRoles(mainContainer);
 
-  // Positional: 0=name, 1=brand, 2=unitQuantity, 3=unitPrice, 4=categoryTag (optional)
-  const name = stripColorTags(texts[0] ?? "");
-  const brand = stripColorTags(texts[1] ?? "");
-  const unitQuantity = stripColorTags(texts[2] ?? "");
-  const unitPrice = texts[3] ? stripColorTags(texts[3]) || null : null;
-
-  // Category tag (e.g. "Diepvries") at position 4 with a distinct inner color
-  let categoryTag: { text: string; color: string } | null = null;
-  if (texts[4]) {
-    const color = extractInnerColor(texts[4]);
-    const text = stripColorTags(texts[4]);
-    if (text && color) {
-      categoryTag = { text, color };
-    }
-  }
+  const name = roles.name ?? stripColorTags(texts[0] ?? "");
+  const brand = roles.brand ?? "";
+  const unitQuantity = roles.unitQuantity ?? stripColorTags(texts[2] ?? "");
+  const fallbackUnitPrice = texts[3] ? stripColorTags(texts[3]) : "";
+  const unitPrice =
+    roles.unitPrice ??
+    (fallbackUnitPrice && CURRENCY_PREFIXES.has(fallbackUnitPrice[0])
+      ? fallbackUnitPrice
+      : null);
+  const categoryTag = extractCategoryTagFromTexts(texts, [name, brand, unitQuantity, unitPrice]);
 
   return { name, brand, unitQuantity, unitPrice, categoryTag };
+}
+
+function extractCategoryIds(page: unknown): ProductDetail["categoryIds"] {
+  const button = findNodeById(page, PRODUCT_CATEGORY_BUTTON_ID);
+  if (!button) return null;
+
+  const onPressTargets = collectPropertyValues(button, "onPress")
+    .filter((value): value is Record<string, unknown> => typeof value === "object" && value !== null)
+    .map((value) => value.target)
+    .filter((target): target is string => typeof target === "string");
+
+  for (const target of onPressTargets) {
+    const match = target.match(CATEGORY_DEEPLINK_PATTERN);
+    if (!match) continue;
+
+    return {
+      l1: Number(match[1]),
+      l2: Number(match[2]),
+      l3: Number(match[3]),
+    };
+  }
+
+  return null;
 }
 
 /** Extract gallery image IDs from the image gallery container. */
@@ -231,11 +337,11 @@ export function extractProductTileData(
 ): { name: string; unitQuantity: string; imageId: string; displayPrice: number; maxCount: number; originalPrice: number | null; priceRanges: BundleThreshold[] | null } {
   const page = (rawPage as Record<string, unknown>)?.body ?? rawPage;
 
-  // Name and unit quantity from the main container's markdown nodes
   const mainContainer = findNodeById(page, PRODUCT_MAIN_CONTAINER_ID);
+  const mainInfo = extractMainContainerInfo(page);
   const texts = collectMarkdowns(mainContainer).map(stripColorTags);
-  const name = cleanMarkdown(texts[0] ?? "");
-  const unitQuantity = cleanMarkdown(texts[2] ?? "");
+  const name = mainInfo.name;
+  const unitQuantity = mainInfo.unitQuantity;
 
   // Find the selling unit by ID — don't require max_count to be set (unlike
   // findMainSellingUnit which gates on max_count !== undefined and misses some units)
@@ -344,6 +450,7 @@ export function parseProductDetailPage(rawPage: unknown, productId: string): Pro
     unitQuantity: mainInfo.unitQuantity,
     unitPrice: mainInfo.unitPrice,
     categoryTag: mainInfo.categoryTag,
+    categoryIds: extractCategoryIds(page),
     displayPrice,
     originalPrice: extractOriginalPrice(page),
     maxCount: mainUnit.maxCount,

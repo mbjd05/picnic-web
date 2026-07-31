@@ -182,6 +182,7 @@ export const PRODUCT_ACCORDION_ID = "accordion-list";
 export const PRODUCT_BUNDLES_PREFIX = "product-page-bundles-";
 export const PRODUCT_ALTERNATIVES_ID = "alternatives-container";
 export const PRODUCT_LABELS_PREFIX = "product-page-labels-";
+export const PRODUCT_CATEGORY_BUTTON_ID = "category-button";
 
 /** A single allergen badge with its display color. */
 export type AllergenBadge = {
@@ -295,6 +296,8 @@ export type ProductDetail = {
   unitPrice: string | null;
   /** Category tag text (e.g. "Diepvries") with color. Null if not available. */
   categoryTag: { text: string; color: string } | null;
+  /** Category ids from the product page category deep-link. Null if unavailable. */
+  categoryIds: { l1: number; l2: number; l3: number } | null;
   /** Selling price in euro cents. */
   displayPrice: number;
   /** Original price in cents before discount, or null. */
@@ -579,6 +582,7 @@ export type RecipeDetailApiResponse = RecipeDetail;
 
 /** Error codes returned by API routes for auth-related failures. */
 export type AuthErrorCode = "TOKEN_EXPIRED" | "TOKEN_INVALID" | "API_UNREACHABLE";
+export type TwoFactorChannel = "SMS" | "EMAIL";
 
 /** Response shape from the /api/auth/login route. */
 export type AuthApiResponse =
