@@ -6,7 +6,7 @@ This file is the source of truth for end-to-end validation during Chunk 19 and C
 
 - Test the migrated Vite/Hono app through the Worker at `http://127.0.0.1:8787`.
 - Use Playwright MCP for browser-level checks and the existing authenticated API smoke for API/state-restoration checks.
-- Keep token use efficient: prefer one authenticated browser session per matrix run.
+- Keep Codex context/tool usage efficient: prefer one authenticated browser session per matrix run.
 - Prefer `browser_evaluate` for grouped assertions. Use screenshots only for visual checkpoints and failures.
 - Mutation policy is restored-only:
   - Cart mutations are allowed only after capturing the exact original quantity and restoring it.
