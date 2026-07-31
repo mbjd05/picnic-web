@@ -14,12 +14,13 @@ const twoFactorChannels = ["SMS", "EMAIL"] as const;
 
 const nonEmptyStringSchema = v.pipe(v.string(), v.trim(), v.minLength(1));
 const positiveNumberSchema = v.pipe(v.number(), v.finite(), v.minValue(1));
+const positiveIntegerSchema = v.pipe(v.number(), v.integer(), v.minValue(1));
 const nonNegativeIntegerSchema = v.pipe(v.number(), v.integer(), v.minValue(0));
 
 export const cartMutationSchema = v.object({
   productId: nonEmptyStringSchema,
   action: v.picklist(["add", "remove"]),
-  count: positiveNumberSchema,
+  count: positiveIntegerSchema,
 });
 
 export const deliverySlotSchema = v.object({

@@ -600,9 +600,8 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
         </form>
 
         <nav className="order-1 ml-auto flex shrink-0 items-center gap-2 md:order-2">
-          <div className="border-card-border mr-1 flex min-w-[9.9rem] items-center justify-between border-r pr-3 xl:min-w-[13.2rem]">
+          <div className="border-card-border mr-1 flex min-w-[9.9rem] items-center justify-end border-r pr-3 xl:min-w-[14rem]">
             {cartLink}
-            <span aria-hidden="true" />
           </div>
           <div ref={localeMenuRef} className="relative">
             <button

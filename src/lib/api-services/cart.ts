@@ -63,15 +63,18 @@ export async function mutateCartService(
 
   try {
     const client = buildPicnicClient(authToken, countryCode);
-    const rawCart = await (client as unknown as SendRequestClient).sendRequest(
-      "POST",
-      endpoint,
-      {
-        product_id: validation.data.productId,
-        count: validation.data.count,
-      },
-      true
-    );
+    let rawCart: unknown = null;
+    for (let index = 0; index < validation.data.count; index += 1) {
+      rawCart = await (client as unknown as SendRequestClient).sendRequest(
+        "POST",
+        endpoint,
+        {
+          product_id: validation.data.productId,
+          count: 1,
+        },
+        true
+      );
+    }
 
     return { body: parseCartResponse(rawCart, countryCode) };
   } catch (error) {

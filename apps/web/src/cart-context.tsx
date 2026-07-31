@@ -15,6 +15,7 @@ import type { BundleProgress, BundleThreshold, CartData } from "@/lib/types";
 import { fetchJson } from "./lib/api-client";
 import { queryKeys, queryStaleTime } from "./lib/query-config";
 import { quantitiesFromCart, useCartUiStore } from "./cart-ui-store";
+import { useTranslations } from "./country-context";
 
 const CART_MUTATION_DEBOUNCE_MS = 220;
 
@@ -34,7 +35,24 @@ type CartContextValue = {
 
 const CartContext = createContext<CartContextValue | null>(null);
 
+function ToastDismissIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.75}
+      stroke="currentColor"
+      className="h-4 w-4"
+      aria-hidden="true"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+    </svg>
+  );
+}
+
 export function CartProvider({ children }: { children: ReactNode }) {
+  const t = useTranslations();
   const queryClient = useQueryClient();
   const quantities = useCartUiStore((state) => state.quantities);
   const totalPrice = useCartUiStore((state) => state.totalPrice);
@@ -280,10 +298,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
       {toast ? (
         <div
           role="status"
-          className="app-toast fixed right-4 bottom-4 z-[100] max-w-sm rounded-lg px-4 py-3 text-sm"
-          onClick={() => setToast(null)}
+          className="app-toast fixed right-4 bottom-4 z-[100] flex max-w-sm items-center gap-3 rounded-lg px-4 py-3 text-sm"
         >
-          {toast}
+          <span>{toast}</span>
+          <button
+            type="button"
+            onClick={() => setToast(null)}
+            className="-mr-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-current/80 transition-colors hover:bg-white/10 hover:text-current"
+            aria-label={t.dismissAriaLabel}
+          >
+            <ToastDismissIcon />
+          </button>
         </div>
       ) : null}
     </CartContext.Provider>
