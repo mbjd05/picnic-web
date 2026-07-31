@@ -481,7 +481,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
     <Link
       to="/cart"
       search={{ returnSearch: activeSearchTerm || undefined }}
-      className="border-card-border bg-card-bg text-foreground hover:border-picnic-red hover:text-picnic-red relative flex h-10 shrink-0 items-center gap-2 rounded-full border px-3 text-sm font-semibold transition-colors sm:px-4 lg:w-[8.5rem] lg:justify-between xl:w-[14rem]"
+      className="border-card-border bg-card-bg text-foreground hover:border-picnic-red hover:text-picnic-red relative flex h-10 shrink-0 items-center gap-2 rounded-full border px-3 text-sm font-semibold transition-colors sm:px-4"
       aria-label={t.cartTitle}
     >
       <span className="flex items-center gap-2">
@@ -518,7 +518,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
           ref={searchRef}
           role="search"
           onSubmit={handleSearch}
-          className="order-3 w-full md:order-1 md:flex-1"
+          className="order-3 w-full md:order-1 md:flex-1 xl:w-[36rem] xl:flex-none 2xl:w-[42rem]"
         >
           <div className="relative mx-auto w-full max-w-2xl">
             <input
