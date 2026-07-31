@@ -1,6 +1,10 @@
 import { stdin as input, stdout as output } from "node:process";
 import { createInterface } from "node:readline/promises";
 
+import { loadLocalEnvFile } from "./local-env.mjs";
+
+loadLocalEnvFile();
+
 const baseUrl = (process.env.PICNIC_WORKER_URL ?? "http://localhost:8791").replace(/\/$/, "");
 const token = process.env.PICNIC_TOKEN;
 const countryCode = (process.env.PICNIC_COUNTRY_CODE ?? "NL").toUpperCase();

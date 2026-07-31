@@ -1,8 +1,11 @@
 import { createHash } from "node:crypto";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 
 import PicnicClient from "picnic-api";
+
+import { loadLocalEnvFile } from "./local-env.mjs";
 
 /*
 Local auth probe
@@ -17,15 +20,25 @@ Token validation:
 Options:
   $env:PICNIC_COUNTRY_CODE="NL"
   $env:PICNIC_API_VERSION="17"
+  --show-token              Print the full token after success.
+  --no-env-file             Do not update the local .env file.
+  --print-powershell-env    Print a PowerShell assignment for the current shell.
 
-This script prints the resulting auth token. Do not paste its output into logs
-or upstream PRs.
+This script saves the resulting full auth token to .env by default and only
+prints a hash prefix unless --show-token is provided.
 */
 
-const mode = process.argv[2] ?? "login";
+const envFilePath = ".env";
+
+loadLocalEnvFile(envFilePath);
+
+const mode = process.argv.find((arg, index) => index > 1 && !arg.startsWith("--")) ?? "login";
 const countryCode = process.env.PICNIC_COUNTRY_CODE ?? "NL";
 const apiVersion = process.env.PICNIC_API_VERSION ?? "17";
 const debug2FA = process.env.PICNIC_DEBUG_2FA === "1" || process.argv.includes("--debug-2fa");
+const showToken = process.argv.includes("--show-token");
+const updateEnvFile = !process.argv.includes("--no-env-file");
+const printPowerShellEnv = process.argv.includes("--print-powershell-env");
 
 function createClient(authKey) {
   return new PicnicClient({
@@ -47,6 +60,35 @@ function getBaseUrl() {
 
 function makeDeviceId() {
   return Math.random().toString(16).slice(2, 14).toUpperCase();
+}
+
+function setEnvValue(contents, name, value) {
+  const escapedValue = JSON.stringify(value);
+  const lines = contents ? contents.split(/\r?\n/) : [];
+  let replaced = false;
+  const nextLines = lines.map((line) => {
+    if (line.startsWith(`${name}=`)) {
+      replaced = true;
+      return `${name}=${escapedValue}`;
+    }
+    return line;
+  });
+
+  if (!replaced) {
+    if (nextLines.length > 0 && nextLines[nextLines.length - 1] !== "") {
+      nextLines.push("");
+    }
+    nextLines.push(`${name}=${escapedValue}`);
+  }
+
+  return `${nextLines.join("\n").replace(/\n+$/, "")}\n`;
+}
+
+function saveTokenToEnvFile(authKey) {
+  const currentContents = existsSync(envFilePath) ? readFileSync(envFilePath, "utf8") : "";
+  let nextContents = setEnvValue(currentContents, "PICNIC_TOKEN", authKey);
+  nextContents = setEnvValue(nextContents, "PICNIC_COUNTRY_CODE", countryCode);
+  writeFileSync(envFilePath, nextContents, { encoding: "utf8", mode: 0o600 });
 }
 
 async function generate2FACodeWithDebug(authKey, channel = "SMS") {
@@ -89,12 +131,29 @@ async function generate2FACodeWithDebug(authKey, channel = "SMS") {
   return body ? JSON.parse(body) : null;
 }
 
-function printToken(authKey) {
-  console.log("");
-  console.log("Auth token:");
-  console.log(authKey);
+function printTokenStatus(authKey) {
   console.log("");
   console.log(`SHA-256 prefix: ${createHash("sha256").update(authKey).digest("hex").slice(0, 16)}`);
+
+  if (updateEnvFile) {
+    saveTokenToEnvFile(authKey);
+    console.log(`Saved PICNIC_TOKEN and PICNIC_COUNTRY_CODE to ${envFilePath}.`);
+  }
+
+  if (printPowerShellEnv) {
+    console.log("");
+    console.log("PowerShell assignment for this terminal:");
+    console.log(`$env:PICNIC_TOKEN=${JSON.stringify(authKey)}`);
+    console.log(`$env:PICNIC_COUNTRY_CODE=${JSON.stringify(countryCode)}`);
+  }
+
+  if (showToken) {
+    console.log("");
+    console.log("Auth token:");
+    console.log(authKey);
+  }
+
+  console.log("");
 }
 
 async function validateAuthKey(authKey) {
@@ -128,7 +187,7 @@ async function runTokenMode() {
   try {
     await validateAuthKey(token);
     console.log("Token is valid and fully authenticated.");
-    printToken(token);
+    printTokenStatus(token);
     return;
   } catch (error) {
     console.log("Token is not accepted as a full auth token.");
@@ -154,7 +213,7 @@ async function runTokenMode() {
     if (!finalToken) throw new Error("2FA succeeded but no final auth token was returned.");
     await validateAuthKey(finalToken);
     console.log("2FA token verification succeeded.");
-    printToken(finalToken);
+    printTokenStatus(finalToken);
   } finally {
     rl.close();
   }
@@ -178,15 +237,19 @@ async function runLoginMode() {
     if (!loginResult.second_factor_authentication_required) {
       await validateAuthKey(authKey);
       console.log("Credential login produced a valid full auth token.");
-      printToken(authKey);
+      printTokenStatus(authKey);
       return;
     }
 
     console.log("");
-    console.log("Partial auth token for web-app 2FA testing:");
-    console.log(authKey);
-    console.log("");
-    console.log("Paste this into the web app's Auth token login mode to test token + 2FA.");
+    console.log("A partial auth token was received for 2FA verification.");
+    if (showToken) {
+      console.log("");
+      console.log("Partial auth token for web-app 2FA testing:");
+      console.log(authKey);
+      console.log("");
+      console.log("Paste this into the web app's Auth token login mode to test token + 2FA.");
+    }
 
     try {
       await generate2FACodeWithDebug(authKey, "SMS");
@@ -204,7 +267,7 @@ async function runLoginMode() {
     if (!finalToken) throw new Error("2FA succeeded but no final auth token was returned.");
     await validateAuthKey(finalToken);
     console.log("Credential login + 2FA produced a valid full auth token.");
-    printToken(finalToken);
+    printTokenStatus(finalToken);
   } finally {
     rl.close();
   }

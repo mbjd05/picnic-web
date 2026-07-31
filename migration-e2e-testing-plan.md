@@ -18,6 +18,7 @@ This file is the source of truth for end-to-end validation during Chunk 19 and C
 ## Required Environment
 
 - `PICNIC_TOKEN`: required for authenticated API smoke and browser login.
+  - `node .\src\scripts\picnic-auth-probe.mjs login` saves a verified token to the local `.env` file.
 - `PICNIC_COUNTRY_CODE`: optional; defaults to `NL`.
 - `PICNIC_EMAIL` and `PICNIC_PASSWORD`: optional, only for explicit credential/2FA smoke.
 - Local target: `http://127.0.0.1:8787`.

@@ -1,5 +1,7 @@
 import PicnicClient from "picnic-api";
 
+import { loadLocalEnvFile } from "./local-env.mjs";
+
 /*
 Useful probe commands
 =====================
@@ -62,6 +64,8 @@ Payment option removal:
 
 The removal command only removes one explicit payment option ID and requires --confirm.
 */
+
+loadLocalEnvFile();
 
 const token = process.env.PICNIC_TOKEN;
 const countryCode = process.env.PICNIC_COUNTRY_CODE ?? "NL";
