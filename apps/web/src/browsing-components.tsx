@@ -171,7 +171,7 @@ function QuantityControl({
         className="quantity-control-surface text-text-dark flex h-8 w-8 items-center justify-center rounded-full text-lg font-bold hover:bg-gray-100"
         aria-label={t.addToCartAriaLabel}
       >
-        +
+        <span className="translate-y-px leading-none">+</span>
       </button>
     );
   }

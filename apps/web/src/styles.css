@@ -32,7 +32,7 @@
   --text-bio-green: #628003;
   --quantity-control-bg: #ffffff;
   --quantity-control-border: #d2d2d2;
-  --quantity-control-shadow: 0 2px 8px rgb(33 33 33 / 14%);
+  --quantity-control-shadow: 0 1px 3px rgb(33 33 33 / 12%);
   color-scheme: light;
 }
 
@@ -67,7 +67,7 @@
   --text-bio-green: #a9ce45;
   --quantity-control-bg: #242a23;
   --quantity-control-border: #50594d;
-  --quantity-control-shadow: 0 2px 10px rgb(0 0 0 / 38%);
+  --quantity-control-shadow: 0 1px 4px rgb(0 0 0 / 32%);
   color-scheme: dark;
 }
 
