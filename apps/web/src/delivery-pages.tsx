@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type {
+  DeliveryActionApiResponse,
   DeliveryDetail,
+  DeliveryOrderStatusApiResponse,
   DeliverySummariesApiResponse,
   DeliverySummary,
   DeliveryTrackingApiResponse,
@@ -195,7 +197,72 @@ function DeliveryDetailPanel({
 }) {
   const countryCode = useCountryCode();
   const t = getTranslations(countryCode);
+  const queryClient = useQueryClient();
   const order = delivery.orders[0] ?? null;
+  const [rating, setRating] = useState("10");
+  const [orderStatusRequested, setOrderStatusRequested] = useState(false);
+
+  useEffect(() => {
+    setOrderStatusRequested(false);
+  }, [delivery.deliveryId]);
+
+  const orderStatusQuery = useQuery({
+    queryKey: order?.id
+      ? queryKeys.deliveryOrderStatus(order.id, countryCode)
+      : ["delivery-order-status", "none", countryCode],
+    queryFn: () => fetchJson<DeliveryOrderStatusApiResponse>(`/api/orders/${order?.id}/status`),
+    enabled: Boolean(order?.id && orderStatusRequested),
+    staleTime: queryStaleTime.deliveryOrderStatus,
+    retry: false,
+  });
+
+  function invalidateDeliveryData() {
+    void queryClient.invalidateQueries({ queryKey: ["deliveries"] });
+    void queryClient.invalidateQueries({
+      queryKey: queryKeys.deliveryDetail(delivery.deliveryId, countryCode),
+    });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.cart() });
+  }
+
+  const cancelDeliveryMutation = useMutation({
+    mutationFn: () =>
+      fetchJson<DeliveryActionApiResponse>(`/api/deliveries/${delivery.deliveryId}/cancel`, {
+        method: "POST",
+      }),
+    onSuccess: invalidateDeliveryData,
+  });
+
+  const invoiceEmailMutation = useMutation({
+    mutationFn: () =>
+      fetchJson<DeliveryActionApiResponse>(
+        `/api/deliveries/${delivery.deliveryId}/invoice-email`,
+        { method: "POST" }
+      ),
+  });
+
+  const ratingMutation = useMutation({
+    mutationFn: () =>
+      fetchJson<DeliveryActionApiResponse>(`/api/deliveries/${delivery.deliveryId}/rating`, {
+        method: "POST",
+        body: JSON.stringify({ rating: Number(rating) }),
+      }),
+    onSuccess: invalidateDeliveryData,
+  });
+
+  useEffect(() => {
+    cancelDeliveryMutation.reset();
+    invoiceEmailMutation.reset();
+    ratingMutation.reset();
+  }, [delivery.deliveryId]);
+
+  const canCancelDelivery = delivery.status === "CURRENT" && order?.cancellable === true;
+  const canSendInvoiceEmail = delivery.status === "COMPLETED";
+  const canRateDelivery = delivery.status === "COMPLETED";
+
+  function handleCancelDelivery() {
+    if (!window.confirm(t.cancelDeliveryConfirm)) return;
+    cancelDeliveryMutation.mutate();
+  }
 
   return (
     <div className="space-y-5">
@@ -228,6 +295,108 @@ function DeliveryDetailPanel({
             value={[order?.paymentType, order?.redactedIban].filter(Boolean).join(" ") || "-"}
           />
         </dl>
+      </section>
+
+      <section className="border-card-border rounded-lg border bg-white p-4">
+        <h2 className="text-base font-semibold text-gray-900">{t.deliveryActions}</h2>
+        <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+          {order?.id ? (
+            <button
+              type="button"
+              onClick={() => {
+                setOrderStatusRequested(true);
+                void orderStatusQuery.refetch();
+              }}
+              disabled={orderStatusQuery.isFetching}
+              className="border-card-border hover:text-foreground rounded-full border px-4 py-2 text-sm font-semibold text-gray-600 transition-colors disabled:cursor-wait disabled:opacity-60"
+            >
+              {orderStatusQuery.isFetching
+                ? t.deliveryOrderStatusLoading
+                : t.deliveryOrderStatusRefresh}
+            </button>
+          ) : null}
+          {canCancelDelivery ? (
+            <button
+              type="button"
+              onClick={handleCancelDelivery}
+              disabled={cancelDeliveryMutation.isPending}
+              className="rounded-full border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-50 disabled:cursor-wait disabled:opacity-60"
+            >
+              {cancelDeliveryMutation.isPending ? t.cancellingDelivery : t.cancelDelivery}
+            </button>
+          ) : null}
+          {canSendInvoiceEmail ? (
+            <button
+              type="button"
+              onClick={() => invoiceEmailMutation.mutate()}
+              disabled={invoiceEmailMutation.isPending}
+              className="border-card-border hover:text-foreground rounded-full border px-4 py-2 text-sm font-semibold text-gray-600 transition-colors disabled:cursor-wait disabled:opacity-60"
+            >
+              {invoiceEmailMutation.isPending ? t.sendingInvoiceEmail : t.sendInvoiceEmail}
+            </button>
+          ) : null}
+        </div>
+
+        {canRateDelivery ? (
+          <form
+            className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end"
+            onSubmit={(event) => {
+              event.preventDefault();
+              ratingMutation.mutate();
+            }}
+          >
+            <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
+              {t.deliveryRating}
+              <select
+                value={rating}
+                onChange={(event) => setRating(event.target.value)}
+                className="border-input-border focus:border-input-focus focus:ring-input-focus/20 rounded-md border bg-white px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:outline-none"
+              >
+                {Array.from({ length: 11 }, (_, score) => (
+                  <option key={score} value={score}>
+                    {score}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="submit"
+              disabled={ratingMutation.isPending}
+              className="bg-picnic-red hover:bg-picnic-red-dark rounded-full px-4 py-2 text-sm font-semibold text-white transition-colors disabled:cursor-wait disabled:opacity-60"
+            >
+              {ratingMutation.isPending ? t.submittingDeliveryRating : t.submitDeliveryRating}
+            </button>
+          </form>
+        ) : null}
+
+        <DeliveryActionFeedback
+          error={cancelDeliveryMutation.error}
+          success={cancelDeliveryMutation.isSuccess ? t.cancelDeliverySuccess : null}
+          fallbackError={t.cancelDeliveryError}
+        />
+        <DeliveryActionFeedback
+          error={invoiceEmailMutation.error}
+          success={invoiceEmailMutation.isSuccess ? t.invoiceEmailSent : null}
+          fallbackError={t.invoiceEmailError}
+        />
+        <DeliveryActionFeedback
+          error={ratingMutation.error}
+          success={ratingMutation.isSuccess ? t.deliveryRatingSaved : null}
+          fallbackError={t.deliveryRatingError}
+        />
+
+        {orderStatusQuery.isError ? (
+          <p className="mt-3 text-sm text-red-600">
+            {orderStatusQuery.error instanceof ApiClientError
+              ? orderStatusQuery.error.message
+              : t.deliveryOrderStatusError}
+          </p>
+        ) : null}
+        {orderStatusQuery.data ? (
+          <div className="mt-4">
+            <RawPayload title={t.deliveryOrderStatus} value={orderStatusQuery.data.status} />
+          </div>
+        ) : null}
       </section>
 
       <section className="border-card-border rounded-lg border bg-white p-4">
@@ -277,6 +446,28 @@ function DeliveryDetailPanel({
       ) : null}
     </div>
   );
+}
+
+function DeliveryActionFeedback({
+  error,
+  success,
+  fallbackError,
+}: {
+  error: Error | null;
+  success: string | null;
+  fallbackError: string;
+}) {
+  if (error) {
+    return (
+      <p className="mt-3 text-sm text-red-600">
+        {error instanceof ApiClientError ? error.message : fallbackError}
+      </p>
+    );
+  }
+  if (success) {
+    return <p className="mt-3 text-sm text-green-700">{success}</p>;
+  }
+  return null;
 }
 
 function InfoItem({ label, value }: { label: string; value: string }) {

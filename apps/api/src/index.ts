@@ -16,9 +16,13 @@ import {
 import { getCategoriesService } from "@/lib/api-services/categories";
 import { getCookbookService, searchCookbookService } from "@/lib/api-services/cookbook";
 import {
+  cancelDeliveryService,
   getDeliveryDetailService,
+  getDeliveryOrderStatusService,
   getDeliverySummariesService,
   getDeliveryTrackingService,
+  sendDeliveryInvoiceEmailService,
+  setDeliveryRatingService,
 } from "@/lib/api-services/deliveries";
 import { fetchImageService } from "@/lib/api-services/images";
 import {
@@ -347,6 +351,60 @@ app.get("/api/deliveries/:deliveryId/tracking", async (c) => {
   }
 
   const result = await getDeliveryTrackingService(token, countryCode, c.req.param("deliveryId"));
+  return c.json(result.body, jsonStatus(result.status));
+});
+
+app.get("/api/orders/:orderId/status", async (c) => {
+  const { token, countryCode } = readSession(c);
+  if (!token) {
+    return authRequiredResponse(c);
+  }
+
+  const result = await getDeliveryOrderStatusService(token, countryCode, c.req.param("orderId"));
+  return c.json(result.body, jsonStatus(result.status));
+});
+
+app.post("/api/deliveries/:deliveryId/cancel", async (c) => {
+  const { token, countryCode } = readSession(c);
+  if (!token) {
+    return authRequiredResponse(c);
+  }
+
+  const result = await cancelDeliveryService(token, countryCode, c.req.param("deliveryId"));
+  return c.json(result.body, jsonStatus(result.status));
+});
+
+app.post("/api/deliveries/:deliveryId/rating", async (c) => {
+  const { token, countryCode } = readSession(c);
+  if (!token) {
+    return authRequiredResponse(c);
+  }
+
+  const body = await c.req.json().catch(() => null);
+  if (body === null) {
+    return c.json({ error: "Invalid JSON body" }, 400);
+  }
+
+  const result = await setDeliveryRatingService(
+    token,
+    countryCode,
+    c.req.param("deliveryId"),
+    Number(body.rating)
+  );
+  return c.json(result.body, jsonStatus(result.status));
+});
+
+app.post("/api/deliveries/:deliveryId/invoice-email", async (c) => {
+  const { token, countryCode } = readSession(c);
+  if (!token) {
+    return authRequiredResponse(c);
+  }
+
+  const result = await sendDeliveryInvoiceEmailService(
+    token,
+    countryCode,
+    c.req.param("deliveryId")
+  );
   return c.json(result.body, jsonStatus(result.status));
 });
 

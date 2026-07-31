@@ -62,3 +62,12 @@ export type DeliveryTrackingApiResponse = {
   scenario: unknown | null;
   position: unknown | null;
 };
+
+export type DeliveryOrderStatusApiResponse = {
+  status: unknown;
+};
+
+export type DeliveryActionApiResponse = {
+  success: true;
+  result: unknown;
+};
