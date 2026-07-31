@@ -1,5 +1,11 @@
 import { QueryClient } from "@tanstack/react-query";
-import { Outlet, createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
+import {
+  Outlet,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  lazyRouteComponent,
+} from "@tanstack/react-router";
 
 import { AuthenticatedShell, StandaloneShell } from "./app-shell";
 import { LoadingSurface } from "./app-surfaces";
@@ -9,14 +15,9 @@ import {
   ShortcutProductsPage,
   SubcategoryProductsPage,
 } from "./browsing-pages";
-import { CartPage } from "./cart-page";
 import { CountryProvider } from "./country-context";
-import { DeliveriesPage } from "./delivery-pages";
 import { ApiClientError } from "./lib/api-client";
 import { LoginPage } from "./login-page";
-import { PaymentAccountPage, PaymentReturnPage } from "./payment-pages";
-import { ProductDetailPage } from "./product-detail-page";
-import { CookbookPage, RecipeDetailPage } from "./recipe-pages";
 import { AppShellError, RootNotFound } from "./router-surfaces";
 
 export const queryClient = new QueryClient({
@@ -85,12 +86,12 @@ const cartRoute = createRoute({
         ? search.returnSearch.trim()
         : undefined,
   }),
-  component: CartPage,
+  component: lazyRouteComponent(() => import("./cart-page"), "CartPage"),
 });
 const paymentReturnRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/cart/payment-return",
-  component: PaymentReturnPage,
+  component: lazyRouteComponent(() => import("./payment-pages"), "PaymentReturnPage"),
 });
 const categoryRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
@@ -105,12 +106,12 @@ const subcategoryRoute = createRoute({
 const cookbookRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/cookbook",
-  component: CookbookPage,
+  component: lazyRouteComponent(() => import("./recipe-pages"), "CookbookPage"),
 });
 const deliveriesRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/deliveries",
-  component: DeliveriesPage,
+  component: lazyRouteComponent(() => import("./delivery-pages"), "DeliveriesPage"),
 });
 const paymentRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
@@ -118,17 +119,17 @@ const paymentRoute = createRoute({
   validateSearch: (search: Record<string, unknown>) => ({
     from: search.from === "cart" ? ("cart" as const) : undefined,
   }),
-  component: PaymentAccountPage,
+  component: lazyRouteComponent(() => import("./payment-pages"), "PaymentAccountPage"),
 });
 const productRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/product/$id",
-  component: ProductDetailPage,
+  component: lazyRouteComponent(() => import("./product-detail-page"), "ProductDetailPage"),
 });
 const recipeRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/recipe/$id",
-  component: RecipeDetailPage,
+  component: lazyRouteComponent(() => import("./recipe-pages"), "RecipeDetailPage"),
 });
 
 const routeTree = rootRoute.addChildren([
