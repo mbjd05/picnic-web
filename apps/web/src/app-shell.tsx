@@ -200,7 +200,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
   const switchLanguage = useSwitchLanguage();
   const {
     preference: themePreference,
-    resolvedTheme,
+    systemTheme,
     setPreference: setThemePreference,
   } = useTheme();
   const t = getTranslations(languageCode);
@@ -418,7 +418,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
         </span>
         {preference === "system" ? (
           <span className={selected ? "text-white/80" : "text-gray-400"}>
-            {resolvedTheme === "dark" ? t.themeDark : t.themeLight}
+            {systemTheme === "dark" ? t.themeDark : t.themeLight}
           </span>
         ) : null}
       </button>

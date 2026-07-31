@@ -8,10 +8,12 @@ const THEME_STORAGE_KEY = "picnic_theme";
 const ThemeContext = createContext<{
   preference: ThemePreference;
   resolvedTheme: ResolvedTheme;
+  systemTheme: ResolvedTheme;
   setPreference: (preference: ThemePreference) => void;
 }>({
   preference: "system",
   resolvedTheme: "light",
+  systemTheme: "light",
   setPreference: () => undefined,
 });
 
@@ -62,8 +64,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ preference, resolvedTheme, setPreference }),
-    [preference, resolvedTheme, setPreference]
+    () => ({ preference, resolvedTheme, systemTheme, setPreference }),
+    [preference, resolvedTheme, systemTheme, setPreference]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
