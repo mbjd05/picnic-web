@@ -6,8 +6,8 @@
 - [x] Phase 2: Zustand client-only cart/UI state
 - [x] Phase 3: TanStack Form login/payment/rating forms
 - [x] Phase 4: Ky-backed API client wrapper
-- [ ] Phase 5: TanStack Virtual performance spike
-- [ ] Phase 6: Persistent cache decision: no persistent cache vs no library vs in-memory query only vs Dexie vs idb
+- [x] Phase 5: TanStack Virtual performance spike
+- [x] Phase 6: Persistent cache decision: no persistent cache vs no library vs in-memory query only vs Dexie vs idb
 
 ## Current Status
 
@@ -19,6 +19,18 @@ Moved login, payment-bank selection, and delivery-rating submit controls to TanS
 
 Moved the existing browser `fetchJson` implementation onto Ky while preserving its public API, same-origin credentials, JSON parsing, expired-session redirect behavior, and non-`ApiClientError` network failures.
 
+Rejected TanStack Virtual for the current product grids. The app's main product views use responsive CSS grids plus section headers that drive the sticky section navigation. Virtualizing those rows now would make section DOM positions synthetic and would risk regressions in active-section highlighting, scroll restoration, and browser back behavior. Revisit only if profiling shows rendering, not API/image loading, is the bottleneck and after replacing section tracking with virtualization-aware measurements.
+
+Kept caching on TanStack Query only. Private Picnic data should not be persisted by default, and current search/category caching already targets the main pain point without stale cross-session data. If offline or reload-persistent product browsing becomes a requirement later, prefer `idb` over Dexie for this app's likely key-value cache shape; Dexie is only worth the extra abstraction if we need relational indexes, table migrations, or complex client-side queries.
+
+## SOLID Pass
+
+- Single responsibility improved: API body validation now lives in `src/lib/api-validation.ts`; visible cart UI state now lives in `apps/web/src/cart-ui-store.ts`; browser HTTP behavior remains centralized in `fetchJson`.
+- Open/closed improved: new request body shapes can be added as Valibot schemas without editing each service's manual parsing logic.
+- Liskov substitution is not a major pressure point in this codebase because there are few inheritance-style abstractions.
+- Interface segregation is already mostly followed through small service functions and UI components; the cart context remains intentionally broader because product cards need a single ergonomic cart API.
+- Dependency inversion improved at the browser API boundary: route/page code depends on the app-level `fetchJson` contract, not directly on `fetch` or Ky.
+
 ## Validation Log
 
 - `pnpm format:check`
@@ -28,3 +40,4 @@ Moved the existing browser `fetchJson` implementation onto Ky while preserving i
 - Phase 2 repeated `pnpm format:check`, `pnpm typecheck`, and `pnpm test:unit`.
 - Phase 3 repeated `pnpm format:check`, `pnpm typecheck`, and `pnpm lint`.
 - Phase 4 repeated `pnpm typecheck`, `pnpm lint`, and `pnpm test:unit`.
+- Phase 5/6 decision: no code adoption for TanStack Virtual, Dexie, or `idb` yet; avoid dependencies until profiling or product requirements justify them.
