@@ -409,7 +409,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
   }
 
   const showCartBadge = cart.totalCount > 0;
-  const showCartBadgePlaceholder = cart.isLoading && !showCartBadge;
+  const showCartBadgePlaceholder = cart.isLoading && !showCartBadge && !cart.hasStoredSummary;
   const activeSearchTerm = new URLSearchParams(location.searchStr).get("q")?.trim();
 
   function renderLocaleOption<TCode extends CountryCode | LanguageCode>({

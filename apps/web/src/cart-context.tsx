@@ -23,6 +23,7 @@ type CartContextValue = {
   quantities: Map<string, number>;
   totalPrice: number;
   totalCount: number;
+  hasStoredSummary: boolean;
   isLoading: boolean;
   addProduct: (productId: string, maxCount: number, priceDelta?: number) => void;
   removeProduct: (productId: string, priceDelta?: number) => void;
@@ -57,6 +58,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const quantities = useCartUiStore((state) => state.quantities);
   const totalPrice = useCartUiStore((state) => state.totalPrice);
   const totalCount = useCartUiStore((state) => state.totalCount);
+  const hasStoredSummary = useCartUiStore((state) => state.hasStoredSummary);
   const bundleData = useCartUiStore((state) => state.bundleData);
   const isLoading = useCartUiStore((state) => state.isLoading);
   const toast = useCartUiStore((state) => state.toast);
@@ -268,6 +270,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       quantities,
       totalPrice,
       totalCount,
+      hasStoredSummary,
       isLoading,
       addProduct,
       removeProduct,
@@ -281,6 +284,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       quantities,
       totalPrice,
       totalCount,
+      hasStoredSummary,
       isLoading,
       addProduct,
       removeProduct,
