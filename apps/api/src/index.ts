@@ -55,7 +55,12 @@ import {
   upstreamUnavailableResponse,
 } from "./lib/http";
 import { apiSecurity } from "./lib/security";
-import { applyAuthResultCookies, clearAuthCookie, readSession } from "./lib/session";
+import {
+  applyAuthResultCookies,
+  clearAuthCookie,
+  readSession,
+  switchSessionCountry,
+} from "./lib/session";
 
 const app = new Hono();
 
@@ -144,6 +149,18 @@ app.post("/api/auth/verify-2fa", async (c) => {
 app.post("/api/auth/logout", (c) => {
   clearAuthCookie(c);
   return authJson(c, { success: true });
+});
+
+app.post("/api/auth/switch-country", async (c) => {
+  const body = await c.req.json().catch(() => null);
+  const { countryCode } = readSession(c);
+  const targetCountryCode = resolveAuthCountryCode(body?.countryCode, countryCode);
+
+  return c.json({
+    success: true,
+    countryCode: targetCountryCode,
+    authenticated: switchSessionCountry(c, targetCountryCode),
+  });
 });
 
 app.get("/api/account/payment-profile", async (c) => {

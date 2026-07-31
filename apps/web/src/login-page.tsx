@@ -3,7 +3,12 @@ import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { useSearch } from "@tanstack/react-router";
 
 import { type Translations, getTranslations } from "@/lib/i18n";
-import { type AuthApiResponse, type CountryCode, SUPPORTED_COUNTRY_CODES } from "@/lib/types";
+import {
+  type AuthApiResponse,
+  type CountryCode,
+  SUPPORTED_COUNTRY_CODES,
+  type SwitchCountryResponse,
+} from "@/lib/types";
 
 import { useCountryCode } from "./country-context";
 import { ApiClientError, fetchJson } from "./lib/api-client";
@@ -61,6 +66,25 @@ function LoginForm({
   const [error, setError] = useState<string | null>(isExpired ? t.sessionExpired : null);
 
   const clearError = useCallback(() => setError(null), []);
+
+  async function handleCountrySelect(code: CountryCode) {
+    setCountryCode(code);
+    setPartialToken(null);
+    setTwoFactorCode("");
+    setError(null);
+
+    try {
+      const data = await fetchJson<SwitchCountryResponse>("/api/auth/switch-country", {
+        method: "POST",
+        body: JSON.stringify({ countryCode: code }),
+      });
+      if (data.authenticated) {
+        window.location.assign(redirectTo);
+      }
+    } catch {
+      // The selected region still applies to the login form even if persistence fails.
+    }
+  }
 
   async function submitAuth(path: string, body: object, failureMessage: string) {
     setIsLoading(true);
@@ -147,7 +171,7 @@ function LoginForm({
             <button
               key={code}
               type="button"
-              onClick={() => setCountryCode(code)}
+              onClick={() => void handleCountrySelect(code)}
               className={`rounded-lg px-4 py-1.5 text-sm font-semibold transition-colors ${
                 code === countryCode
                   ? "bg-picnic-red text-white"

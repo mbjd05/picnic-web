@@ -598,3 +598,9 @@ export type AuthApiResponse =
   | { success: true }
   | { success: false; error: string }
   | { success: false; error: "2FA_REQUIRED"; partialToken: string };
+
+export type SwitchCountryResponse = {
+  success: true;
+  countryCode: CountryCode;
+  authenticated: boolean;
+};

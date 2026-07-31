@@ -9,8 +9,11 @@ import {
   type LanguageCode,
   SUPPORTED_LANGUAGE_CODES,
   SUPPORTED_COUNTRY_CODES,
+  type SwitchCountryResponse,
 } from "@/lib/types";
 import { getTranslations } from "@/lib/i18n";
+
+import { fetchJson } from "./lib/api-client";
 
 const COUNTRY_COOKIE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 const CountryContext = createContext<CountryCode>(DEFAULT_COUNTRY_CODE);
@@ -51,10 +54,31 @@ export function CountryProvider({ children }: { children: ReactNode }) {
     document.documentElement.lang = languageCode.toLowerCase();
   }, [languageCode]);
 
-  const switchCountry = useCallback((code: CountryCode) => {
-    document.cookie = `${COUNTRY_COOKIE_NAME}=${code}; path=/; max-age=${COUNTRY_COOKIE_MAX_AGE_SECONDS}; samesite=lax`;
-    window.location.reload();
-  }, []);
+  const switchCountry = useCallback(
+    async (code: CountryCode) => {
+      if (code === countryCode) return;
+
+      try {
+        const result = await fetchJson<SwitchCountryResponse>("/api/auth/switch-country", {
+          method: "POST",
+          body: JSON.stringify({ countryCode: code }),
+        });
+
+        if (result.authenticated) {
+          window.location.reload();
+          return;
+        }
+
+        const redirect = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+        const search = new URLSearchParams({ redirect });
+        window.location.assign(`/login?${search.toString()}`);
+      } catch {
+        document.cookie = `${COUNTRY_COOKIE_NAME}=${code}; path=/; max-age=${COUNTRY_COOKIE_MAX_AGE_SECONDS}; samesite=lax`;
+        window.location.reload();
+      }
+    },
+    [countryCode]
+  );
 
   const switchLanguage = useCallback((code: LanguageCode) => {
     document.cookie = `${LANGUAGE_COOKIE_NAME}=${code}; path=/; max-age=${COUNTRY_COOKIE_MAX_AGE_SECONDS}; samesite=lax`;

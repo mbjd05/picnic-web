@@ -146,6 +146,7 @@ export async function verify2FAService(
     return {
       body: { success: true },
       authToken: authKey,
+      countryCode,
     };
   } catch (error) {
     if (is2FAError(error)) {
