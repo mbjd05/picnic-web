@@ -429,7 +429,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
     <Link
       to="/cart"
       search={{ returnSearch: activeSearchTerm || undefined }}
-      className={`relative flex h-10 shrink-0 items-center gap-2 rounded-full border px-3 text-sm font-semibold shadow-sm transition-colors sm:px-4 ${
+      className={`relative flex h-10 shrink-0 items-center gap-2 rounded-full border px-3 text-sm font-semibold transition-colors sm:px-4 ${
         showCartBadge
           ? "border-picnic-red bg-picnic-red hover:bg-picnic-red-dark text-white"
           : "border-card-border bg-card-bg text-foreground hover:border-picnic-red hover:text-picnic-red"
@@ -538,7 +538,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
         </form>
 
         <nav className="order-1 ml-auto flex shrink-0 items-center gap-2 md:order-2">
-          {cartLink}
+          <div className="border-card-border mr-1 flex items-center border-r pr-3">{cartLink}</div>
           <div ref={localeMenuRef} className="relative">
             <button
               type="button"

@@ -168,7 +168,7 @@ function QuantityControl({
           increment();
         }}
         ref={wheelAdjustRef}
-        className="text-text-dark flex h-8 w-8 items-center justify-center rounded-full bg-white text-lg font-bold shadow-md hover:bg-gray-100"
+        className="quantity-control-surface text-text-dark flex h-8 w-8 items-center justify-center rounded-full text-lg font-bold hover:bg-gray-100"
         aria-label={t.addToCartAriaLabel}
       >
         +
@@ -178,7 +178,7 @@ function QuantityControl({
 
   return (
     <div className="flex flex-col items-center gap-1" ref={wheelAdjustRef} onClick={stop}>
-      <div className="grid w-24 grid-cols-[1.75rem_2.5rem_1.75rem] items-center rounded-full bg-white shadow-sm">
+      <div className="quantity-control-surface grid w-24 grid-cols-[1.75rem_2.5rem_1.75rem] items-center rounded-full">
         <button
           type="button"
           onClick={decrement}

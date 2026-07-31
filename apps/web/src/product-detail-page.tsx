@@ -423,7 +423,7 @@ function PdpStepper({
         onClick={onIncrement}
         ref={wheelAdjustRef}
         disabled={maxCount <= 0}
-        className="border-card-border text-foreground w-full rounded-lg border bg-white py-3 text-center text-sm font-semibold transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+        className="quantity-control-surface text-foreground w-full rounded-lg py-3 text-center text-sm font-semibold transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {addLabel}
       </button>
@@ -431,10 +431,7 @@ function PdpStepper({
   }
 
   return (
-    <div
-      className="border-card-border flex items-center rounded-lg border bg-white"
-      ref={wheelAdjustRef}
-    >
+    <div className="quantity-control-surface flex items-center rounded-lg" ref={wheelAdjustRef}>
       <button
         type="button"
         onClick={onDecrement}

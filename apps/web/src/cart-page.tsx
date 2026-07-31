@@ -622,7 +622,7 @@ function QuantityStepper({
   return (
     <div
       ref={wheelAdjustRef}
-      className="flex items-center gap-0 rounded-full bg-gray-100 px-0.5 py-0.5"
+      className="quantity-control-surface flex items-center gap-0 rounded-full px-0.5 py-0.5"
     >
       <button
         type="button"
