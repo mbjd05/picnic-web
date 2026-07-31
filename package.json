@@ -16,9 +16,11 @@
     "deploy:worker": "pnpm build:web && wrangler deploy --config apps/api/wrangler.jsonc",
     "auth-key": "node src/generate-auth-key.mjs",
     "smoke:api:auth": "node ./src/scripts/worker-auth-smoke.mjs",
+    "test:unit": "vitest run",
+    "coverage": "vitest run --coverage",
     "lint": "eslint --cache --cache-location .eslintcache",
     "typecheck": "tsc --noEmit --pretty false",
-    "validate": "pnpm lint && pnpm typecheck && pnpm build",
+    "validate": "pnpm lint && pnpm typecheck && pnpm test:unit && pnpm coverage && pnpm build",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
@@ -38,6 +40,7 @@
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
     "@vitejs/plugin-react": "6.0.5",
+    "@vitest/coverage-v8": "4.1.10",
     "dotenv": "17.4.2",
     "eslint": "10.8.0",
     "playwright": "1.62.1",
@@ -47,6 +50,7 @@
     "typescript": "5.9.3",
     "typescript-eslint": "8.65.0",
     "vite": "8.2.0",
+    "vitest": "4.1.10",
     "wrangler": "4.117.0"
   },
   "overrides": {

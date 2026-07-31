@@ -4,6 +4,7 @@ import { Link } from "@tanstack/react-router";
 
 import { Badge } from "@/components/badge";
 import { PriceDisplay } from "@/components/price-display";
+import { estimatedProgressPriceDelta } from "@/lib/cart-price-estimates";
 import type { CategoryItem, ShortcutItem } from "@/lib/category-types";
 import { buildImageUrl } from "@/lib/image-url";
 import type {
@@ -92,27 +93,6 @@ function activeBundlePrice(
   return activePrice !== undefined && activePrice < displayPrice ? activePrice : null;
 }
 
-function estimatedLineTotal(
-  progress: BundleProgress | null,
-  quantity: number,
-  displayPrice: number
-): number {
-  if (quantity <= 0) return 0;
-  return quantity * (activeBundlePrice(progress, quantity, displayPrice) ?? displayPrice);
-}
-
-function estimatedCartPriceDelta(
-  progress: BundleProgress | null,
-  currentQuantity: number,
-  nextQuantity: number,
-  displayPrice: number
-): number {
-  return Math.abs(
-    estimatedLineTotal(progress, nextQuantity, displayPrice) -
-      estimatedLineTotal(progress, currentQuantity, displayPrice)
-  );
-}
-
 function BundleDots({ progress, quantity }: { progress: BundleProgress; quantity: number }) {
   const next = progress.thresholds.find((threshold) => threshold.quantity > quantity);
   const active = progress.thresholds.filter((threshold) => threshold.quantity <= quantity).at(-1);
@@ -161,7 +141,7 @@ function QuantityControl({
           cart.addProduct(
             product.id,
             product.maxCount,
-            estimatedCartPriceDelta(progress, 0, 1, product.displayPrice)
+            estimatedProgressPriceDelta(progress, 0, 1, product.displayPrice)
           );
         }}
         className="text-text-dark flex h-8 w-8 items-center justify-center rounded-full bg-white text-lg font-bold shadow-md hover:bg-gray-100"
@@ -180,7 +160,7 @@ function QuantityControl({
           onClick={() =>
             cart.removeProduct(
               product.id,
-              estimatedCartPriceDelta(progress, quantity, quantity - 1, product.displayPrice)
+              estimatedProgressPriceDelta(progress, quantity, quantity - 1, product.displayPrice)
             )
           }
           className="text-text-muted flex h-7 w-7 items-center justify-center text-base font-semibold"
@@ -198,7 +178,7 @@ function QuantityControl({
             cart.addProduct(
               product.id,
               product.maxCount,
-              estimatedCartPriceDelta(progress, quantity, quantity + 1, product.displayPrice)
+              estimatedProgressPriceDelta(progress, quantity, quantity + 1, product.displayPrice)
             )
           }
           disabled={quantity >= product.maxCount}

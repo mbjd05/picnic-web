@@ -9,6 +9,7 @@ import { ProductDescription } from "@/components/product-description";
 import { ProductHighlights } from "@/components/product-highlights";
 import { ProductInfoHeader } from "@/components/product-info-header";
 import { ProductLabels } from "@/components/product-labels";
+import { estimatedBundlePriceDelta } from "@/lib/cart-price-estimates";
 import { formatPrice } from "@/lib/format-price";
 import { buildImageUrl } from "@/lib/image-url";
 import type {
@@ -78,31 +79,6 @@ function NotFoundView() {
         Terug naar zoeken
       </Link>
     </div>
-  );
-}
-
-function estimatedBundleLineTotal(
-  bundles: BundleOption[],
-  quantity: number,
-  displayPrice: number
-): number {
-  if (quantity <= 0) return 0;
-  const activePrice = bundles.filter((bundle) => bundle.quantity <= quantity).at(-1)?.pricePerUnit;
-  return (
-    quantity *
-    (activePrice !== undefined && activePrice < displayPrice ? activePrice : displayPrice)
-  );
-}
-
-function estimatedBundlePriceDelta(
-  bundles: BundleOption[],
-  currentQuantity: number,
-  nextQuantity: number,
-  displayPrice: number
-): number {
-  return Math.abs(
-    estimatedBundleLineTotal(bundles, nextQuantity, displayPrice) -
-      estimatedBundleLineTotal(bundles, currentQuantity, displayPrice)
   );
 }
 
