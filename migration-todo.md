@@ -467,6 +467,7 @@ Prove the Worker app is fast, reliable, and suitable for the free tier.
 Scope:
 
 - Exercise login, search, categories, product, cart, cookbook, recipe, payment profile, and checkout status flows.
+- Follow `migration-e2e-testing-plan.md` as the source-of-truth checklist.
 - Watch Worker logs for CPU-heavy requests and unexpected upstream fan-out.
 - Check bundle size and route-level splitting.
 - Check API response sizes for large pages.
@@ -475,7 +476,7 @@ Scope:
 
 Validation:
 
-- Manual smoke test matrix completed.
+- Completed Chunk 19 checklist in `migration-e2e-testing-plan.md`, including Playwright MCP desktop/mobile matrix and restored-state API smoke.
 - Worker dry-run build passes.
 - No obvious CPU or request explosion issues.
 
@@ -492,12 +493,13 @@ Scope:
 - Keep shared parser/service code in its final home.
 - Update docs to make Vite/Hono the default development flow.
 - Confirm no imports from `next/*` remain.
+- Re-run the Chunk 19 Playwright MCP/API matrix from `migration-e2e-testing-plan.md` after removing Next.
 
 Validation:
 
 - Clean install.
 - Typecheck, lint, web build, Worker dry-run build.
-- Final full manual smoke test.
+- Completed Chunk 20 checklist in `migration-e2e-testing-plan.md`.
 
 ## Always-Run Validation Baseline
 
