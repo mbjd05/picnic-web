@@ -376,6 +376,20 @@ Date verified read-only: 2026-07-31, using `picnic-api` `4.6.0` against API `17`
 
 The currently confirmed user-settings surface is split across multiple API families. Address and profile data are readable as normal user/profile data, but household and business composition writes are exposed through the authenticated `user-onboarding` family.
 
+Reusable probe:
+
+```powershell
+node .\src\scripts\settings-api-probe.mjs
+```
+
+The default mode redacts personal values, summarizes response shapes, and only uses read-only or validation-style route checks. It skips meaningful account-setting mutations unless explicitly run with:
+
+```powershell
+node .\src\scripts\settings-api-probe.mjs --confirm-idempotent-writes
+```
+
+Do not use the idempotent-write mode casually: even sending the current values back may update server timestamps or consent audit records.
+
 ### Profile and address reads
 
 `picnic-api` exposes:
@@ -475,6 +489,36 @@ What remains unverified:
 
 Do not implement address editing until the authenticated route family is discovered and tested. Showing the address as read-only is currently the safe settings behavior.
 
+Validation probes rejected these authenticated address-route candidates with `404 Not Found` for `GET`, `POST`, and `PUT`:
+
+```text
+/address
+/addresses
+/user/address
+/user/addresses
+/user/address-change
+/user/address_change
+/user/move
+/user/relocation
+/user/delivery-address
+/user/delivery_address
+/user-onboarding/address
+/user-onboarding/check-address
+/user-onboarding/register-address
+/user-onboarding/update-address
+/address/check
+/address/autocomplete
+```
+
+`PUT /user`, `PATCH /user`, and `PUT /user-info` are also not viable profile/address update routes. They return `BAD_REQUEST` with messages like:
+
+```text
+Request method 'PUT' is not supported
+Request method 'PATCH' is not supported
+```
+
+`GET /bootstrap` did not expose obvious address/profile/settings navigation targets in the verified response. This makes an undiscovered address-change route less likely to be a simple first-level REST path.
+
 ### Household composition
 
 Household composition is read from `GET /user.household_details`.
@@ -512,6 +556,27 @@ This route has not yet been mutation-tested in this repo. Treat it as a strong c
 - whether sending the current values is idempotent;
 - country parity for NL/DE/FR.
 
+Validation-only probes confirmed:
+
+- `POST /user-onboarding/household-details` exists.
+- `GET` and `PUT` on the same route are rejected with `405 Method Not Allowed`.
+- The payload must be top-level, not nested under `household_details`.
+- Empty body returns:
+
+```text
+At least one field of the household details should be present.
+```
+
+- Sending string values to numeric fields reaches DTO validation on `tech.picnic.userregistration.api.dtos.HouseholdDetails.Json`, confirming the backend expects integer values such as `adults`, `children`, `cats`, and `dogs`.
+
+Practical CRUD interpretation:
+
+```text
+Read current household details:  GET  /api/17/user
+Create/update household details: POST /api/17/user-onboarding/household-details
+Delete household details:        no confirmed endpoint
+```
+
 ### Business account details
 
 Business details are optional on `GET /user.business_details`; the verified consumer account did not include them.
@@ -540,6 +605,27 @@ Likely payload:
 ```
 
 Use `b2b_enabled` from public `check-address` and `customer_type` / `business_details` from `GET /user` to decide whether to show this UI. Do not call this endpoint casually because it may alter account type or tax/business metadata.
+
+Validation-only probes confirmed:
+
+- `POST /user-onboarding/business-details` exists.
+- `PUT` on the same route is rejected with `405 Method Not Allowed`.
+- The payload must be top-level, not nested under `business_details`.
+- Empty body returns:
+
+```text
+At least one field of the business details should be present.
+```
+
+- Sending invalid numeric values reaches DTO validation on `tech.picnic.userregistration.api.dtos.BusinessDetails.Json`, confirming at least `employee_count` is expected as an integer when present.
+
+Practical CRUD interpretation:
+
+```text
+Read current business details:  GET  /api/17/user
+Create/update business details: POST /api/17/user-onboarding/business-details
+Delete business details:        no confirmed endpoint
+```
 
 ### Consents, privacy, and subscriptions
 
@@ -611,6 +697,73 @@ with payload:
 ```
 
 Do not treat email/list subscriptions and push subscriptions as the same feature until their route semantics are verified.
+
+Validation-only probes confirmed:
+
+- `PUT /consents` is the target for normal privacy/marketing consent settings.
+- `PUT /consents` with an empty declaration list returns `200` and an empty `consent_request_text_ids` list, so the route is live and can accept no-op input.
+- `PUT /consents` with incomplete declaration objects returns missing-field validation for `consentRequestTextId`, `consentRequestLocale`, and `agreement`.
+- `PUT /consents/general` is live, but `general_consent: true` requires a matching general consent declaration. A false/no-declaration payload returned:
+
+```text
+General consent declaration must be provided with generalConsent=true
+```
+
+Practical CRUD interpretation:
+
+```text
+Read consent settings:          GET /api/17/consents/settings-page
+Update consent settings:        PUT /api/17/consents
+Read general consent request:   GET /api/17/consents/general
+Read general settings page:     GET /api/17/consents/general/settings-page
+Update general consent:         PUT /api/17/consents/general
+Delete consent settings:        no delete; update by declaring agreement true/false
+Read email/list subscriptions:  GET /api/17/user
+Update email/list subscriptions: no confirmed endpoint
+Read push subscriptions:        GET /api/17/user
+Subscribe push topics:          POST /api/17/user-onboarding/subscribe-push
+Unsubscribe push topics:        no confirmed endpoint
+```
+
+`POST /user-onboarding/subscribe-push` is device-sensitive. Validation with the generic script device ID returned a bad-request error saying the current user has no device with that ID. That confirms the route exists, but not that it should be used for ordinary settings toggles in this web app.
+
+### Phone and email settings
+
+Current phone and contact email are readable from `GET /user`. Redacted phone is readable from `GET /user-info`.
+
+`picnic-api` exposes phone verification helpers:
+
+```ts
+client.auth.generatePhoneVerificationCode(phoneNumber);
+client.auth.verifyPhoneNumber(phoneNumber, code);
+```
+
+Routes:
+
+```text
+POST /api/17/user/phone_verification/generate
+POST /api/17/user/phone_verification/verify
+```
+
+Validation probes confirmed both routes exist and require `phone_number`; verify additionally requires `otp`.
+
+These are phone verification routes, not confirmed phone-number update routes. No email update route has been found yet.
+
+### Settings CRUD target matrix
+
+Current implementation target table:
+
+| Settings area                     | Read                                                              | Create/update                                                                    | Delete/clear                     | Confidence                                                                      |
+| --------------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------- | ------------------------------------------------------------------------------- |
+| Profile name/email/phone          | `GET /user`, `GET /user-info`, `GET /profile-menu?fetch_mgm=true` | no confirmed route                                                               | no confirmed route               | Read confirmed only                                                             |
+| Delivery address                  | `GET /user`, `GET /profile-menu?fetch_mgm=true`                   | no confirmed authenticated route                                                 | no confirmed route               | Read confirmed only                                                             |
+| Household composition             | `GET /user.household_details`                                     | `POST /user-onboarding/household-details`                                        | no confirmed route               | Route and payload validation confirmed; live same-value mutation still optional |
+| Business details                  | `GET /user.business_details`                                      | `POST /user-onboarding/business-details`                                         | no confirmed route               | Route and payload validation confirmed; live mutation not run                   |
+| Normal privacy/marketing consents | `GET /consents/settings-page`                                     | `PUT /consents`                                                                  | no delete; set `agreement` false | Read and update route confirmed                                                 |
+| General consents                  | `GET /consents/general`, `GET /consents/general/settings-page`    | `PUT /consents/general`                                                          | no delete; update declarations   | Read and update route confirmed                                                 |
+| Email/list subscriptions          | `GET /user.subscriptions`                                         | no confirmed route                                                               | no confirmed route               | Read confirmed only                                                             |
+| Push subscriptions                | `GET /user.push_subscriptions`                                    | `POST /user-onboarding/subscribe-push`                                           | no confirmed route               | Route exists, but device-bound and not ordinary web settings-ready              |
+| Phone verification                | none needed beyond `GET /user`/`GET /user-info`                   | `POST /user/phone_verification/generate`, `POST /user/phone_verification/verify` | n/a                              | Verification route confirmed, profile update not confirmed                      |
 
 ## Implementation outline
 
