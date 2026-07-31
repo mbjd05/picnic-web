@@ -96,12 +96,14 @@ function ProductDetailContent({ product }: { product: ProductDetail }) {
       const next = Math.max(0, Math.min(target, product.maxCount));
       const diff = next - current;
       if (diff > 0) {
-        for (let index = 0; index < diff; index += 1) cart.addProduct(product.id, product.maxCount);
+        for (let index = 0; index < diff; index += 1)
+          cart.addProduct(product.id, product.maxCount, product.displayPrice);
       } else if (diff < 0) {
-        for (let index = 0; index < Math.abs(diff); index += 1) cart.removeProduct(product.id);
+        for (let index = 0; index < Math.abs(diff); index += 1)
+          cart.removeProduct(product.id, product.displayPrice);
       }
     },
-    [cart, product.id, product.maxCount]
+    [cart, product.displayPrice, product.id, product.maxCount]
   );
 
   return (
@@ -127,8 +129,8 @@ function ProductDetailContent({ product }: { product: ProductDetail }) {
             bundles={product.bundles}
             cartQuantity={cartQuantity}
             maxCount={product.maxCount}
-            onIncrement={() => cart.addProduct(product.id, product.maxCount)}
-            onDecrement={() => cart.removeProduct(product.id)}
+            onIncrement={() => cart.addProduct(product.id, product.maxCount, product.displayPrice)}
+            onDecrement={() => cart.removeProduct(product.id, product.displayPrice)}
             onSetQuantity={setQuantity}
           />
           <ProductDescription description={product.description} />

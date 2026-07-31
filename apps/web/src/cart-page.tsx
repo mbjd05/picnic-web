@@ -26,6 +26,7 @@ import type {
 } from "@/lib/types";
 
 import { ErrorView, LoadingView, useDocumentTitle } from "./browsing-components";
+import { useCart } from "./cart-context";
 import { useCountryCode, useTranslations } from "./country-context";
 import { ApiClientError, fetchJson } from "./lib/api-client";
 import { queryKeys, queryStaleTime } from "./lib/query-config";
@@ -73,6 +74,7 @@ export function CartPage() {
   const countryCode = useCountryCode();
   const t = useTranslations();
   const queryClient = useQueryClient();
+  const { applyVisibleCart } = useCart();
   useDocumentTitle(t.cartTitle);
 
   const [pageState, setPageState] = useState<CartPageState>({ status: "loading" });
@@ -141,6 +143,16 @@ export function CartPage() {
       });
     }
   }, [cartQuery.data, cartQuery.error, cartQuery.isError, hasPendingCartMutations]);
+
+  useEffect(() => {
+    if (pageState.status === "success") {
+      applyVisibleCart(pageState.cart);
+      return;
+    }
+    if (pageState.status === "empty") {
+      applyVisibleCart({ items: [], totalPrice: 0, totalCount: 0 });
+    }
+  }, [applyVisibleCart, pageState]);
 
   const flushProductDelta = useCallback(
     async (productId: string) => {

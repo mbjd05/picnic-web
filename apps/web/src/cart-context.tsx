@@ -23,18 +23,19 @@ type CartContextValue = {
   totalPrice: number;
   totalCount: number;
   isLoading: boolean;
-  addProduct: (productId: string, maxCount: number) => void;
-  removeProduct: (productId: string) => void;
+  addProduct: (productId: string, maxCount: number, unitPrice?: number) => void;
+  removeProduct: (productId: string, unitPrice?: number) => void;
   getQuantity: (productId: string) => number;
   getBundleProgress: (productId: string) => BundleProgress | null;
   registerBundleDataBatch: (entries: ReadonlyArray<readonly [string, BundleThreshold[]]>) => void;
+  applyVisibleCart: (cart: Pick<CartData, "items" | "totalPrice" | "totalCount">) => void;
   refresh: () => void;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
 const ToastContext = createContext<(message: string) => void>(() => undefined);
 
-function quantitiesFromCart(cart: CartData): Map<string, number> {
+function quantitiesFromCart(cart: Pick<CartData, "items">): Map<string, number> {
   return new Map(cart.items.map((item) => [item.productId, item.quantity]));
 }
 
@@ -47,7 +48,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
   const confirmedRef = useRef(new Map<string, number>());
+  const confirmedTotalsRef = useRef({ totalPrice: 0, totalCount: 0 });
   const visibleQuantitiesRef = useRef(new Map<string, number>());
+  const visibleTotalsRef = useRef({ totalPrice: 0, totalCount: 0 });
   const pendingDeltasRef = useRef(new Map<string, number>());
   const pendingTimersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const requestCountRef = useRef(0);
@@ -67,15 +70,28 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setQuantities(next);
   }, []);
 
+  const applyTotals = useCallback((next: { totalPrice: number; totalCount: number }) => {
+    visibleTotalsRef.current = next;
+    setTotalPrice(next.totalPrice);
+    setTotalCount(next.totalCount);
+  }, []);
+
+  const applyVisibleCart = useCallback(
+    (cart: Pick<CartData, "items" | "totalPrice" | "totalCount">) => {
+      applyQuantities(quantitiesFromCart(cart));
+      applyTotals({ totalPrice: cart.totalPrice, totalCount: cart.totalCount });
+    },
+    [applyQuantities, applyTotals]
+  );
+
   const reconcile = useCallback(
     (cart: CartData) => {
       const next = quantitiesFromCart(cart);
       confirmedRef.current = new Map(next);
-      applyQuantities(next);
-      setTotalPrice(cart.totalPrice);
-      setTotalCount(cart.totalCount);
+      confirmedTotalsRef.current = { totalPrice: cart.totalPrice, totalCount: cart.totalCount };
+      applyVisibleCart(cart);
     },
-    [applyQuantities]
+    [applyVisibleCart]
   );
 
   const refresh = useCallback(() => {
@@ -85,6 +101,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       .then((result) => {
         if (!result.data) return;
         confirmedRef.current = quantitiesFromCart(result.data);
+        confirmedTotalsRef.current = {
+          totalPrice: result.data.totalPrice,
+          totalCount: result.data.totalCount,
+        };
         if (!hasPendingCartWork()) reconcile(result.data);
       })
       .catch(() => undefined)
@@ -94,6 +114,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (cartQuery.data) {
       confirmedRef.current = quantitiesFromCart(cartQuery.data);
+      confirmedTotalsRef.current = {
+        totalPrice: cartQuery.data.totalPrice,
+        totalCount: cartQuery.data.totalCount,
+      };
       if (!hasPendingCartWork()) reconcile(cartQuery.data);
       setIsLoading(false);
     } else if (cartQuery.isError) {
@@ -120,6 +144,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         });
         queryClient.setQueryData(queryKeys.cart(), cart);
         confirmedRef.current = quantitiesFromCart(cart);
+        confirmedTotalsRef.current = { totalPrice: cart.totalPrice, totalCount: cart.totalCount };
         if (pendingDeltasRef.current.size === 0 && requestCountRef.current === 1) reconcile(cart);
       } catch {
         const next = new Map(visibleQuantitiesRef.current);
@@ -127,6 +152,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         if (confirmed === 0) next.delete(productId);
         else next.set(productId, confirmed);
         applyQuantities(next);
+        applyTotals(confirmedTotalsRef.current);
         setToast("Er ging iets mis. Probeer het opnieuw.");
         refresh();
       } finally {
@@ -163,30 +189,36 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addProduct = useCallback(
-    (productId: string, maxCount: number) => {
+    (productId: string, maxCount: number, unitPrice = 0) => {
       const quantity = visibleQuantitiesRef.current.get(productId) ?? 0;
       if (quantity >= maxCount) return;
       const next = new Map(visibleQuantitiesRef.current);
       next.set(productId, quantity + 1);
       applyQuantities(next);
-      setTotalCount((count) => count + 1);
+      applyTotals({
+        totalPrice: visibleTotalsRef.current.totalPrice + unitPrice,
+        totalCount: visibleTotalsRef.current.totalCount + 1,
+      });
       enqueue(productId, 1);
     },
-    [applyQuantities, enqueue]
+    [applyQuantities, applyTotals, enqueue]
   );
 
   const removeProduct = useCallback(
-    (productId: string) => {
+    (productId: string, unitPrice = 0) => {
       const quantity = visibleQuantitiesRef.current.get(productId) ?? 0;
       if (quantity === 0) return;
       const next = new Map(visibleQuantitiesRef.current);
       if (quantity <= 1) next.delete(productId);
       else next.set(productId, quantity - 1);
       applyQuantities(next);
-      setTotalCount((count) => Math.max(0, count - 1));
+      applyTotals({
+        totalPrice: Math.max(0, visibleTotalsRef.current.totalPrice - unitPrice),
+        totalCount: Math.max(0, visibleTotalsRef.current.totalCount - 1),
+      });
       enqueue(productId, -1);
     },
-    [applyQuantities, enqueue]
+    [applyQuantities, applyTotals, enqueue]
   );
 
   const getQuantity = useCallback(
@@ -229,6 +261,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       getQuantity,
       getBundleProgress,
       registerBundleDataBatch,
+      applyVisibleCart,
       refresh,
     }),
     [
@@ -241,6 +274,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       getQuantity,
       getBundleProgress,
       registerBundleDataBatch,
+      applyVisibleCart,
       refresh,
     ]
   );
