@@ -12,7 +12,7 @@ const testCredentials = process.argv.includes("--credentials");
 const REQUEST_TIMEOUT_MS = 30_000;
 
 if (!token) {
-  console.error("Missing PICNIC_TOKEN. See src/scripts/picnic-auth-probe.mjs.");
+  console.error("Missing PICNIC_TOKEN. See scripts/picnic-auth-probe.mjs.");
   process.exit(1);
 }
 

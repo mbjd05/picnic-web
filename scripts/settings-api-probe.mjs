@@ -9,10 +9,10 @@ Picnic user settings API probe
 ==============================
 
 Default read/route-existence run:
-  node .\src\scripts\settings-api-probe.mjs
+  node .\scripts\settings-api-probe.mjs
 
 Optional idempotent mutation confirmation:
-  node .\src\scripts\settings-api-probe.mjs --confirm-idempotent-writes
+  node .\scripts\settings-api-probe.mjs --confirm-idempotent-writes
 
 The default mode avoids meaningful account changes. It summarizes response
 shapes and status/error classes, and redacts personal values.

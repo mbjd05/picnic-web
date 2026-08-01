@@ -7,7 +7,7 @@ References reviewed:
 
 This is a three-way comparison between this migrated Cloudflare Worker app, the Python Picnic API fork, and the MCP Picnic server. It tracks only direct Picnic API/page functionality or compatibility hardening. MCP-only AI workflows, prompt helpers, and lossy LLM response shaping are excluded from the implementation roadmap.
 
-This document does not replace profile/settings CRUD research in `src/scripts/registration-onboarding-flow.md`.
+This document does not replace profile/settings CRUD research in `docs/registration-onboarding-flow.md`.
 
 ## Ranked Implementation Queue
 
@@ -295,4 +295,4 @@ Reason: this web app should remain a user-facing Picnic client with HTTP-only co
 
 Python fork models user, address, household, and subscription reads through `GET /user`. MCP Picnic exposes user details and user info/feature toggles through the JS package. Neither reference implements authenticated delivery address or household write routes.
 
-Decision: keep `src/scripts/registration-onboarding-flow.md` as the source of truth for profile/settings CRUD discovery.
+Decision: keep `docs/registration-onboarding-flow.md` as the source of truth for profile/settings CRUD discovery.

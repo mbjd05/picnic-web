@@ -50,7 +50,7 @@ pnpm deploy:worker
 Authenticated smoke tests use `PICNIC_TOKEN` from `.env`. Generate one with:
 
 ```powershell
-node .\src\scripts\picnic-auth-probe.mjs login
+node .\scripts\picnic-auth-probe.mjs login
 ```
 
 Then run:

@@ -12,10 +12,10 @@ Local auth probe
 ================
 
 Credential login:
-  node .\src\scripts\picnic-auth-probe.mjs login
+  node .\scripts\picnic-auth-probe.mjs login
 
 Token validation:
-  $env:PICNIC_TOKEN="YOUR_AUTH_TOKEN"; node .\src\scripts\picnic-auth-probe.mjs token
+  $env:PICNIC_TOKEN="YOUR_AUTH_TOKEN"; node .\scripts\picnic-auth-probe.mjs token
 
 Options:
   $env:PICNIC_COUNTRY_CODE="NL"

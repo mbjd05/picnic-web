@@ -379,13 +379,13 @@ The currently confirmed user-settings surface is split across multiple API famil
 Reusable probe:
 
 ```powershell
-node .\src\scripts\settings-api-probe.mjs
+node .\scripts\settings-api-probe.mjs
 ```
 
 The default mode redacts personal values, summarizes response shapes, and only uses read-only or validation-style route checks. It skips meaningful account-setting mutations unless explicitly run with:
 
 ```powershell
-node .\src\scripts\settings-api-probe.mjs --confirm-idempotent-writes
+node .\scripts\settings-api-probe.mjs --confirm-idempotent-writes
 ```
 
 Do not use the idempotent-write mode casually: even sending the current values back may update server timestamps or consent audit records.

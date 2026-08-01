@@ -450,7 +450,7 @@ Implemented:
 - Confirmed private API responses stay `Cache-Control: no-store`.
 - Confirmed production auth cookies become `Secure` on HTTPS Cloudflare requests.
 - Added `npm run deploy:worker` to build Vite assets and deploy the Worker in one command.
-- Added current deployment notes to `platform_migration.md`.
+- Added current deployment notes to `docs/platform_migration.md`.
 
 Validated:
 
@@ -464,7 +464,7 @@ Completed in this chunk.
 
 Implemented:
 
-- Followed `migration-e2e-testing-plan.md` as the Chunk 19 source of truth.
+- Followed `docs/migration-e2e-testing-plan.md` as the Chunk 19 source of truth.
 - Ran restored-state authenticated API smoke against the local Worker.
 - Exercised authenticated browser flows for login/session, search, section navigation, categories, shortcuts, product detail, cart, cookbook, recipe detail, payment settings, payment return, and mobile overflow.
 - Captured request-count and Worker-log checks to look for obvious request fan-out or CPU-heavy behavior.
@@ -484,7 +484,7 @@ Prove the Worker app is fast, reliable, and suitable for the free tier.
 Scope:
 
 - Exercise login, search, categories, product, cart, cookbook, recipe, payment profile, and checkout status flows.
-- Follow `migration-e2e-testing-plan.md` as the source-of-truth checklist.
+- Follow `docs/migration-e2e-testing-plan.md` as the source-of-truth checklist.
 - Watch Worker logs for CPU-heavy requests and unexpected upstream fan-out.
 - Check bundle size and route-level splitting.
 - Check API response sizes for large pages.
@@ -493,7 +493,7 @@ Scope:
 
 Validation:
 
-- Completed Chunk 19 checklist in `migration-e2e-testing-plan.md`, including Playwright MCP desktop/mobile matrix and restored-state API smoke.
+- Completed Chunk 19 checklist in `docs/migration-e2e-testing-plan.md`, including Playwright MCP desktop/mobile matrix and restored-state API smoke.
 - Worker dry-run build passes.
 - No obvious CPU or request explosion issues.
 
@@ -534,13 +534,13 @@ Scope:
 - Keep shared parser/service code in its final home.
 - Update docs to make Vite/Hono the default development flow.
 - Confirm no imports from `next/*` remain.
-- Re-run the Chunk 19 Playwright MCP/API matrix from `migration-e2e-testing-plan.md` after removing Next.
+- Re-run the Chunk 19 Playwright MCP/API matrix from `docs/migration-e2e-testing-plan.md` after removing Next.
 
 Validation:
 
 - Clean install.
 - Typecheck, lint, web build, Worker dry-run build.
-- Completed Chunk 20 checklist in `migration-e2e-testing-plan.md`.
+- Completed Chunk 20 checklist in `docs/migration-e2e-testing-plan.md`.
 
 ## Always-Run Validation Baseline
 
