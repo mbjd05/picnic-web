@@ -147,7 +147,12 @@ function QuantityControl({
   }
 
   return (
-    <div className="flex flex-col items-center gap-1" ref={wheelAdjustRef} onClick={stop}>
+    <div
+      className="flex flex-col items-center gap-1"
+      ref={wheelAdjustRef}
+      onClickCapture={stop}
+      aria-label={t.inCartLabel}
+    >
       <div className="quantity-control-surface grid w-24 grid-cols-[1.75rem_2.5rem_1.75rem] items-center rounded-full">
         <button
           type="button"

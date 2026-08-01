@@ -6,13 +6,13 @@ import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { formatEuroPrice } from "@/lib/format/price";
 import { getRecipeIngredientCount } from "@/lib/recipes/quantity";
 import { DEBOUNCE_DELAY_MS } from "@/lib/config/app-constants";
-import type { CookbookApiResponse, RecipeCategory, RecipeDetail, RecipeItem } from "@/types/recipe";
+import type { RecipeCategory, RecipeDetail, RecipeItem } from "@/types/recipe";
 
 import { ErrorView, LoadingView } from "../../components/page-state";
 import { useDocumentTitle } from "../../hooks/use-document-title";
 import { useCartActions } from "../../providers/cart-context";
 import { useCountryCode, useTranslations } from "../../providers/country-context";
-import { CategoryDropdown, type RecipeCategoryOption } from "./category-dropdown";
+import { CategoryDropdown } from "./category-dropdown";
 import { RecipeAddToCartPanel } from "./recipe-add-to-cart-panel";
 import { RecipeCard } from "./recipe-card";
 import {

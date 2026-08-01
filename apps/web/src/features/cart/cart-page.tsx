@@ -288,7 +288,7 @@ export function CartPage() {
       });
       enqueueDelta(productId, 1);
     },
-    [enqueueDelta, pageState]
+    [enqueueDelta, getBundleProgress, pageState]
   );
 
   const handleDecrement = useCallback(
@@ -342,7 +342,7 @@ export function CartPage() {
       });
       enqueueDelta(productId, -1);
     },
-    [enqueueDelta, pageState]
+    [enqueueDelta, getBundleProgress, pageState]
   );
 
   const handleRemoveAll = useCallback(

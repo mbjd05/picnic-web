@@ -1,4 +1,4 @@
-import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from "react";
+import { type FormEvent, type KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import { useQuery } from "@tanstack/react-query";
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
@@ -162,7 +162,10 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
     staleTime: queryStaleTime.suggestions,
     retry: false,
   });
-  const suggestions = suggestionsQuery.data?.suggestions ?? [];
+  const suggestions = useMemo(
+    () => suggestionsQuery.data?.suggestions ?? [],
+    [suggestionsQuery.data?.suggestions]
+  );
   const trimmedQuery = query.trim();
   const canShowSuggestions = trimmedQuery.length >= MIN_SUGGESTION_LENGTH;
   const displayedSuggestions =

@@ -135,7 +135,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       })
       .catch(() => undefined)
       .finally(() => setIsLoading(false));
-  }, [cartQuery, hasPendingCartWork, queryClient, reconcile]);
+  }, [cartQuery, hasPendingCartWork, queryClient, reconcile, setIsLoading]);
 
   useEffect(() => {
     if (cartQuery.data) {
@@ -149,7 +149,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } else if (cartQuery.isError) {
       setIsLoading(false);
     }
-  }, [cartQuery.data, cartQuery.isError, hasPendingCartWork, reconcile]);
+  }, [cartQuery.data, cartQuery.isError, hasPendingCartWork, reconcile, setIsLoading]);
 
   const flush = useCallback(
     async (productId: string) => {
@@ -187,7 +187,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         requestCountRef.current -= 1;
       }
     },
-    [queryClient, reconcile, refresh]
+    [applyQuantities, applyTotals, queryClient, reconcile, refresh, setToast]
   );
 
   const scheduleFlush = useCallback(

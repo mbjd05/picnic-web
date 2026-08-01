@@ -85,7 +85,6 @@ function NotFoundView() {
 }
 
 function ProductDetailContent({ product }: { product: ProductDetail }) {
-  const countryCode = useCountryCode();
   const t = useTranslations();
   const { addProduct, removeProduct } = useCartActions();
   const { getQuantity } = useCartQuantities();
@@ -243,7 +242,7 @@ function ProductGallery({ imageIds }: { imageIds: string[] }) {
       <div className="relative h-64 w-full max-w-md sm:h-80">
         <img
           src={mainImageSrc}
-          alt="Product image"
+          alt=""
           loading="eager"
           fetchPriority="high"
           className="h-full w-full object-contain"

@@ -3,7 +3,6 @@ import * as v from "valibot";
 import type { CartMutationRequest } from "@/types/cart";
 import type { CountryCode } from "@/types/locale";
 import type { PaymentOptionRequest } from "@/types/payment";
-import type { TwoFactorChannel } from "@/types/auth";
 
 export type ValidationResult<T> = { ok: true; data: T } | { ok: false; error: string };
 

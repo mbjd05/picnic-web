@@ -1,4 +1,8 @@
+import js from "@eslint/js";
+import checkFile from "eslint-plugin-check-file";
+import reactHooks from "eslint-plugin-react-hooks";
 import { defineConfig, globalIgnores } from "eslint/config";
+import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default defineConfig([
@@ -12,6 +16,8 @@ export default defineConfig([
     "coverage/**",
     "**/*.min.js",
   ]),
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
   ...tseslint.config({
     files: ["**/*.{ts,tsx,mts}"],
     languageOptions: {
@@ -20,9 +26,54 @@ export default defineConfig([
         ecmaFeatures: { jsx: true },
         sourceType: "module",
       },
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
     },
-    rules: {},
+    plugins: {
+      "check-file": checkFile,
+      "react-hooks": reactHooks,
+    },
+    rules: {
+      "react-hooks/exhaustive-deps": "warn",
+      "react-hooks/rules-of-hooks": "error",
+      "check-file/filename-naming-convention": [
+        "error",
+        {
+          "**/*.{ts,tsx,mts,mjs}": "KEBAB_CASE",
+        },
+        {
+          ignoreMiddleExtensions: true,
+        },
+      ],
+    },
   }),
+  {
+    files: ["**/*.{js,mjs,cjs}"],
+    languageOptions: {
+      sourceType: "module",
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
+    },
+  },
+  {
+    files: ["apps/**/*", "scripts/**/*", "src/**/*", "tests/**/*"],
+    ignores: ["**/__tests__/**"],
+    plugins: {
+      "check-file": checkFile,
+    },
+    rules: {
+      "check-file/folder-naming-convention": [
+        "error",
+        {
+          "**/*": "KEBAB_CASE",
+        },
+      ],
+    },
+  },
   {
     files: ["apps/web/src/features/**/*.{ts,tsx}"],
     rules: {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -38,7 +38,10 @@ export function DeliveriesPage() {
     staleTime: queryStaleTime.deliveries,
   });
 
-  const deliveries = summariesQuery.data?.deliveries ?? [];
+  const deliveries = useMemo(
+    () => summariesQuery.data?.deliveries ?? [],
+    [summariesQuery.data?.deliveries]
+  );
 
   useEffect(() => {
     if (deliveries.length === 0) {
@@ -267,7 +270,7 @@ function DeliveryDetailPanel({
     cancelDeliveryMutation.reset();
     invoiceEmailMutation.reset();
     ratingMutation.reset();
-  }, [delivery.deliveryId]);
+  }, [cancelDeliveryMutation, delivery.deliveryId, invoiceEmailMutation, ratingMutation]);
 
   const canCancelDelivery = delivery.status === "CURRENT" && order?.cancellable === true;
   const canSendInvoiceEmail = delivery.status === "COMPLETED";
