@@ -4,12 +4,12 @@ import { useForm } from "@tanstack/react-form";
 import { useSearch } from "@tanstack/react-router";
 
 import { type Translations, getTranslations } from "@/lib/i18n/translations";
-import type { AuthApiResponse, SwitchCountryResponse } from "@/lib/types/auth";
-import type { CountryCode } from "@/lib/types/locale";
-import { SUPPORTED_COUNTRY_CODES } from "@/lib/types/locale";
+import type { AuthApiResponse, SwitchCountryResponse } from "@/types/auth";
+import type { CountryCode } from "@/types/locale";
+import { SUPPORTED_COUNTRY_CODES } from "@/types/locale";
 
-import { useCountryCode } from "./country-context";
-import { ApiClientError, fetchJson } from "./lib/api-client";
+import { useCountryCode } from "../../app/providers/country-context";
+import { ApiClientError, fetchJson } from "../../lib/api-client";
 
 const DEFAULT_REDIRECT = "/";
 const PICNIC_API_NPM_URL = "https://www.npmjs.com/package/picnic-api";

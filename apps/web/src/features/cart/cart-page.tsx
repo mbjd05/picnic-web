@@ -4,20 +4,21 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Link, useSearch } from "@tanstack/react-router";
 
 import { estimatedBundleLineTotal } from "@/lib/cart/price-estimates";
-import type { BundleProgress, CartData, CartItem } from "@/lib/types/cart";
+import type { BundleProgress, CartData, CartItem } from "@/types/cart";
 
-import { ErrorView, LoadingView, useDocumentTitle } from "./browsing-components";
-import { useCartActions, useCartBundles } from "./cart-context";
-import { useTranslations } from "./country-context";
-import { CartCheckoutCta } from "./features/cart/cart-checkout-cta";
-import { CartItemCard } from "./features/cart/cart-item-card";
-import { CartOrderSummary } from "./features/cart/cart-order-summary";
-import { CartProductSlider } from "./features/cart/cart-product-slider";
-import { DeliverySlotBanner } from "./features/cart/delivery-slot-banner";
-import { DeliverySlotPicker } from "./features/cart/delivery-slot-picker";
-import { useCartQuery } from "./features/cart/use-cart-query";
-import { fetchJson } from "./lib/api-client";
-import { queryKeys } from "./lib/query-config";
+import { ErrorView, LoadingView } from "../../components/page-state";
+import { useDocumentTitle } from "../../hooks/use-document-title";
+import { useCartActions, useCartBundles } from "../../app/providers/cart-context";
+import { useTranslations } from "../../app/providers/country-context";
+import { CartCheckoutCta } from "./cart-checkout-cta";
+import { CartItemCard } from "./cart-item-card";
+import { CartOrderSummary } from "./cart-order-summary";
+import { CartProductSlider } from "./cart-product-slider";
+import { DeliverySlotBanner } from "./delivery-slot-banner";
+import { DeliverySlotPicker } from "./delivery-slot-picker";
+import { useCartQuery } from "../../hooks/use-cart-query";
+import { fetchJson } from "../../lib/api-client";
+import { queryKeys } from "../../lib/query-config";
 
 const CART_MUTATION_DEBOUNCE_MS = 220;
 

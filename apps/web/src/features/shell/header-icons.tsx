@@ -1,4 +1,4 @@
-import type { ThemePreference } from "../../theme-context";
+import type { ThemePreference } from "../../app/providers/theme-context";
 
 export function SearchIcon() {
   return (

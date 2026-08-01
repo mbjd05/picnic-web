@@ -1,6 +1,6 @@
 import type { Context } from "hono";
 
-import type { CountryCode } from "@/lib/types/locale";
+import type { CountryCode } from "@/types/locale";
 
 import { authRequiredResponse, jsonStatus } from "./http";
 import { readSession } from "./session";

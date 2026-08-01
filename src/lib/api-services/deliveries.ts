@@ -5,11 +5,11 @@ import type {
   DeliveryOrderStatusApiResponse,
   DeliverySummariesApiResponse,
   DeliveryTrackingApiResponse,
-} from "@/lib/types/delivery";
+} from "@/types/delivery";
 import { parseDeliveryDetail, parseDeliverySummaries } from "@/lib/parse/deliveries";
 import { buildPicnicClient } from "@/lib/picnic/client";
-import type { ApiErrorResponse } from "@/lib/types/api";
-import type { CountryCode } from "@/lib/types/locale";
+import type { ApiErrorResponse } from "@/types/api";
+import type { CountryCode } from "@/types/locale";
 
 import type { ApiServiceResult } from "./types";
 

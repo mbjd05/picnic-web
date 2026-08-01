@@ -9,7 +9,7 @@ import {
   getPreferredPaymentOptionForMethod,
   isEmptyJsonResponseError,
 } from "@/lib/payment/options";
-import type { PaymentProfile } from "@/lib/types";
+import type { PaymentProfile } from "@/types/payment";
 
 const profile: PaymentProfile = {
   available_payment_methods: [

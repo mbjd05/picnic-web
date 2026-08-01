@@ -10,13 +10,13 @@ import {
 
 import { useQueryClient } from "@tanstack/react-query";
 
-import type { BundleProgress, BundleThreshold, CartData } from "@/lib/types/cart";
+import type { BundleProgress, BundleThreshold, CartData } from "@/types/cart";
 
-import { fetchJson } from "./lib/api-client";
-import { queryKeys } from "./lib/query-config";
-import { quantitiesFromCart, useCartUiStore } from "./cart-ui-store";
+import { fetchJson } from "../../lib/api-client";
+import { queryKeys } from "../../lib/query-config";
+import { quantitiesFromCart, useCartUiStore } from "../../stores/cart-ui-store";
 import { useTranslations } from "./country-context";
-import { useCartQuery } from "./features/cart/use-cart-query";
+import { useCartQuery } from "../../hooks/use-cart-query";
 
 const CART_MUTATION_DEBOUNCE_MS = 220;
 

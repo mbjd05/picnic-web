@@ -1,7 +1,7 @@
 import type { ErrorComponentProps } from "@tanstack/react-router";
 
 import { ErrorSurface, NotFoundSurface } from "./app-surfaces";
-import { CountryProvider } from "./country-context";
+import { CountryProvider } from "./providers/country-context";
 
 export function AppShellError({ error, reset }: ErrorComponentProps) {
   return (

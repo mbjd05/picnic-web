@@ -20,9 +20,11 @@ The parser and service layers are already in decent shape:
 - `src/lib/parse/*` keeps raw upstream response parsing out of UI code.
 - `src/lib` is grouped by shared concern instead of a flat technical list.
 - `src/components/*` contains several narrow presentational components.
+- `apps/web/src/app`, `features`, `components`, `hooks`, and `stores` now follow the same broad
+  layout guidance as Bulletproof React.
 
-The largest remaining SOLID pressure is in oversized page/shell files, broad cross-feature state
-interfaces, and route/UI code that still repeats low-level fetch/session wiring.
+The largest remaining SOLID pressure is in oversized feature pages and route/UI code that still
+repeats low-level fetch/session wiring.
 
 ## Progress
 
@@ -51,10 +53,15 @@ interfaces, and route/UI code that still repeats low-level fetch/session wiring.
   - [x] `useProductSearch`
   - [x] `useCookbookView`
 - [x] Split large domain type file gradually.
-  - [x] Move domain contracts into explicit files under `src/lib/types/`.
-  - [x] Keep imports direct, e.g. `@/lib/types/cart`, without `index.ts` barrels.
+  - [x] Move domain contracts into explicit files under `src/types/`.
+  - [x] Keep imports direct, e.g. `@/types/cart`, without `index.ts` barrels.
 - [x] Group top-level `src/lib` helpers into concern folders after checking external project
       structure guidance.
+- [x] Move web app shell/router/providers into `apps/web/src/app/`.
+- [x] Move web feature pages into their owning `apps/web/src/features/*/` folders.
+- [x] Move shared web hooks and stores into `apps/web/src/hooks/` and `apps/web/src/stores/`.
+- [x] Move reusable web page state components into `apps/web/src/components/`.
+- [x] Add an ESLint guard against sibling feature imports.
 - [x] Split cart context interfaces after cart extraction.
 - [x] Add Worker authenticated route helper where it reduces repeated route boilerplate.
 
@@ -131,7 +138,7 @@ Recipe presentation and subflows now live in:
 
 ### Shell Feature Extraction
 
-`apps/web/src/app-shell.tsx` now imports self-contained shell helpers from:
+`apps/web/src/app/app-shell.tsx` now imports self-contained shell helpers from:
 
 - `apps/web/src/features/shell/mobile-header-menu-panel.tsx`
 - `apps/web/src/features/shell/header-icons.tsx`
@@ -144,9 +151,9 @@ desktop/mobile behavior harder to follow.
 
 Repeated query setup now has domain hooks for the most common app surfaces:
 
-- `apps/web/src/features/cart/use-cart-query.ts`
-- `apps/web/src/features/payment/use-payment-profile.ts`
-- `apps/web/src/features/products/use-product-search.ts`
+- `apps/web/src/hooks/use-cart-query.ts`
+- `apps/web/src/hooks/use-payment-profile.ts`
+- `apps/web/src/hooks/use-product-search.ts`
 - `apps/web/src/features/recipes/use-cookbook-query.ts`
 
 These hooks preserve existing query keys, stale times, and endpoint behavior.
@@ -162,28 +169,29 @@ custom auth behavior, body parsing, validation, or image proxy behavior stay exp
 
 ### Type File Split
 
-Shared app types now live in explicit domain files under `src/lib/types/` instead of a broad
+Shared app types now live in explicit domain files under `src/types/` instead of a broad
 compatibility barrel or a long flat list in `src/lib`:
 
-- `src/lib/types/api.ts`
-- `src/lib/types/auth.ts`
-- `src/lib/types/cart.ts`
-- `src/lib/types/category.ts`
-- `src/lib/types/delivery.ts`
-- `src/lib/types/delivery-slot.ts`
-- `src/lib/types/locale.ts`
-- `src/lib/types/payment.ts`
-- `src/lib/types/product.ts`
-- `src/lib/types/recipe.ts`
-- `src/lib/types/search.ts`
+- `src/types/api.ts`
+- `src/types/auth.ts`
+- `src/types/cart.ts`
+- `src/types/category.ts`
+- `src/types/delivery.ts`
+- `src/types/delivery-slot.ts`
+- `src/types/locale.ts`
+- `src/types/payment.ts`
+- `src/types/product.ts`
+- `src/types/recipe.ts`
+- `src/types/search.ts`
 
-Import types from the owning domain file directly, for example `@/lib/types/product`. Avoid
+Import types from the owning domain file directly, for example `@/types/product`. Avoid
 reintroducing a general `types.ts` or `types/index.ts` barrel, because it makes new code choose
 between two standards.
 
 ### Cart Context Interface Split
 
-`cart-context.tsx` still owns the cart state provider, but consumers now use narrower hooks:
+`apps/web/src/app/providers/cart-context.tsx` still owns the cart state provider, but consumers now
+use narrower hooks:
 
 - `useCartQuantities`
 - `useCartTotals`
@@ -210,30 +218,51 @@ by one giant top-level list and not by frontend-only feature folders:
 
 ```text
 apps/web/src
+  app/
+    app-shell.tsx
+    app-surfaces.tsx
+    router.tsx
+    router-surfaces.tsx
+    providers/
+      cart-context.tsx
+      country-context.tsx
+      theme-context.tsx
+  components/
+    page-state.tsx
   features/
+    auth/
+      login-page.tsx
+    browsing/
+      browsing-components.tsx
+      browsing-pages.tsx
     cart/
+      cart-page.tsx
       cart-item-card.tsx
       cart-order-summary.tsx
       cart-checkout-cta.tsx
       cart-product-slider.tsx
       delivery-slot-banner.tsx
       delivery-slot-picker.tsx
-      use-cart-query.ts
+    deliveries/
+      delivery-pages.tsx
+    payment/
+      payment-pages.tsx
     recipes/
-      cookbook-page.tsx
-      recipe-detail-page.tsx
+      recipe-pages.tsx
       recipe-card.tsx
-      recipe-ingredient-list.tsx
-      use-cookbook-query.ts
     products/
-      browsing-pages.tsx
       product-detail-page.tsx
-      use-product-search.ts
     shell/
-      app-shell.tsx
+      header-icons.tsx
       mobile-header-menu-panel.tsx
-      use-mobile-header-menu-panel.ts
-      header-menu-content.tsx
+  hooks/
+    use-cart-query.ts
+    use-document-title.ts
+    use-payment-profile.ts
+    use-product-search.ts
+    use-wheel-quantity-adjust.ts
+  stores/
+    cart-ui-store.ts
 
 apps/api/src
   routes/
@@ -267,12 +296,27 @@ src/lib
   pml/           # generic PML traversal/render helpers
   recipes/       # recipe-specific pure helpers
   state/         # shared state primitives
-  types/         # shared domain contracts
   utils/         # generic low-level utilities
+
+src/types
+  api.ts
+  auth.ts
+  cart.ts
+  category.ts
+  delivery.ts
+  delivery-slot.ts
+  locale.ts
+  payment.ts
+  product.ts
+  recipe.ts
+  search.ts
 ```
 
-Keep imports direct, e.g. `@/lib/parse/cart` or `@/lib/types/product`. Avoid `index.ts` barrels
-unless a future tool or package boundary gives a concrete reason to add one.
+Keep imports direct, e.g. `@/lib/parse/cart`, `@/types/product`, or
+`apps/web/src/hooks/use-cart-query`. Avoid `index.ts` barrels unless a future tool or package
+boundary gives a concrete reason to add one. Feature modules must not import sibling feature
+modules directly; shared web code belongs in `apps/web/src/components`, `hooks`, `stores`, or the
+repo-level shared `src/lib`/`src/types` folders.
 
 ## 1. Single Responsibility Principle
 

@@ -10,14 +10,15 @@ import type {
   DeliverySummariesApiResponse,
   DeliverySummary,
   DeliveryTrackingApiResponse,
-} from "@/lib/types/delivery";
+} from "@/types/delivery";
 import { formatPrice } from "@/lib/format/price";
 import { buildImageUrl } from "@/lib/media/image-url";
 
-import { ErrorView, LoadingView, useDocumentTitle } from "./browsing-components";
-import { useCountryCode, useTranslations } from "./country-context";
-import { ApiClientError, fetchJson } from "./lib/api-client";
-import { queryKeys, queryStaleTime } from "./lib/query-config";
+import { ErrorView, LoadingView } from "../../components/page-state";
+import { useDocumentTitle } from "../../hooks/use-document-title";
+import { useCountryCode, useTranslations } from "../../app/providers/country-context";
+import { ApiClientError, fetchJson } from "../../lib/api-client";
+import { queryKeys, queryStaleTime } from "../../lib/query-config";
 
 type DeliveryFilter = "current" | "all";
 

@@ -1,12 +1,12 @@
 import { isApiTokenExpiredError } from "@/lib/api/error";
 import { deliverySlotSchema, validateCartMutation, validateInput } from "@/lib/api/validation";
-import type { DeliverySlotPickerData } from "@/lib/types/delivery-slot";
+import type { DeliverySlotPickerData } from "@/types/delivery-slot";
 import { parseCartResponse } from "@/lib/parse/cart";
 import { parseDeliverySlotsPicker } from "@/lib/parse/delivery-slots";
 import { buildPicnicClient } from "@/lib/picnic/client";
-import type { ApiErrorResponse } from "@/lib/types/api";
-import type { CartData } from "@/lib/types/cart";
-import type { CountryCode } from "@/lib/types/locale";
+import type { ApiErrorResponse } from "@/types/api";
+import type { CartData } from "@/types/cart";
+import type { CountryCode } from "@/types/locale";
 
 import type { ApiServiceResult } from "./types";
 

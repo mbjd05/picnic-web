@@ -1,5 +1,5 @@
-import type { SelectedSlotData } from "@/lib/types/delivery-slot";
-import type { Badge, SliderProduct } from "@/lib/types/product";
+import type { SelectedSlotData } from "@/types/delivery-slot";
+import type { Badge, SliderProduct } from "@/types/product";
 
 /** A single line item in the cart, derived from raw order line + article objects. */
 export type CartItem = {

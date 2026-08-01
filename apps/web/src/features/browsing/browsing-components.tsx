@@ -5,18 +5,23 @@ import { Link } from "@tanstack/react-router";
 import { Badge } from "@/components/badge";
 import { PriceDisplay } from "@/components/price-display";
 import { estimatedProgressPriceDelta } from "@/lib/cart/price-estimates";
-import type { CategoryItem, ShortcutItem } from "@/lib/types/category";
+import type { CategoryItem, ShortcutItem } from "@/types/category";
 import { buildImageUrl } from "@/lib/media/image-url";
 import { localizeApiSectionTitle } from "@/lib/i18n/localize-api-label";
-import type { BundleProgress, BundleThreshold } from "@/lib/types/cart";
-import type { CountryCode } from "@/lib/types/locale";
-import type { Product } from "@/lib/types/product";
-import type { SearchSection } from "@/lib/types/search";
+import type { BundleProgress, BundleThreshold } from "@/types/cart";
+import type { CountryCode } from "@/types/locale";
+import type { Product } from "@/types/product";
+import type { SearchSection } from "@/types/search";
 import { buildSectionId } from "@/lib/config/app-constants";
 
-import { useCartActions, useCartBundles, useCartQuantities } from "./cart-context";
-import { useCountryCode, useTranslations } from "./country-context";
-import { useWheelQuantityAdjust } from "./lib/use-wheel-quantity-adjust";
+import {
+  useCartActions,
+  useCartBundles,
+  useCartQuantities,
+} from "../../app/providers/cart-context";
+import { useCountryCode, useTranslations } from "../../app/providers/country-context";
+import { LoadingView } from "../../components/page-state";
+import { useWheelQuantityAdjust } from "../../hooks/use-wheel-quantity-adjust";
 
 const PLACEHOLDER_IMAGE = "/placeholder-product.svg";
 const STICKY_HEADER_OFFSET_PX = 144;
@@ -26,34 +31,6 @@ const PRODUCT_IMAGE_PRELOAD_TIMEOUT_MS = 1200;
 const SECTION_SCROLL_GAP_PX = 12;
 const MAX_LOADED_PRODUCT_IMAGE_URLS = 500;
 const loadedProductImageUrls = new Set<string>();
-
-export function LoadingView() {
-  return (
-    <div className="flex justify-center py-16" role="status" aria-label="Laden">
-      <span className="border-t-picnic-red h-6 w-6 animate-spin rounded-full border-2 border-gray-200" />
-    </div>
-  );
-}
-
-export function ErrorView({ message, onRetry }: { message: string; onRetry?: () => void }) {
-  const t = useTranslations();
-  return (
-    <div className="py-16 text-center">
-      <p className="text-sm text-red-600" role="alert">
-        {message}
-      </p>
-      {onRetry ? (
-        <button
-          type="button"
-          onClick={onRetry}
-          className="text-picnic-red mt-3 text-sm font-semibold hover:underline"
-        >
-          {t.retryButton}
-        </button>
-      ) : null}
-    </div>
-  );
-}
 
 function ProductImage({
   src,
@@ -594,19 +571,6 @@ function List({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-export function BackButton({ onClick }: { onClick: () => void }) {
-  const t = useTranslations();
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="text-picnic-red mb-4 flex items-center gap-1 text-sm font-medium hover:underline"
-    >
-      <span aria-hidden="true">←</span> {t.backButton}
-    </button>
-  );
-}
-
 export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
   const t = useTranslations();
   const [active, setActive] = useState(0);
@@ -759,13 +723,6 @@ export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
       </div>
     </nav>
   );
-}
-
-export function useDocumentTitle(title?: string) {
-  useEffect(() => {
-    const context = title && title.length > 60 ? `${title.slice(0, 57)}...` : title;
-    document.title = context ? `${context} - Picnic Web` : "Picnic Web";
-  }, [title]);
 }
 
 export function useStableSections(sections?: SearchSection[]) {

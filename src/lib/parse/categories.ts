@@ -1,6 +1,6 @@
 // Parser that extracts CategoryItem[] from the empty-search-page-root
 // FusionPage PML tree. Uses existing pml-helpers for tree traversal.
-import type { CategoryItem } from "@/lib/types/category";
+import type { CategoryItem } from "@/types/category";
 import { collectPropertyValues, findNodeByIdSubstring } from "@/lib/pml/helpers";
 
 const CATEGORY_LIST_BLOCK_ID = "category-tree-wrapper-list";

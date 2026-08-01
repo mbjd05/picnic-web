@@ -1,4 +1,4 @@
-import { useTranslations } from "../../country-context";
+import { useTranslations } from "../../app/providers/country-context";
 
 export function DeliverySlotBanner({
   bannerText,

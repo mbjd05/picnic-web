@@ -4,11 +4,11 @@ import { Link } from "@tanstack/react-router";
 
 import { formatEuroPrice } from "@/lib/format/price";
 import { getPreferredPaymentOption } from "@/lib/payment/options";
-import type { CheckoutPaymentResponse } from "@/lib/types/payment";
+import type { CheckoutPaymentResponse } from "@/types/payment";
 
-import { useTranslations } from "../../country-context";
+import { useTranslations } from "../../app/providers/country-context";
 import { ApiClientError, fetchJson } from "../../lib/api-client";
-import { usePaymentProfile } from "../payment/use-payment-profile";
+import { usePaymentProfile } from "../../hooks/use-payment-profile";
 
 const PAYMENT_BANK_STORAGE_KEY = "picnic_payment_option_banks";
 

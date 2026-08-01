@@ -18,14 +18,15 @@ import type {
   ProductDetail,
   ProductPromotion,
   SliderProduct,
-} from "@/lib/types/product";
+} from "@/types/product";
 
-import { BackButton, ErrorView, LoadingView, useDocumentTitle } from "./browsing-components";
-import { useCartActions, useCartQuantities } from "./cart-context";
-import { useCountryCode, useTranslations } from "./country-context";
-import { ApiClientError, fetchJson } from "./lib/api-client";
-import { queryKeys, queryStaleTime } from "./lib/query-config";
-import { useWheelQuantityAdjust } from "./lib/use-wheel-quantity-adjust";
+import { BackButton, ErrorView, LoadingView } from "../../components/page-state";
+import { useDocumentTitle } from "../../hooks/use-document-title";
+import { useCartActions, useCartQuantities } from "../../app/providers/cart-context";
+import { useCountryCode, useTranslations } from "../../app/providers/country-context";
+import { ApiClientError, fetchJson } from "../../lib/api-client";
+import { queryKeys, queryStaleTime } from "../../lib/query-config";
+import { useWheelQuantityAdjust } from "../../hooks/use-wheel-quantity-adjust";
 
 const PLACEHOLDER_IMAGE = "/placeholder-product.svg";
 const GALLERY_IMAGE_SIZE = "large";

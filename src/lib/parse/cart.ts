@@ -9,9 +9,9 @@ import { formatBannerText } from "@/lib/format/delivery-window";
 import { getTranslations } from "@/lib/i18n/translations";
 import { parseSelectedSlot } from "@/lib/parse/delivery-slots";
 import { asArray, asNumber, asString, isObject } from "@/lib/utils/type-guards";
-import type { Badge, SliderProduct } from "@/lib/types/product";
-import type { BundleThreshold, CartData, CartItem, DepositEntry } from "@/lib/types/cart";
-import type { CountryCode } from "@/lib/types/locale";
+import type { Badge, SliderProduct } from "@/types/product";
+import type { BundleThreshold, CartData, CartItem, DepositEntry } from "@/types/cart";
+import type { CountryCode } from "@/types/locale";
 
 // ─── Decorator helpers ────────────────────────────────────────────────────────
 

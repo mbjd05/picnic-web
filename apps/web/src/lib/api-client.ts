@@ -1,6 +1,6 @@
 import ky, { type Options } from "ky";
 
-import type { ApiErrorResponse } from "@/lib/types/api";
+import type { ApiErrorResponse } from "@/types/api";
 
 type ErrorPayload = Partial<ApiErrorResponse> & Record<string, unknown>;
 

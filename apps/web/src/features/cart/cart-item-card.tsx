@@ -6,10 +6,10 @@ import { Badge } from "@/components/badge";
 import { PriceDisplay } from "@/components/price-display";
 import { TrashIcon } from "@/components/trash-icon";
 import { buildImageUrl } from "@/lib/media/image-url";
-import type { CartItem } from "@/lib/types/cart";
+import type { CartItem } from "@/types/cart";
 
-import { useCountryCode, useTranslations } from "../../country-context";
-import { useWheelQuantityAdjust } from "../../lib/use-wheel-quantity-adjust";
+import { useCountryCode, useTranslations } from "../../app/providers/country-context";
+import { useWheelQuantityAdjust } from "../../hooks/use-wheel-quantity-adjust";
 
 export function CartItemCard({
   item,

@@ -1,5 +1,5 @@
-import type { BundleThreshold } from "@/lib/types/cart";
-import type { AllergenInfo, NutritionRow } from "@/lib/types/product";
+import type { BundleThreshold } from "@/types/cart";
+import type { AllergenInfo, NutritionRow } from "@/types/product";
 
 export type RecipeItem = {
   id: string;

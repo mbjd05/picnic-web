@@ -1,6 +1,6 @@
 // Parser that extracts ShortcutItem[] from the home_page_root
 // FusionPage PML tree. Targets the "Snel naar" (quick-access) section.
-import type { ShortcutItem } from "@/lib/types/category";
+import type { ShortcutItem } from "@/types/category";
 import { cleanMarkdown, collectPropertyValues, findNodeByIdSubstring } from "@/lib/pml/helpers";
 
 const SHORTCUT_SECTION_ID = "campaign-category-shortcuts-section";

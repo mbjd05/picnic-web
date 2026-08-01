@@ -8,13 +8,7 @@ import {
   stripColorTags,
 } from "@/lib/pml/helpers";
 import { collectLabels } from "@/lib/pml/product-helpers";
-import type {
-  Badge,
-  BadgeVariant,
-  Highlight,
-  PromoPlacement,
-  SubtitleIcon,
-} from "@/lib/types/product";
+import type { Badge, BadgeVariant, Highlight, PromoPlacement, SubtitleIcon } from "@/types/product";
 
 /** Extract a promotion label from the analytics contexts (e.g. "3 voor €5"). */
 export function extractPromotionLabel(contexts: AnalyticsContext[] | undefined): string | null {

@@ -3,9 +3,9 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 
 import { buildRecipeImageUrl } from "@/lib/media/image-url";
-import type { RecipeItem } from "@/lib/types/recipe";
+import type { RecipeItem } from "@/types/recipe";
 
-import { useCountryCode, useTranslations } from "../../country-context";
+import { useCountryCode, useTranslations } from "../../app/providers/country-context";
 import { BookmarkIcon } from "./recipe-icons";
 
 const PLACEHOLDER = "/placeholder-product.svg";

@@ -2,15 +2,11 @@ import { useCallback, useState } from "react";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import type {
-  DeliverySlotData,
-  DeliverySlotPickerData,
-  SlotDayGroup,
-} from "@/lib/types/delivery-slot";
+import type { DeliverySlotData, DeliverySlotPickerData, SlotDayGroup } from "@/types/delivery-slot";
 import { formatTime } from "@/lib/format/delivery-window";
-import type { CartData } from "@/lib/types/cart";
+import type { CartData } from "@/types/cart";
 
-import { useTranslations } from "../../country-context";
+import { useTranslations } from "../../app/providers/country-context";
 import { fetchJson } from "../../lib/api-client";
 import { queryKeys, queryStaleTime } from "../../lib/query-config";
 

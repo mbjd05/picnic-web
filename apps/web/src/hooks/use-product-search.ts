@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 
-import type { CountryCode } from "@/lib/types/locale";
-import type { SearchApiResponse } from "@/lib/types/search";
+import type { CountryCode } from "@/types/locale";
+import type { SearchApiResponse } from "@/types/search";
 
-import { fetchJson } from "../../lib/api-client";
-import { queryGcTime, queryKeys, queryStaleTime } from "../../lib/query-config";
+import { fetchJson } from "../lib/api-client";
+import { queryGcTime, queryKeys, queryStaleTime } from "../lib/query-config";
 
 export function useProductSearch(query: string, countryCode: CountryCode) {
   return useQuery({

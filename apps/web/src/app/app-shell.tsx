@@ -14,35 +14,35 @@ import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { createPortal } from "react-dom";
 
 import { getTranslations } from "@/lib/i18n/translations";
-import type { AuthApiResponse } from "@/lib/types/auth";
-import type { SuggestionsApiResponse } from "@/lib/types/search";
+import type { AuthApiResponse } from "@/types/auth";
+import type { SuggestionsApiResponse } from "@/types/search";
 import { MIN_SUGGESTION_LENGTH } from "@/lib/config/app-constants";
-import { SUPPORTED_COUNTRY_CODES, SUPPORTED_LANGUAGE_CODES } from "@/lib/types/locale";
-import type { CountryCode, LanguageCode } from "@/lib/types/locale";
+import { SUPPORTED_COUNTRY_CODES, SUPPORTED_LANGUAGE_CODES } from "@/types/locale";
+import type { CountryCode, LanguageCode } from "@/types/locale";
 
-import { CartProvider, useCartTotals } from "./cart-context";
+import { CartProvider, useCartTotals } from "./providers/cart-context";
 import {
   CountryProvider,
   useCountryCode,
   useLanguageCode,
   useSwitchCountry,
   useSwitchLanguage,
-} from "./country-context";
-import { fetchJson } from "./lib/api-client";
+} from "./providers/country-context";
+import { fetchJson } from "../lib/api-client";
 import {
   CartIcon,
   LanguageIcon,
   MenuIcon,
   SearchIcon,
   ThemePreferenceIcon,
-} from "./features/shell/header-icons";
+} from "../features/shell/header-icons";
 import {
   type HeaderMenu,
   MobileHeaderMenuPanel,
   useMobileHeaderMenuPanel,
-} from "./features/shell/mobile-header-menu-panel";
-import { queryKeys, queryStaleTime } from "./lib/query-config";
-import { ThemeProvider, type ThemePreference, useTheme } from "./theme-context";
+} from "../features/shell/mobile-header-menu-panel";
+import { queryKeys, queryStaleTime } from "../lib/query-config";
+import { ThemeProvider, type ThemePreference, useTheme } from "./providers/theme-context";
 
 const HeaderBottomBarContext = createContext<HTMLElement | null>(null);
 const SUGGESTION_DEBOUNCE_MS = 150;

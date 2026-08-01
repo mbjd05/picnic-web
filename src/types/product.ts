@@ -1,4 +1,4 @@
-import type { BundleThreshold } from "@/lib/types/cart";
+import type { BundleThreshold } from "@/types/cart";
 
 export type BadgeVariant =
   "promo" | "discount" | "size" | "freshness" | "availability" | "info" | "unit-price" | "bundle";

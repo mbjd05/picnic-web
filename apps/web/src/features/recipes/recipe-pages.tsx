@@ -6,36 +6,28 @@ import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { formatEuroPrice } from "@/lib/format/price";
 import { getRecipeIngredientCount } from "@/lib/recipes/quantity";
 import { DEBOUNCE_DELAY_MS } from "@/lib/config/app-constants";
-import type {
-  CookbookApiResponse,
-  RecipeCategory,
-  RecipeDetail,
-  RecipeItem,
-} from "@/lib/types/recipe";
+import type { CookbookApiResponse, RecipeCategory, RecipeDetail, RecipeItem } from "@/types/recipe";
 
-import { ErrorView, LoadingView, useDocumentTitle } from "./browsing-components";
-import { useCartActions } from "./cart-context";
-import { useCountryCode, useTranslations } from "./country-context";
-import { CategoryDropdown, type RecipeCategoryOption } from "./features/recipes/category-dropdown";
-import { RecipeAddToCartPanel } from "./features/recipes/recipe-add-to-cart-panel";
-import { RecipeCard } from "./features/recipes/recipe-card";
+import { ErrorView, LoadingView } from "../../components/page-state";
+import { useDocumentTitle } from "../../hooks/use-document-title";
+import { useCartActions } from "../../app/providers/cart-context";
+import { useCountryCode, useTranslations } from "../../app/providers/country-context";
+import { CategoryDropdown, type RecipeCategoryOption } from "./category-dropdown";
+import { RecipeAddToCartPanel } from "./recipe-add-to-cart-panel";
+import { RecipeCard } from "./recipe-card";
 import {
   IngredientSection,
   RecipeAllergenSection,
   RecipeHeroImage,
   RecipeNutritionSection,
-} from "./features/recipes/recipe-detail-sections";
-import { BookmarkIcon } from "./features/recipes/recipe-icons";
-import { RecipeSaveButton } from "./features/recipes/recipe-save-button";
-import { RecipeSearchInput } from "./features/recipes/recipe-search-input";
-import { RecipeStepsSection } from "./features/recipes/recipe-steps-section";
-import {
-  useCookbookSearch,
-  useCookbookView,
-  useSavedRecipes,
-} from "./features/recipes/use-cookbook-query";
-import { fetchJson } from "./lib/api-client";
-import { queryKeys, queryStaleTime } from "./lib/query-config";
+} from "./recipe-detail-sections";
+import { BookmarkIcon } from "./recipe-icons";
+import { RecipeSaveButton } from "./recipe-save-button";
+import { RecipeSearchInput } from "./recipe-search-input";
+import { RecipeStepsSection } from "./recipe-steps-section";
+import { useCookbookSearch, useCookbookView, useSavedRecipes } from "./use-cookbook-query";
+import { fetchJson } from "../../lib/api-client";
+import { queryKeys, queryStaleTime } from "../../lib/query-config";
 
 const PAGE_SIZE = 24;
 

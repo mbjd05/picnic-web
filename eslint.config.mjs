@@ -23,4 +23,30 @@ export default defineConfig([
     },
     rules: {},
   }),
+  {
+    files: ["apps/web/src/features/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: [
+                "../auth/*",
+                "../browsing/*",
+                "../cart/*",
+                "../deliveries/*",
+                "../payment/*",
+                "../products/*",
+                "../recipes/*",
+                "../shell/*",
+              ],
+              message:
+                "Feature modules should not import sibling features directly. Move shared code to apps/web/src/components, hooks, stores, or src/lib.",
+            },
+          ],
+        },
+      ],
+    },
+  },
 ]);

@@ -9,8 +9,8 @@ import {
   findSellingUnitContainers,
   stripColorTags,
 } from "@/lib/pml/helpers";
-import type { Product } from "@/lib/types/product";
-import type { SearchSection } from "@/lib/types/search";
+import type { Product } from "@/types/product";
+import type { SearchSection } from "@/types/search";
 
 type PmlRecord = Record<string, unknown>;
 

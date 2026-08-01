@@ -1,6 +1,6 @@
 // Parser that extracts CategoryItem[] from an L1 category page
 // FusionPage PML tree. Reuses shared extraction logic from parse-categories.
-import type { CategoryItem } from "@/lib/types/category";
+import type { CategoryItem } from "@/types/category";
 import { CATEGORY_ITEM_PREFIX, extractCategoryFromPmlItem } from "@/lib/parse/categories";
 import { findNodeByIdSubstring } from "@/lib/pml/helpers";
 

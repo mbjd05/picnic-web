@@ -5,7 +5,7 @@ import { RouterProvider } from "@tanstack/react-router";
 import { createRoot } from "react-dom/client";
 
 import { installProductQueryPersistence } from "./lib/product-query-persistence";
-import { queryClient, router } from "./router";
+import { queryClient, router } from "./app/router";
 import "./styles.css";
 
 const rootElement = document.getElementById("root");

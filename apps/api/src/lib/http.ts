@@ -1,7 +1,7 @@
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 
-import type { AuthApiResponse } from "@/lib/types/auth";
+import type { AuthApiResponse } from "@/types/auth";
 
 export function jsonStatus(status: number | undefined): ContentfulStatusCode {
   return (status ?? 200) as ContentfulStatusCode;

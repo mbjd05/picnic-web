@@ -9,10 +9,10 @@ import type {
   DeliverySlotPickerData,
   SelectedSlotData,
   SlotDayGroup,
-} from "@/lib/types/delivery-slot";
+} from "@/types/delivery-slot";
 import { formatDayTabLabel } from "@/lib/format/delivery-window";
 import { asArray, asString, isObject } from "@/lib/utils/type-guards";
-import type { CountryCode } from "@/lib/types/locale";
+import type { CountryCode } from "@/types/locale";
 
 // ─── Single slot extraction ──────────────────────────────────────────────────
 

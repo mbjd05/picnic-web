@@ -2,12 +2,12 @@
 // promotion data from the Fusion product detail page tree.
 import { collectPropertyValues, findNodeById, findNodeByIdPrefix } from "@/lib/pml/helpers";
 import type { PmlNode } from "@/lib/pml/helpers";
-import type { BundleOption, ProductPromotion, SliderProduct } from "@/lib/types/product";
+import type { BundleOption, ProductPromotion, SliderProduct } from "@/types/product";
 import {
   PRODUCT_ALTERNATIVES_ID,
   PRODUCT_BUNDLES_PREFIX,
   PRODUCT_MAIN_CONTAINER_ID,
-} from "@/lib/types/product";
+} from "@/types/product";
 
 // ─── Selling unit helpers ────────────────────────────────────────────────────
 

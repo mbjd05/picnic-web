@@ -1,8 +1,8 @@
 import { is2FAError, isApiAuthError } from "@/lib/api/error";
 import { buildPicnicClient, buildPicnicClientAnonymous } from "@/lib/picnic/client";
-import type { AuthApiResponse, TwoFactorChannel } from "@/lib/types/auth";
-import type { CountryCode } from "@/lib/types/locale";
-import { SUPPORTED_COUNTRY_CODES } from "@/lib/types/locale";
+import type { AuthApiResponse, TwoFactorChannel } from "@/types/auth";
+import type { CountryCode } from "@/types/locale";
+import { SUPPORTED_COUNTRY_CODES } from "@/types/locale";
 
 import type { ApiServiceResult } from "./types";
 

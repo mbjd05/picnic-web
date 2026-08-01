@@ -8,25 +8,18 @@ import type {
   CategoryItem,
   ShortcutItem,
   SubcategoriesApiResponse,
-} from "@/lib/types/category";
+} from "@/types/category";
 import { parsePageIdFromDeepLink } from "@/lib/parse/deep-link";
-import type { CategoryProductsApiResponse, SearchSection } from "@/lib/types/search";
+import type { CategoryProductsApiResponse, SearchSection } from "@/types/search";
 
-import { HeaderBottomBar } from "./app-shell";
-import {
-  BackButton,
-  CategoryBrowser,
-  ErrorView,
-  LoadingView,
-  ProductGrid,
-  ResultsView,
-  SectionNavBar,
-  useDocumentTitle,
-} from "./browsing-components";
-import { useCountryCode, useTranslations } from "./country-context";
-import { useProductSearch } from "./features/products/use-product-search";
-import { fetchJson } from "./lib/api-client";
-import { queryGcTime, queryKeys, queryStaleTime } from "./lib/query-config";
+import { HeaderBottomBar } from "../../app/app-shell";
+import { BackButton, ErrorView, LoadingView } from "../../components/page-state";
+import { useDocumentTitle } from "../../hooks/use-document-title";
+import { CategoryBrowser, ProductGrid, ResultsView, SectionNavBar } from "./browsing-components";
+import { useCountryCode, useTranslations } from "../../app/providers/country-context";
+import { useProductSearch } from "../../hooks/use-product-search";
+import { fetchJson } from "../../lib/api-client";
+import { queryGcTime, queryKeys, queryStaleTime } from "../../lib/query-config";
 
 function PageLayout({ children }: { children: React.ReactNode }) {
   return (

@@ -14,10 +14,10 @@ import {
   HomePage,
   ShortcutProductsPage,
   SubcategoryProductsPage,
-} from "./browsing-pages";
-import { CountryProvider } from "./country-context";
-import { ApiClientError } from "./lib/api-client";
-import { LoginPage } from "./login-page";
+} from "../features/browsing/browsing-pages";
+import { CountryProvider } from "./providers/country-context";
+import { ApiClientError } from "../lib/api-client";
+import { LoginPage } from "../features/auth/login-page";
 import { AppShellError, RootNotFound } from "./router-surfaces";
 
 export const queryClient = new QueryClient({
@@ -86,12 +86,15 @@ const cartRoute = createRoute({
         ? search.returnSearch.trim()
         : undefined,
   }),
-  component: lazyRouteComponent(() => import("./cart-page"), "CartPage"),
+  component: lazyRouteComponent(() => import("../features/cart/cart-page"), "CartPage"),
 });
 const paymentReturnRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/cart/payment-return",
-  component: lazyRouteComponent(() => import("./payment-pages"), "PaymentReturnPage"),
+  component: lazyRouteComponent(
+    () => import("../features/payment/payment-pages"),
+    "PaymentReturnPage"
+  ),
 });
 const categoryRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
@@ -106,12 +109,15 @@ const subcategoryRoute = createRoute({
 const cookbookRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/cookbook",
-  component: lazyRouteComponent(() => import("./recipe-pages"), "CookbookPage"),
+  component: lazyRouteComponent(() => import("../features/recipes/recipe-pages"), "CookbookPage"),
 });
 const deliveriesRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/deliveries",
-  component: lazyRouteComponent(() => import("./delivery-pages"), "DeliveriesPage"),
+  component: lazyRouteComponent(
+    () => import("../features/deliveries/delivery-pages"),
+    "DeliveriesPage"
+  ),
 });
 const paymentRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
@@ -119,17 +125,26 @@ const paymentRoute = createRoute({
   validateSearch: (search: Record<string, unknown>) => ({
     from: search.from === "cart" ? ("cart" as const) : undefined,
   }),
-  component: lazyRouteComponent(() => import("./payment-pages"), "PaymentAccountPage"),
+  component: lazyRouteComponent(
+    () => import("../features/payment/payment-pages"),
+    "PaymentAccountPage"
+  ),
 });
 const productRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/product/$id",
-  component: lazyRouteComponent(() => import("./product-detail-page"), "ProductDetailPage"),
+  component: lazyRouteComponent(
+    () => import("../features/products/product-detail-page"),
+    "ProductDetailPage"
+  ),
 });
 const recipeRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/recipe/$id",
-  component: lazyRouteComponent(() => import("./recipe-pages"), "RecipeDetailPage"),
+  component: lazyRouteComponent(
+    () => import("../features/recipes/recipe-pages"),
+    "RecipeDetailPage"
+  ),
 });
 
 const routeTree = rootRoute.addChildren([

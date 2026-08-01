@@ -1,17 +1,17 @@
 import { isApiTokenExpiredError } from "@/lib/api/error";
-import type { SubcategoriesApiResponse } from "@/lib/types/category";
+import type { SubcategoriesApiResponse } from "@/types/category";
 import { parseProductDetailPage } from "@/lib/parse/fusion-product";
 import { parseCategoryPageSections } from "@/lib/parse/fusion-search";
 import { extractPageTitle, parseSubcategoryPage } from "@/lib/parse/subcategories";
 import { buildPicnicClient } from "@/lib/picnic/client";
-import type { ApiErrorResponse } from "@/lib/types/api";
+import type { ApiErrorResponse } from "@/types/api";
 import type {
   CategoryProductsApiResponse,
   SearchSuggestion,
   SuggestionsApiResponse,
-} from "@/lib/types/search";
-import type { CountryCode } from "@/lib/types/locale";
-import type { ProductDetail } from "@/lib/types/product";
+} from "@/types/search";
+import type { CountryCode } from "@/types/locale";
+import type { ProductDetail } from "@/types/product";
 
 import type { ApiServiceResult } from "./types";
 

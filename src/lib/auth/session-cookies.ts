@@ -1,9 +1,5 @@
-import {
-  COUNTRY_COOKIE_NAME,
-  DEFAULT_COUNTRY_CODE,
-  SUPPORTED_COUNTRY_CODES,
-} from "@/lib/types/locale";
-import type { CountryCode } from "@/lib/types/locale";
+import { COUNTRY_COOKIE_NAME, DEFAULT_COUNTRY_CODE, SUPPORTED_COUNTRY_CODES } from "@/types/locale";
+import type { CountryCode } from "@/types/locale";
 
 /** Cookie name for the Picnic auth token. */
 export const AUTH_COOKIE_NAME = "picnic_auth_token";

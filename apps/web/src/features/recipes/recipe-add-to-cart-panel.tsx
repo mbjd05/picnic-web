@@ -1,6 +1,6 @@
 import { formatEuroPrice } from "@/lib/format/price";
 
-import { useTranslations } from "../../country-context";
+import { useTranslations } from "../../app/providers/country-context";
 
 export function RecipeAddToCartPanel({
   portions,

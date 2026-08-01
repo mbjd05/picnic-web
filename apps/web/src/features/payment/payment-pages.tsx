@@ -9,13 +9,14 @@ import type {
   CheckoutStatusResponse,
   PaymentBank,
   PaymentProfile,
-} from "@/lib/types/payment";
+} from "@/types/payment";
 
-import { ErrorView, LoadingView, useDocumentTitle } from "./browsing-components";
-import { useTranslations } from "./country-context";
-import { usePaymentProfile } from "./features/payment/use-payment-profile";
-import { ApiClientError, fetchJson } from "./lib/api-client";
-import { queryKeys } from "./lib/query-config";
+import { ErrorView, LoadingView } from "../../components/page-state";
+import { useDocumentTitle } from "../../hooks/use-document-title";
+import { useTranslations } from "../../app/providers/country-context";
+import { usePaymentProfile } from "../../hooks/use-payment-profile";
+import { ApiClientError, fetchJson } from "../../lib/api-client";
+import { queryKeys } from "../../lib/query-config";
 
 const PAYMENT_BANK_STORAGE_KEY = "picnic_payment_option_banks";
 

@@ -2,9 +2,9 @@ import { Link } from "@tanstack/react-router";
 
 import { formatPrice } from "@/lib/format/price";
 import { buildImageUrl } from "@/lib/media/image-url";
-import type { SliderProduct } from "@/lib/types/product";
+import type { SliderProduct } from "@/types/product";
 
-import { useCountryCode } from "../../country-context";
+import { useCountryCode } from "../../app/providers/country-context";
 
 export function CartProductSlider({
   title,
