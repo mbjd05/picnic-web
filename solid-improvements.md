@@ -50,8 +50,8 @@ interfaces, and route/UI code that still repeats low-level fetch/session wiring.
   - [x] `useProductSearch`
   - [x] `useCookbookView`
 - [x] Split large domain type file gradually.
-  - [x] Move country/language constants and helpers into `src/lib/types/locale-types.ts`.
-  - [x] Move payment/checkout types into `src/lib/types/payment-types.ts`.
+  - [x] Move country/language constants and helpers into `src/lib/locale-types.ts`.
+  - [x] Move payment/checkout types into `src/lib/payment-types.ts`.
 - [x] Split cart context interfaces after cart extraction.
 - [x] Add Worker authenticated route helper where it reduces repeated route boilerplate.
 
@@ -162,10 +162,12 @@ custom auth behavior, body parsing, validation, or image proxy behavior stay exp
 The large `src/lib/types.ts` file now re-exports smaller domain files while preserving the existing
 `@/lib/types` import surface:
 
-- `src/lib/types/locale-types.ts`
-- `src/lib/types/payment-types.ts`
+- `src/lib/locale-types.ts`
+- `src/lib/payment-types.ts`
 
-Continue this pattern opportunistically when product, recipe, cart, or delivery domains are touched.
+Continue this flat `src/lib/<domain>-types.ts` pattern opportunistically when product, recipe, cart,
+or delivery domains are touched. It matches the existing `category-types.ts`, `delivery-types.ts`,
+and `delivery-slot-types.ts` files.
 
 ### Cart Context Interface Split
 
@@ -226,13 +228,16 @@ apps/api/src
     session.ts
 
 src/lib
-  types/
-    auth-types.ts
-    cart-types.ts
-    delivery-types.ts
-    payment-types.ts
-    product-types.ts
-    recipe-types.ts
+  auth-types.ts
+  cart-types.ts
+  category-types.ts
+  delivery-types.ts
+  delivery-slot-types.ts
+  locale-types.ts
+  payment-types.ts
+  product-types.ts
+  recipe-types.ts
+  types.ts
 ```
 
 Do this gradually. Avoid one giant move-only commit unless there is a clear payoff.

@@ -1,7 +1,7 @@
 // Application-level type definitions for the Picnic web client.
 // These are our own domain types, decoupled from the upstream picnic-api types.
 import type { SelectedSlotData } from "@/lib/delivery-slot-types";
-import type { CountryCode } from "@/lib/types/locale-types";
+import type { CountryCode } from "@/lib/locale-types";
 
 export type { SelectedSlotData } from "@/lib/delivery-slot-types";
 export {
@@ -13,8 +13,8 @@ export {
   SUPPORTED_LANGUAGE_CODES,
   getImageCdnBase,
   parseCountryCode,
-} from "@/lib/types/locale-types";
-export type { CountryCode, LanguageCode } from "@/lib/types/locale-types";
+} from "@/lib/locale-types";
+export type { CountryCode, LanguageCode } from "@/lib/locale-types";
 export type {
   AvailablePaymentMethod,
   CheckoutCancelResponse,
@@ -26,7 +26,7 @@ export type {
   PaymentOptionRequest,
   PaymentProfile,
   StoredPaymentOption,
-} from "@/lib/types/payment-types";
+} from "@/lib/payment-types";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
