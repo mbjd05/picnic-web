@@ -10,7 +10,7 @@ import {
 
 import { useQueryClient } from "@tanstack/react-query";
 
-import type { BundleProgress, BundleThreshold, CartData } from "@/lib/types";
+import type { BundleProgress, BundleThreshold, CartData } from "@/lib/cart-types";
 
 import { fetchJson } from "./lib/api-client";
 import { queryKeys } from "./lib/query-config";
@@ -330,29 +330,29 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useCart(): CartContextValue {
+function useCartContext(): CartContextValue {
   const value = useContext(CartContext);
-  if (!value) throw new Error("useCart must be used within CartProvider");
+  if (!value) throw new Error("useCartContext must be used within CartProvider");
   return value;
 }
 
 export function useCartQuantities(): CartQuantitiesContextValue {
-  const { quantities, getQuantity } = useCart();
+  const { quantities, getQuantity } = useCartContext();
   return { quantities, getQuantity };
 }
 
 export function useCartTotals(): CartTotalsContextValue {
-  const { totalPrice, totalCount, hasStoredSummary, isLoading } = useCart();
+  const { totalPrice, totalCount, hasStoredSummary, isLoading } = useCartContext();
   return { totalPrice, totalCount, hasStoredSummary, isLoading };
 }
 
 export function useCartActions(): CartActionsContextValue {
-  const { addProduct, removeProduct, applyVisibleCart, refresh } = useCart();
+  const { addProduct, removeProduct, applyVisibleCart, refresh } = useCartContext();
   return { addProduct, removeProduct, applyVisibleCart, refresh };
 }
 
 export function useCartBundles(): CartBundlesContextValue {
-  const { getBundleProgress, registerBundleDataBatch } = useCart();
+  const { getBundleProgress, registerBundleDataBatch } = useCartContext();
   return { getBundleProgress, registerBundleDataBatch };
 }
 

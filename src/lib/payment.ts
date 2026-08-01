@@ -3,7 +3,7 @@ import type {
   PaymentMethod,
   PaymentProfile,
   StoredPaymentOption,
-} from "@/lib/types";
+} from "@/lib/payment-types";
 
 export function getErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;

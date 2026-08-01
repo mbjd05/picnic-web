@@ -3,7 +3,9 @@ import { extractProducts } from "@/lib/extract-products";
 import { getTranslations } from "@/lib/i18n";
 import { parseFusionSearchSections } from "@/lib/parse-fusion-search";
 import { buildPicnicClient } from "@/lib/picnic-client";
-import type { ApiErrorResponse, CountryCode, SearchApiResponse, SearchSection } from "@/lib/types";
+import type { ApiErrorResponse } from "@/lib/api-types";
+import type { CountryCode } from "@/lib/locale-types";
+import type { SearchApiResponse, SearchSection } from "@/lib/search-types";
 
 import type { ApiServiceResult } from "./types";
 

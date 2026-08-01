@@ -1,4 +1,4 @@
-import type { CountryCode } from "@/lib/types";
+import type { CountryCode } from "@/lib/locale-types";
 
 export const queryStaleTime = {
   categories: 20 * 60 * 1000,

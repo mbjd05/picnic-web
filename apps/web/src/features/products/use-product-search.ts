@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
-import type { CountryCode, SearchApiResponse } from "@/lib/types";
+import type { CountryCode } from "@/lib/locale-types";
+import type { SearchApiResponse } from "@/lib/search-types";
 
 import { fetchJson } from "../../lib/api-client";
 import { queryGcTime, queryKeys, queryStaleTime } from "../../lib/query-config";

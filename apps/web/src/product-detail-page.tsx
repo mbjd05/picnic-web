@@ -18,7 +18,7 @@ import type {
   ProductDetail,
   ProductPromotion,
   SliderProduct,
-} from "@/lib/types";
+} from "@/lib/product-types";
 
 import { BackButton, ErrorView, LoadingView, useDocumentTitle } from "./browsing-components";
 import { useCartActions, useCartQuantities } from "./cart-context";

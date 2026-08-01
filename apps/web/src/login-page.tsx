@@ -4,12 +4,9 @@ import { useForm } from "@tanstack/react-form";
 import { useSearch } from "@tanstack/react-router";
 
 import { type Translations, getTranslations } from "@/lib/i18n";
-import {
-  type AuthApiResponse,
-  type CountryCode,
-  SUPPORTED_COUNTRY_CODES,
-  type SwitchCountryResponse,
-} from "@/lib/types";
+import type { AuthApiResponse, SwitchCountryResponse } from "@/lib/auth-types";
+import type { CountryCode } from "@/lib/locale-types";
+import { SUPPORTED_COUNTRY_CODES } from "@/lib/locale-types";
 
 import { useCountryCode } from "./country-context";
 import { ApiClientError, fetchJson } from "./lib/api-client";

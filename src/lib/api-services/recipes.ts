@@ -5,12 +5,9 @@ import { extractProductNutritionRows, extractProductTileData } from "@/lib/parse
 import { parseRecipeDetail } from "@/lib/parse-recipe-detail";
 import { buildPicnicClient } from "@/lib/picnic-client";
 import type { PicnicClientInstance } from "@/lib/picnic-client";
-import type {
-  ApiErrorResponse,
-  CountryCode,
-  RecipeDetailApiResponse,
-  RecipeIngredient,
-} from "@/lib/types";
+import type { ApiErrorResponse } from "@/lib/api-types";
+import type { CountryCode } from "@/lib/locale-types";
+import type { RecipeDetailApiResponse, RecipeIngredient } from "@/lib/recipe-types";
 
 import type { ApiServiceResult } from "./types";
 

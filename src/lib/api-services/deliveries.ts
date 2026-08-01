@@ -8,7 +8,8 @@ import type {
 } from "@/lib/delivery-types";
 import { parseDeliveryDetail, parseDeliverySummaries } from "@/lib/parse-deliveries";
 import { buildPicnicClient } from "@/lib/picnic-client";
-import type { ApiErrorResponse, CountryCode } from "@/lib/types";
+import type { ApiErrorResponse } from "@/lib/api-types";
+import type { CountryCode } from "@/lib/locale-types";
 
 import type { ApiServiceResult } from "./types";
 

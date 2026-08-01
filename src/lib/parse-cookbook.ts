@@ -1,5 +1,5 @@
 import { cleanMarkdown, collectMarkdowns } from "./pml-helpers";
-import type { RecipeItem } from "./types";
+import type { RecipeItem } from "./recipe-types";
 
 type PmlRecord = Record<string, unknown>;
 

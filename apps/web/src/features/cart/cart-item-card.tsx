@@ -6,7 +6,7 @@ import { Badge } from "@/components/badge";
 import { PriceDisplay } from "@/components/price-display";
 import { TrashIcon } from "@/components/trash-icon";
 import { buildImageUrl } from "@/lib/image-url";
-import type { CartItem } from "@/lib/types";
+import type { CartItem } from "@/lib/cart-types";
 
 import { useCountryCode, useTranslations } from "../../country-context";
 import { useWheelQuantityAdjust } from "../../lib/use-wheel-quantity-adjust";

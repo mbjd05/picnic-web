@@ -159,15 +159,20 @@ custom auth behavior, body parsing, validation, or image proxy behavior stay exp
 
 ### Type File Split
 
-The large `src/lib/types.ts` file now re-exports smaller domain files while preserving the existing
-`@/lib/types` import surface:
+Shared app types now live in flat domain files under `src/lib` instead of a broad compatibility
+barrel:
 
+- `src/lib/api-types.ts`
+- `src/lib/auth-types.ts`
+- `src/lib/cart-types.ts`
 - `src/lib/locale-types.ts`
 - `src/lib/payment-types.ts`
+- `src/lib/product-types.ts`
+- `src/lib/recipe-types.ts`
+- `src/lib/search-types.ts`
 
-Continue this flat `src/lib/<domain>-types.ts` pattern opportunistically when product, recipe, cart,
-or delivery domains are touched. It matches the existing `category-types.ts`, `delivery-types.ts`,
-and `delivery-slot-types.ts` files.
+Import types from the owning domain file directly. Avoid reintroducing a general `types.ts` barrel,
+because it makes new code choose between two standards.
 
 ### Cart Context Interface Split
 
@@ -178,7 +183,8 @@ and `delivery-slot-types.ts` files.
 - `useCartActions`
 - `useCartBundles`
 
-The broad `useCart` hook remains as an internal compatibility layer.
+The previous broad `useCart` hook has been kept private inside the provider module; exported
+consumers should use the narrower hooks above.
 
 ## Folder Structure Direction
 

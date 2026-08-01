@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 
 import { buildRecipeImageUrl } from "@/lib/image-url";
-import type { RecipeItem } from "@/lib/types";
+import type { RecipeItem } from "@/lib/recipe-types";
 
 import { useCountryCode, useTranslations } from "../../country-context";
 import { BookmarkIcon } from "./recipe-icons";

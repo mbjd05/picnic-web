@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import type { CartData } from "@/lib/types";
+import type { CartData } from "@/lib/cart-types";
 
 import { fetchJson } from "../../lib/api-client";
 import { queryKeys, queryStaleTime } from "../../lib/query-config";

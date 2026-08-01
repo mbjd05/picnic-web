@@ -12,7 +12,7 @@ import type {
 } from "@/lib/delivery-slot-types";
 import { formatDayTabLabel } from "@/lib/format-delivery-window";
 import { asArray, asString, isObject } from "@/lib/type-guards";
-import type { CountryCode } from "@/lib/types";
+import type { CountryCode } from "@/lib/locale-types";
 
 // ─── Single slot extraction ──────────────────────────────────────────────────
 

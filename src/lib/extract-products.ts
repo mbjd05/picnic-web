@@ -1,4 +1,5 @@
-import type { Badge, BadgeVariant, BundleThreshold, Product } from "./types";
+import type { Badge, BadgeVariant, Product } from "./product-types";
+import type { BundleThreshold } from "./cart-types";
 
 // ─── Decorator type guards ───────────────────────────────────────────────────
 // The upstream SellingUnit.decorators is typed as `any[]`.

@@ -5,8 +5,13 @@ import { Link, useNavigate, useParams } from "@tanstack/react-router";
 
 import { formatEuroPrice } from "@/lib/format-price";
 import { getRecipeIngredientCount } from "@/lib/recipe-quantity";
-import { DEBOUNCE_DELAY_MS } from "@/lib/types";
-import type { CookbookApiResponse, RecipeCategory, RecipeDetail, RecipeItem } from "@/lib/types";
+import { DEBOUNCE_DELAY_MS } from "@/lib/app-constants";
+import type {
+  CookbookApiResponse,
+  RecipeCategory,
+  RecipeDetail,
+  RecipeItem,
+} from "@/lib/recipe-types";
 
 import { ErrorView, LoadingView, useDocumentTitle } from "./browsing-components";
 import { useCartActions } from "./cart-context";

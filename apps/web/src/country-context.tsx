@@ -2,15 +2,14 @@ import { type ReactNode, createContext, useCallback, useContext, useEffect, useS
 
 import {
   COUNTRY_COOKIE_NAME,
-  type CountryCode,
   DEFAULT_LANGUAGE_CODE,
   DEFAULT_COUNTRY_CODE,
   LANGUAGE_COOKIE_NAME,
-  type LanguageCode,
   SUPPORTED_LANGUAGE_CODES,
   SUPPORTED_COUNTRY_CODES,
-  type SwitchCountryResponse,
-} from "@/lib/types";
+} from "@/lib/locale-types";
+import type { CountryCode, LanguageCode } from "@/lib/locale-types";
+import type { SwitchCountryResponse } from "@/lib/auth-types";
 import { getTranslations } from "@/lib/i18n";
 
 import { fetchJson } from "./lib/api-client";

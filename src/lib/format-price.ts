@@ -1,4 +1,4 @@
-import { CENTS_DIVISOR } from "@/lib/types";
+import { CENTS_DIVISOR } from "@/lib/app-constants";
 
 /**
  * Format a price in cents to a display string without currency symbol.

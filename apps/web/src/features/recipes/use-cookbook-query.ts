@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
-import type { CookbookApiResponse, CountryCode } from "@/lib/types";
+import type { CookbookApiResponse } from "@/lib/recipe-types";
+import type { CountryCode } from "@/lib/locale-types";
 
 import { fetchJson } from "../../lib/api-client";
 import { queryKeys, queryStaleTime } from "../../lib/query-config";

@@ -6,7 +6,9 @@ import {
   fetchRecipeCategoryPage,
   isRecipeCategoryId,
 } from "@/lib/recipe-categories";
-import type { ApiErrorResponse, CookbookApiResponse, CountryCode } from "@/lib/types";
+import type { ApiErrorResponse } from "@/lib/api-types";
+import type { CookbookApiResponse } from "@/lib/recipe-types";
+import type { CountryCode } from "@/lib/locale-types";
 
 import type { ApiServiceResult } from "./types";
 

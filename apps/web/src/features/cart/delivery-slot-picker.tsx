@@ -8,7 +8,7 @@ import type {
   SlotDayGroup,
 } from "@/lib/delivery-slot-types";
 import { formatTime } from "@/lib/format-delivery-window";
-import type { CartData } from "@/lib/types";
+import type { CartData } from "@/lib/cart-types";
 
 import { useTranslations } from "../../country-context";
 import { fetchJson } from "../../lib/api-client";

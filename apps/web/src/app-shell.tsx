@@ -14,14 +14,11 @@ import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { createPortal } from "react-dom";
 
 import { getTranslations } from "@/lib/i18n";
-import type { AuthApiResponse, SuggestionsApiResponse } from "@/lib/types";
-import {
-  MIN_SUGGESTION_LENGTH,
-  SUPPORTED_COUNTRY_CODES,
-  SUPPORTED_LANGUAGE_CODES,
-  type CountryCode,
-  type LanguageCode,
-} from "@/lib/types";
+import type { AuthApiResponse } from "@/lib/auth-types";
+import type { SuggestionsApiResponse } from "@/lib/search-types";
+import { MIN_SUGGESTION_LENGTH } from "@/lib/app-constants";
+import { SUPPORTED_COUNTRY_CODES, SUPPORTED_LANGUAGE_CODES } from "@/lib/locale-types";
+import type { CountryCode, LanguageCode } from "@/lib/locale-types";
 
 import { CartProvider, useCartTotals } from "./cart-context";
 import {

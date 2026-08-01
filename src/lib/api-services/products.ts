@@ -4,14 +4,14 @@ import { parseProductDetailPage } from "@/lib/parse-fusion-product";
 import { parseCategoryPageSections } from "@/lib/parse-fusion-search";
 import { extractPageTitle, parseSubcategoryPage } from "@/lib/parse-subcategories";
 import { buildPicnicClient } from "@/lib/picnic-client";
+import type { ApiErrorResponse } from "@/lib/api-types";
 import type {
-  ApiErrorResponse,
   CategoryProductsApiResponse,
-  CountryCode,
-  ProductDetail,
   SearchSuggestion,
   SuggestionsApiResponse,
-} from "@/lib/types";
+} from "@/lib/search-types";
+import type { CountryCode } from "@/lib/locale-types";
+import type { ProductDetail } from "@/lib/product-types";
 
 import type { ApiServiceResult } from "./types";
 

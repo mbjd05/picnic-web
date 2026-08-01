@@ -10,7 +10,7 @@ import {
   parseAuthToken,
   parseCountryCookie,
 } from "@/lib/session-cookies";
-import type { CountryCode } from "@/lib/types";
+import type { CountryCode } from "@/lib/locale-types";
 
 export function readSession(c: Context) {
   const countryCode = parseCountryCookie(getCookie(c, COUNTRY_COOKIE_NAME));

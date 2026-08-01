@@ -26,13 +26,13 @@ import {
 import type {
   AllergenBadge,
   AllergenInfo,
-  BundleThreshold,
   NutritionRow,
   ProductDetail,
   ProductHighlightItem,
   ProductInfoSection,
   ProductLabel,
-} from "./types";
+} from "./product-types";
+import type { BundleThreshold } from "./cart-types";
 import {
   PRODUCT_ACCORDION_ID,
   PRODUCT_ALLERGIES_ID,
@@ -42,7 +42,7 @@ import {
   PRODUCT_HIGHLIGHTS_ID,
   PRODUCT_LABELS_PREFIX,
   PRODUCT_MAIN_CONTAINER_ID,
-} from "./types";
+} from "./product-types";
 
 // ─── Internal extraction helpers ─────────────────────────────────────────────
 

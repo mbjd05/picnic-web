@@ -5,7 +5,8 @@ import {
   isEmptyJsonResponseError,
 } from "@/lib/payment";
 import type { PicnicClientInstance } from "@/lib/picnic-client";
-import type { ApiErrorResponse, CheckoutPaymentResponse, PaymentProfile } from "@/lib/types";
+import type { ApiErrorResponse } from "@/lib/api-types";
+import type { CheckoutPaymentResponse, PaymentProfile } from "@/lib/payment-types";
 
 type SendRequestClient = {
   sendRequest: (

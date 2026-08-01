@@ -2,7 +2,7 @@
 // FusionPage PML tree. Reuses shared conversion logic from parse-fusion-search.
 import { containerToProduct } from "@/lib/parse-fusion-search";
 import { findSellingUnitContainers } from "@/lib/pml-helpers";
-import type { Product } from "@/lib/types";
+import type { Product } from "@/lib/product-types";
 
 /**
  * Parse an L2 category FusionPage into Product[].

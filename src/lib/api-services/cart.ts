@@ -4,7 +4,9 @@ import type { DeliverySlotPickerData } from "@/lib/delivery-slot-types";
 import { parseCartResponse } from "@/lib/parse-cart";
 import { parseDeliverySlotsPicker } from "@/lib/parse-delivery-slots";
 import { buildPicnicClient } from "@/lib/picnic-client";
-import type { ApiErrorResponse, CartData, CountryCode } from "@/lib/types";
+import type { ApiErrorResponse } from "@/lib/api-types";
+import type { CartData } from "@/lib/cart-types";
+import type { CountryCode } from "@/lib/locale-types";
 
 import type { ApiServiceResult } from "./types";
 

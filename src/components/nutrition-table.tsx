@@ -1,4 +1,4 @@
-import type { NutritionRow } from "@/lib/types";
+import type { NutritionRow } from "@/lib/product-types";
 
 type NutritionTableProps = {
   rows: NutritionRow[];

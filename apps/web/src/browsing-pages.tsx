@@ -10,7 +10,7 @@ import type {
   SubcategoriesApiResponse,
 } from "@/lib/category-types";
 import { parsePageIdFromDeepLink } from "@/lib/parse-deep-link";
-import type { CategoryProductsApiResponse, SearchSection } from "@/lib/types";
+import type { CategoryProductsApiResponse, SearchSection } from "@/lib/search-types";
 
 import { HeaderBottomBar } from "./app-shell";
 import {
