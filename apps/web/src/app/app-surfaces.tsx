@@ -2,13 +2,15 @@ import { useEffect } from "react";
 
 import { Link } from "@tanstack/react-router";
 
+import { APP_NAME, TITLE_SEPARATOR } from "@/lib/config/constants";
+
 import { useCountryCode, useTranslations } from "../providers/country-context";
 
 export function LoadingSurface({ title }: { title?: string }) {
   const t = useTranslations();
 
   useEffect(() => {
-    document.title = title ? `${title} - Picnic Web` : "Picnic Web";
+    document.title = title ? `${title}${TITLE_SEPARATOR}${APP_NAME}` : APP_NAME;
   }, [title]);
 
   return (

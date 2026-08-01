@@ -26,7 +26,7 @@ const apiVersion = process.env.PICNIC_API_VERSION ?? "17";
 const confirmIdempotentWrites = process.argv.includes("--confirm-idempotent-writes");
 
 if (!token) {
-  console.error("PICNIC_TOKEN is missing. Run: node .\\src\\scripts\\picnic-auth-probe.mjs login");
+  console.error("PICNIC_TOKEN is missing. Run: node .\\scripts\\picnic-auth-probe.mjs login");
   process.exit(1);
 }
 

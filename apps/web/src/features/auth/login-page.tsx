@@ -4,6 +4,7 @@ import { useForm } from "@tanstack/react-form";
 import { useSearch } from "@tanstack/react-router";
 
 import { type Translations, getTranslations } from "@/lib/i18n/translations";
+import { APP_NAME, TITLE_SEPARATOR } from "@/lib/config/constants";
 import type { AuthApiResponse, SwitchCountryResponse } from "@/types/auth";
 import type { CountryCode } from "@/types/locale";
 import { SUPPORTED_COUNTRY_CODES } from "@/types/locale";
@@ -24,7 +25,7 @@ export function LoginPage() {
   const t = getTranslations(countryCode);
 
   useEffect(() => {
-    document.title = `${t.loginTitle} | Picnic Web`;
+    document.title = `${t.loginTitle}${TITLE_SEPARATOR}${APP_NAME}`;
     document.documentElement.lang = countryCode.toLowerCase();
   }, [countryCode, t.loginTitle]);
 
