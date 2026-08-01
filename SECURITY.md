@@ -24,6 +24,12 @@ The following files are intentionally ignored and must stay local:
 
 `.env.example` must remain placeholder-only.
 
+## Secret Scanning False Positives
+
+This repository uses React (not Vue). We exclude `**/*.vue` in
+`.github/secret_scanning.yml` to avoid secret scanning alerts from unrelated Vue
+files that may appear outside this codebase context.
+
 ## Authentication Handling
 
 The application stores Picnic auth tokens in HTTP-only cookies. Production code
