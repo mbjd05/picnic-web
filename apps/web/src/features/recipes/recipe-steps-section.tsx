@@ -1,4 +1,4 @@
-import { renderMarkdownBold } from "@/lib/render-markdown-bold";
+import { renderMarkdownBold } from "@/lib/format/render-markdown-bold";
 import type { RecipeDetail } from "@/lib/types/recipe";
 
 import { useTranslations } from "../../country-context";

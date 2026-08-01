@@ -5,10 +5,10 @@
  * validates/extracts fields at runtime, returning a strongly-typed CartData.
  * No picnic-api types are imported for casting — all field access is defensive.
  */
-import { formatBannerText } from "@/lib/format-delivery-window";
-import { getTranslations } from "@/lib/i18n";
-import { parseSelectedSlot } from "@/lib/parse-delivery-slots";
-import { asArray, asNumber, asString, isObject } from "@/lib/type-guards";
+import { formatBannerText } from "@/lib/format/delivery-window";
+import { getTranslations } from "@/lib/i18n/translations";
+import { parseSelectedSlot } from "@/lib/parse/delivery-slots";
+import { asArray, asNumber, asString, isObject } from "@/lib/utils/type-guards";
 import type { Badge, SliderProduct } from "@/lib/types/product";
 import type { BundleThreshold, CartData, CartItem, DepositEntry } from "@/lib/types/cart";
 import type { CountryCode } from "@/lib/types/locale";

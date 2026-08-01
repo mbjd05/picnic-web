@@ -17,7 +17,8 @@ product change. Move-only work should be easy to review by domain.
 The parser and service layers are already in decent shape:
 
 - `src/lib/api-services/*` separates Picnic API behavior by domain.
-- `src/lib/parse-*` keeps raw upstream response parsing out of UI code.
+- `src/lib/parse/*` keeps raw upstream response parsing out of UI code.
+- `src/lib` is grouped by shared concern instead of a flat technical list.
 - `src/components/*` contains several narrow presentational components.
 
 The largest remaining SOLID pressure is in oversized page/shell files, broad cross-feature state
@@ -52,6 +53,8 @@ interfaces, and route/UI code that still repeats low-level fetch/session wiring.
 - [x] Split large domain type file gradually.
   - [x] Move domain contracts into explicit files under `src/lib/types/`.
   - [x] Keep imports direct, e.g. `@/lib/types/cart`, without `index.ts` barrels.
+- [x] Group top-level `src/lib` helpers into concern folders after checking external project
+      structure guidance.
 - [x] Split cart context interfaces after cart extraction.
 - [x] Add Worker authenticated route helper where it reduces repeated route boilerplate.
 
@@ -192,7 +195,18 @@ consumers should use the narrower hooks above.
 
 ## Folder Structure Direction
 
-The current structure is workable, but feature-level grouping would make future extraction easier:
+The current structure follows the same broad direction as established React/TypeScript project
+guidance:
+
+- Bulletproof React uses shared `components`, `config`, `features`, `lib`, `types`, and `utils`
+  directories, recommends keeping most app-specific code feature-scoped, and warns against broad
+  barrel files for Vite tree-shaking.
+- Redux's official structure FAQ recommends feature/domain folders over large technical piles when
+  logic belongs together.
+
+For this app, `apps/web/src/features/*` owns web UI feature code, while `src/lib/*` is shared by the
+web app and Hono Worker. That shared library should therefore be grouped by concern and domain, not
+by one giant top-level list and not by frontend-only feature folders:
 
 ```text
 apps/web/src
@@ -237,22 +251,28 @@ apps/api/src
     security.ts
     session.ts
 
-src/lib/types
-  api.ts
-  auth.ts
-  cart.ts
-  category.ts
-  delivery.ts
-  delivery-slot.ts
-  locale.ts
-  payment.ts
-  product.ts
-  recipe.ts
-  search.ts
+src/lib
+  api/           # shared API errors and request validation schemas
+  api-services/  # Picnic-facing service functions used by Worker routes
+  auth/          # auth/session cookie helpers
+  cart/          # cart-specific pure helpers
+  config/        # app constants
+  extract/       # lower-level PML/product extraction helpers
+  format/        # display formatting helpers
+  i18n/          # translation and API-label localization helpers
+  media/         # Picnic image URL construction
+  parse/         # raw Picnic/PML response parsers
+  payment/       # payment option and checkout helpers
+  picnic/        # Picnic API client construction
+  pml/           # generic PML traversal/render helpers
+  recipes/       # recipe-specific pure helpers
+  state/         # shared state primitives
+  types/         # shared domain contracts
+  utils/         # generic low-level utilities
 ```
 
-Keep pure contracts here. Runtime helpers, parsers, formatters, and service functions stay in
-`src/lib` or a more specific feature/service folder.
+Keep imports direct, e.g. `@/lib/parse/cart` or `@/lib/types/product`. Avoid `index.ts` barrels
+unless a future tool or package boundary gives a concrete reason to add one.
 
 ## 1. Single Responsibility Principle
 
@@ -329,7 +349,6 @@ Status: Mixed.
 
 - `CartContextValue` exposes quantities, totals, bundle progress, mutation actions, refresh, and
   visible-cart sync through one context.
-- `src/lib/types.ts` is large and acts as a general type dumping ground.
 - Some large pages still pass broad objects down through many subcomponents.
 
 ### Target Improvements
@@ -339,9 +358,8 @@ Status: Mixed.
   - `useCartTotals`
   - `useCartActions`
   - `useCartBundles`
-- Split `src/lib/types.ts` into domain type files.
 - Use small view model types for UI sections.
-- Keep type moves opportunistic and domain-scoped to avoid churn.
+- Keep future moves domain-scoped and avoid reintroducing broad compatibility barrels.
 
 ## 5. Dependency Inversion Principle
 

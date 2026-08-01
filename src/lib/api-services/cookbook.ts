@@ -1,11 +1,11 @@
-import { isApiTokenExpiredError } from "@/lib/api-error";
-import { parseCookbookPage } from "@/lib/parse-cookbook";
-import { buildPicnicClient } from "@/lib/picnic-client";
+import { isApiTokenExpiredError } from "@/lib/api/error";
+import { parseCookbookPage } from "@/lib/parse/cookbook";
+import { buildPicnicClient } from "@/lib/picnic/client";
 import {
   discoverRecipeCategories,
   fetchRecipeCategoryPage,
   isRecipeCategoryId,
-} from "@/lib/recipe-categories";
+} from "@/lib/recipes/categories";
 import type { ApiErrorResponse } from "@/lib/types/api";
 import type { CookbookApiResponse } from "@/lib/types/recipe";
 import type { CountryCode } from "@/lib/types/locale";

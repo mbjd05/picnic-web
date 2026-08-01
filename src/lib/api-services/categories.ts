@@ -1,8 +1,8 @@
-import { isApiTokenExpiredError } from "@/lib/api-error";
+import { isApiTokenExpiredError } from "@/lib/api/error";
 import type { CategoriesApiResponse } from "@/lib/types/category";
-import { parseCategoryPage } from "@/lib/parse-categories";
-import { parseShortcutsPage } from "@/lib/parse-shortcuts";
-import { buildPicnicClient } from "@/lib/picnic-client";
+import { parseCategoryPage } from "@/lib/parse/categories";
+import { parseShortcutsPage } from "@/lib/parse/shortcuts";
+import { buildPicnicClient } from "@/lib/picnic/client";
 import type { ApiErrorResponse } from "@/lib/types/api";
 import type { CountryCode } from "@/lib/types/locale";
 

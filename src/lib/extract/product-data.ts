@@ -1,13 +1,13 @@
 // Extraction helpers for bundle options, similar products, pricing, and
 // promotion data from the Fusion product detail page tree.
-import { collectPropertyValues, findNodeById, findNodeByIdPrefix } from "./pml-helpers";
-import type { PmlNode } from "./pml-helpers";
-import type { BundleOption, ProductPromotion, SliderProduct } from "./types/product";
+import { collectPropertyValues, findNodeById, findNodeByIdPrefix } from "@/lib/pml/helpers";
+import type { PmlNode } from "@/lib/pml/helpers";
+import type { BundleOption, ProductPromotion, SliderProduct } from "@/lib/types/product";
 import {
   PRODUCT_ALTERNATIVES_ID,
   PRODUCT_BUNDLES_PREFIX,
   PRODUCT_MAIN_CONTAINER_ID,
-} from "./types/product";
+} from "@/lib/types/product";
 
 // ─── Selling unit helpers ────────────────────────────────────────────────────
 

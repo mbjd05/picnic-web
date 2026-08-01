@@ -1,4 +1,4 @@
-import type { Translations } from "@/lib/i18n";
+import type { Translations } from "@/lib/i18n/translations";
 
 const ALL_RESULTS_PREFIXES = [
   "alle resultaten voor",

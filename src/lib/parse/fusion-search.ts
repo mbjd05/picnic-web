@@ -5,18 +5,18 @@ import {
   extractTextStackInfo,
   extractUnavailabilityFromPml,
   findTextStackChildren,
-} from "./extract-card-data";
-import { parseContentPageSections } from "./parse-content-page";
-import type { PmlNode, SellingUnitTileContainer } from "./pml-helpers";
+} from "@/lib/extract/card-data";
+import { parseContentPageSections } from "@/lib/parse/content-page";
+import type { PmlNode, SellingUnitTileContainer } from "@/lib/pml/helpers";
 import {
   collectMarkdowns,
   findNodeByIdSubstring,
   findSellingUnitContainers,
   stripColorTags,
-} from "./pml-helpers";
-import type { Badge, Product } from "./types/product";
-import type { BundleThreshold } from "./types/cart";
-import type { SearchSection } from "./types/search";
+} from "@/lib/pml/helpers";
+import type { Badge, Product } from "@/lib/types/product";
+import type { BundleThreshold } from "@/lib/types/cart";
+import type { SearchSection } from "@/lib/types/search";
 
 /** Parse raw price_ranges into BundleThreshold[], or null if empty/absent. */
 function parsePriceRangesFromRaw(raw: unknown[] | null): BundleThreshold[] | null {

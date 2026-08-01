@@ -1,4 +1,4 @@
-import { formatPrice } from "@/lib/format-price";
+import { formatPrice } from "@/lib/format/price";
 import type { DepositEntry, FeeEntry } from "@/lib/types/cart";
 
 import { useTranslations } from "../../country-context";

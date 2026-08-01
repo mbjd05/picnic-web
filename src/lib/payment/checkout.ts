@@ -1,10 +1,10 @@
-import { isApiTokenExpiredError } from "@/lib/api-error";
+import { isApiTokenExpiredError } from "@/lib/api/error";
 import {
   getAvailablePaymentMethod,
   getErrorMessage,
   isEmptyJsonResponseError,
-} from "@/lib/payment";
-import type { PicnicClientInstance } from "@/lib/picnic-client";
+} from "@/lib/payment/options";
+import type { PicnicClientInstance } from "@/lib/picnic/client";
 import type { ApiErrorResponse } from "@/lib/types/api";
 import type { CheckoutPaymentResponse, PaymentProfile } from "@/lib/types/payment";
 

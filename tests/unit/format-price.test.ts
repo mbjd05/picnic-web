@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatEuroPrice, formatPrice } from "@/lib/format-price";
+import { formatEuroPrice, formatPrice } from "@/lib/format/price";
 
 describe("price formatting", () => {
   it("formats cents without a currency symbol for compact product prices", () => {

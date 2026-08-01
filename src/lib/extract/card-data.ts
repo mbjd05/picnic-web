@@ -1,14 +1,20 @@
 // Per-tile data extraction for converting PML selling-unit tiles into Product metadata.
-import type { AnalyticsContext, PmlNode } from "./pml-helpers";
+import type { AnalyticsContext, PmlNode } from "@/lib/pml/helpers";
 import {
   cleanMarkdown,
   collectMarkdowns,
   extractInnerColor,
   findIconNodes,
   stripColorTags,
-} from "./pml-helpers";
-import { collectLabels } from "./pml-product-helpers";
-import type { Badge, BadgeVariant, Highlight, PromoPlacement, SubtitleIcon } from "./types/product";
+} from "@/lib/pml/helpers";
+import { collectLabels } from "@/lib/pml/product-helpers";
+import type {
+  Badge,
+  BadgeVariant,
+  Highlight,
+  PromoPlacement,
+  SubtitleIcon,
+} from "@/lib/types/product";
 
 /** Extract a promotion label from the analytics contexts (e.g. "3 voor €5"). */
 export function extractPromotionLabel(contexts: AnalyticsContext[] | undefined): string | null {

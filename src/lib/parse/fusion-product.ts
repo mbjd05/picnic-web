@@ -6,7 +6,7 @@ import {
   extractSimilarProducts,
   findMainSellingUnit,
   resolveDisplayPrice,
-} from "./extract-product-data";
+} from "@/lib/extract/product-data";
 import {
   cleanMarkdown,
   collectMarkdowns,
@@ -15,14 +15,14 @@ import {
   findNodeById,
   findNodeByIdPrefix,
   stripColorTags,
-} from "./pml-helpers";
+} from "@/lib/pml/helpers";
 import {
   collectAllergenGroups,
   collectHighlightRows,
   collectLabels,
   collectNutritionRows,
   collectPriceNodes,
-} from "./pml-product-helpers";
+} from "@/lib/pml/product-helpers";
 import type {
   AllergenBadge,
   AllergenInfo,
@@ -31,8 +31,8 @@ import type {
   ProductHighlightItem,
   ProductInfoSection,
   ProductLabel,
-} from "./types/product";
-import type { BundleThreshold } from "./types/cart";
+} from "@/lib/types/product";
+import type { BundleThreshold } from "@/lib/types/cart";
 import {
   PRODUCT_ACCORDION_ID,
   PRODUCT_ALLERGIES_ID,
@@ -42,7 +42,7 @@ import {
   PRODUCT_HIGHLIGHTS_ID,
   PRODUCT_LABELS_PREFIX,
   PRODUCT_MAIN_CONTAINER_ID,
-} from "./types/product";
+} from "@/lib/types/product";
 
 // ─── Internal extraction helpers ─────────────────────────────────────────────
 

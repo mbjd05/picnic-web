@@ -6,7 +6,7 @@ import type {
   DeliverySummary,
   DeliveryWindow,
 } from "@/lib/types/delivery";
-import { asArray, isObject } from "@/lib/type-guards";
+import { asArray, isObject } from "@/lib/utils/type-guards";
 
 function stringOrNull(value: unknown): string | null {
   return typeof value === "string" ? value : null;

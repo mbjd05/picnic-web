@@ -1,4 +1,4 @@
-import { formatPrice } from "@/lib/format-price";
+import { formatPrice } from "@/lib/format/price";
 
 type PriceDisplayProps = {
   /** Current price in cents. */

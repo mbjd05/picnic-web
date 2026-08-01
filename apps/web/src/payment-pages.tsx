@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
 
-import { getPaymentDisplayName, getPreferredPaymentOption } from "@/lib/payment";
+import { getPaymentDisplayName, getPreferredPaymentOption } from "@/lib/payment/options";
 import type {
   CheckoutCancelResponse,
   CheckoutStatusResponse,

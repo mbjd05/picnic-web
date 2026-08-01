@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 
-import { formatPrice } from "@/lib/format-price";
-import { buildImageUrl } from "@/lib/image-url";
+import { formatPrice } from "@/lib/format/price";
+import { buildImageUrl } from "@/lib/media/image-url";
 import type { SliderProduct } from "@/lib/types/product";
 
 import { useCountryCode } from "../../country-context";

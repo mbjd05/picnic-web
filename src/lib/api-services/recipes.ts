@@ -1,10 +1,10 @@
-import { isApiTokenExpiredError } from "@/lib/api-error";
-import { addRecipeToCartSchema, validateInput } from "@/lib/api-validation";
-import { parseCookbookPage } from "@/lib/parse-cookbook";
-import { extractProductNutritionRows, extractProductTileData } from "@/lib/parse-fusion-product";
-import { parseRecipeDetail } from "@/lib/parse-recipe-detail";
-import { buildPicnicClient } from "@/lib/picnic-client";
-import type { PicnicClientInstance } from "@/lib/picnic-client";
+import { isApiTokenExpiredError } from "@/lib/api/error";
+import { addRecipeToCartSchema, validateInput } from "@/lib/api/validation";
+import { parseCookbookPage } from "@/lib/parse/cookbook";
+import { extractProductNutritionRows, extractProductTileData } from "@/lib/parse/fusion-product";
+import { parseRecipeDetail } from "@/lib/parse/recipe-detail";
+import { buildPicnicClient } from "@/lib/picnic/client";
+import type { PicnicClientInstance } from "@/lib/picnic/client";
 import type { ApiErrorResponse } from "@/lib/types/api";
 import type { CountryCode } from "@/lib/types/locale";
 import type { RecipeDetailApiResponse, RecipeIngredient } from "@/lib/types/recipe";

@@ -11,8 +11,8 @@ import type {
   DeliverySummary,
   DeliveryTrackingApiResponse,
 } from "@/lib/types/delivery";
-import { formatPrice } from "@/lib/format-price";
-import { buildImageUrl } from "@/lib/image-url";
+import { formatPrice } from "@/lib/format/price";
+import { buildImageUrl } from "@/lib/media/image-url";
 
 import { ErrorView, LoadingView, useDocumentTitle } from "./browsing-components";
 import { useCountryCode, useTranslations } from "./country-context";

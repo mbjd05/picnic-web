@@ -9,9 +9,9 @@ import { ProductDescription } from "@/components/product-description";
 import { ProductHighlights } from "@/components/product-highlights";
 import { ProductInfoHeader } from "@/components/product-info-header";
 import { ProductLabels } from "@/components/product-labels";
-import { estimatedBundlePriceDelta } from "@/lib/cart-price-estimates";
-import { formatPrice } from "@/lib/format-price";
-import { buildImageUrl } from "@/lib/image-url";
+import { estimatedBundlePriceDelta } from "@/lib/cart/price-estimates";
+import { formatPrice } from "@/lib/format/price";
+import { buildImageUrl } from "@/lib/media/image-url";
 import type {
   AllergenInfo,
   BundleOption,

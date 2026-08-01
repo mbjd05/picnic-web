@@ -5,7 +5,7 @@ import { Link } from "@tanstack/react-router";
 import { Badge } from "@/components/badge";
 import { PriceDisplay } from "@/components/price-display";
 import { TrashIcon } from "@/components/trash-icon";
-import { buildImageUrl } from "@/lib/image-url";
+import { buildImageUrl } from "@/lib/media/image-url";
 import type { CartItem } from "@/lib/types/cart";
 
 import { useCountryCode, useTranslations } from "../../country-context";

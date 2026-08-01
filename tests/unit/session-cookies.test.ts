@@ -4,7 +4,7 @@ import {
   authCookieNameForCountry,
   parseAuthToken,
   parseCountryCookie,
-} from "@/lib/session-cookies";
+} from "@/lib/auth/session-cookies";
 
 describe("session cookies", () => {
   it("uses separate auth cookie names per Picnic region", () => {

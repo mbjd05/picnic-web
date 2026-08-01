@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import { Link } from "@tanstack/react-router";
 
-import { buildRecipeImageUrl } from "@/lib/image-url";
+import { buildRecipeImageUrl } from "@/lib/media/image-url";
 import type { RecipeItem } from "@/lib/types/recipe";
 
 import { useCountryCode, useTranslations } from "../../country-context";

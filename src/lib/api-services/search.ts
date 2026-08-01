@@ -1,8 +1,8 @@
-import { isApiTokenExpiredError } from "@/lib/api-error";
-import { extractProducts } from "@/lib/extract-products";
-import { getTranslations } from "@/lib/i18n";
-import { parseFusionSearchSections } from "@/lib/parse-fusion-search";
-import { buildPicnicClient } from "@/lib/picnic-client";
+import { isApiTokenExpiredError } from "@/lib/api/error";
+import { extractProducts } from "@/lib/extract/products";
+import { getTranslations } from "@/lib/i18n/translations";
+import { parseFusionSearchSections } from "@/lib/parse/fusion-search";
+import { buildPicnicClient } from "@/lib/picnic/client";
 import type { ApiErrorResponse } from "@/lib/types/api";
 import type { CountryCode } from "@/lib/types/locale";
 import type { SearchApiResponse, SearchSection } from "@/lib/types/search";

@@ -9,7 +9,7 @@ import {
   authCookieNameForCountry,
   parseAuthToken,
   parseCountryCookie,
-} from "@/lib/session-cookies";
+} from "@/lib/auth/session-cookies";
 import type { CountryCode } from "@/lib/types/locale";
 
 export function readSession(c: Context) {

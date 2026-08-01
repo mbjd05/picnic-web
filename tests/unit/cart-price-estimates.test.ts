@@ -4,7 +4,7 @@ import {
   estimatedBundleLineTotal,
   estimatedBundlePriceDelta,
   estimatedProgressPriceDelta,
-} from "@/lib/cart-price-estimates";
+} from "@/lib/cart/price-estimates";
 import type { BundleProgress, BundleThreshold } from "@/lib/types";
 
 describe("cart price estimates", () => {

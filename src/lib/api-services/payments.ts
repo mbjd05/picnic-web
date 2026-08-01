@@ -1,6 +1,6 @@
-import { checkoutCancelSchema, paymentOptionSchema, validateInput } from "@/lib/api-validation";
-import { getErrorMessage } from "@/lib/payment";
-import { buildPicnicClient } from "@/lib/picnic-client";
+import { checkoutCancelSchema, paymentOptionSchema, validateInput } from "@/lib/api/validation";
+import { getErrorMessage } from "@/lib/payment/options";
+import { buildPicnicClient } from "@/lib/picnic/client";
 import {
   createPreferredPaymentOption,
   mapPaymentError,
@@ -8,7 +8,7 @@ import {
   removePaymentOption,
   sendPicnicRequest,
   startCheckoutPayment,
-} from "@/lib/picnic-payment";
+} from "@/lib/payment/checkout";
 import type { ApiErrorResponse } from "@/lib/types/api";
 import type {
   CheckoutCancelResponse,

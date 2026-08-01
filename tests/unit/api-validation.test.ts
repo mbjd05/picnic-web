@@ -8,7 +8,7 @@ import {
   paymentOptionSchema,
   validateCartMutation,
   validateInput,
-} from "@/lib/api-validation";
+} from "@/lib/api/validation";
 
 describe("API validation schemas", () => {
   it("accepts valid cart mutations and rejects invalid actions", () => {

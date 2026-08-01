@@ -1,9 +1,9 @@
-import { isApiTokenExpiredError } from "@/lib/api-error";
+import { isApiTokenExpiredError } from "@/lib/api/error";
 import type { SubcategoriesApiResponse } from "@/lib/types/category";
-import { parseProductDetailPage } from "@/lib/parse-fusion-product";
-import { parseCategoryPageSections } from "@/lib/parse-fusion-search";
-import { extractPageTitle, parseSubcategoryPage } from "@/lib/parse-subcategories";
-import { buildPicnicClient } from "@/lib/picnic-client";
+import { parseProductDetailPage } from "@/lib/parse/fusion-product";
+import { parseCategoryPageSections } from "@/lib/parse/fusion-search";
+import { extractPageTitle, parseSubcategoryPage } from "@/lib/parse/subcategories";
+import { buildPicnicClient } from "@/lib/picnic/client";
 import type { ApiErrorResponse } from "@/lib/types/api";
 import type {
   CategoryProductsApiResponse,

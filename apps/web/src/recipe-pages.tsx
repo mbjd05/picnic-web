@@ -3,9 +3,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 
-import { formatEuroPrice } from "@/lib/format-price";
-import { getRecipeIngredientCount } from "@/lib/recipe-quantity";
-import { DEBOUNCE_DELAY_MS } from "@/lib/app-constants";
+import { formatEuroPrice } from "@/lib/format/price";
+import { getRecipeIngredientCount } from "@/lib/recipes/quantity";
+import { DEBOUNCE_DELAY_MS } from "@/lib/config/app-constants";
 import type {
   CookbookApiResponse,
   RecipeCategory,

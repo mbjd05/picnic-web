@@ -4,15 +4,15 @@ import { Link } from "@tanstack/react-router";
 
 import { Badge } from "@/components/badge";
 import { PriceDisplay } from "@/components/price-display";
-import { estimatedProgressPriceDelta } from "@/lib/cart-price-estimates";
+import { estimatedProgressPriceDelta } from "@/lib/cart/price-estimates";
 import type { CategoryItem, ShortcutItem } from "@/lib/types/category";
-import { buildImageUrl } from "@/lib/image-url";
-import { localizeApiSectionTitle } from "@/lib/localize-api-label";
+import { buildImageUrl } from "@/lib/media/image-url";
+import { localizeApiSectionTitle } from "@/lib/i18n/localize-api-label";
 import type { BundleProgress, BundleThreshold } from "@/lib/types/cart";
 import type { CountryCode } from "@/lib/types/locale";
 import type { Product } from "@/lib/types/product";
 import type { SearchSection } from "@/lib/types/search";
-import { buildSectionId } from "@/lib/app-constants";
+import { buildSectionId } from "@/lib/config/app-constants";
 
 import { useCartActions, useCartBundles, useCartQuantities } from "./cart-context";
 import { useCountryCode, useTranslations } from "./country-context";

@@ -1,4 +1,4 @@
-import { formatEuroPrice } from "@/lib/format-price";
+import { formatEuroPrice } from "@/lib/format/price";
 
 import { useTranslations } from "../../country-context";
 

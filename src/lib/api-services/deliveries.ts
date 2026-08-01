@@ -1,4 +1,4 @@
-import { isApiTokenExpiredError } from "@/lib/api-error";
+import { isApiTokenExpiredError } from "@/lib/api/error";
 import type {
   DeliveryActionApiResponse,
   DeliveryDetail,
@@ -6,8 +6,8 @@ import type {
   DeliverySummariesApiResponse,
   DeliveryTrackingApiResponse,
 } from "@/lib/types/delivery";
-import { parseDeliveryDetail, parseDeliverySummaries } from "@/lib/parse-deliveries";
-import { buildPicnicClient } from "@/lib/picnic-client";
+import { parseDeliveryDetail, parseDeliverySummaries } from "@/lib/parse/deliveries";
+import { buildPicnicClient } from "@/lib/picnic/client";
 import type { ApiErrorResponse } from "@/lib/types/api";
 import type { CountryCode } from "@/lib/types/locale";
 

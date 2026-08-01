@@ -9,7 +9,7 @@ import type {
   ShortcutItem,
   SubcategoriesApiResponse,
 } from "@/lib/types/category";
-import { parsePageIdFromDeepLink } from "@/lib/parse-deep-link";
+import { parsePageIdFromDeepLink } from "@/lib/parse/deep-link";
 import type { CategoryProductsApiResponse, SearchSection } from "@/lib/types/search";
 
 import { HeaderBottomBar } from "./app-shell";

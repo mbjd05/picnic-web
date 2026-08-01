@@ -1,8 +1,8 @@
 // PML traversal helpers specific to product detail page extraction.
 // Extracts PRICE nodes, highlight rows, label badges, allergen badges,
 // and nutrition rows.
-import type { PmlNode } from "./pml-helpers";
-import { collectMarkdowns, collectPropertyValues, stripColorTags } from "./pml-helpers";
+import type { PmlNode } from "@/lib/pml/helpers";
+import { collectMarkdowns, collectPropertyValues, stripColorTags } from "@/lib/pml/helpers";
 
 // ─── Price nodes ─────────────────────────────────────────────────────────────
 

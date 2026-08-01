@@ -13,10 +13,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { createPortal } from "react-dom";
 
-import { getTranslations } from "@/lib/i18n";
+import { getTranslations } from "@/lib/i18n/translations";
 import type { AuthApiResponse } from "@/lib/types/auth";
 import type { SuggestionsApiResponse } from "@/lib/types/search";
-import { MIN_SUGGESTION_LENGTH } from "@/lib/app-constants";
+import { MIN_SUGGESTION_LENGTH } from "@/lib/config/app-constants";
 import { SUPPORTED_COUNTRY_CODES, SUPPORTED_LANGUAGE_CODES } from "@/lib/types/locale";
 import type { CountryCode, LanguageCode } from "@/lib/types/locale";
 

@@ -2,13 +2,13 @@ import { useState } from "react";
 
 import { Link } from "@tanstack/react-router";
 
-import { formatEuroPrice } from "@/lib/format-price";
-import { getPreferredPaymentOption } from "@/lib/payment";
+import { formatEuroPrice } from "@/lib/format/price";
+import { getPreferredPaymentOption } from "@/lib/payment/options";
 import type { CheckoutPaymentResponse } from "@/lib/types/payment";
 
 import { useTranslations } from "../../country-context";
-import { usePaymentProfile } from "../payment/use-payment-profile";
 import { ApiClientError, fetchJson } from "../../lib/api-client";
+import { usePaymentProfile } from "../payment/use-payment-profile";
 
 const PAYMENT_BANK_STORAGE_KEY = "picnic_payment_option_banks";
 

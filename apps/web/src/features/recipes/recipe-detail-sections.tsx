@@ -2,9 +2,9 @@ import { useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 
 import { NutritionTable } from "@/components/nutrition-table";
-import { formatEuroPrice } from "@/lib/format-price";
-import { buildImageUrl, buildRecipeImageUrl } from "@/lib/image-url";
-import { getRecipeIngredientCount } from "@/lib/recipe-quantity";
+import { formatEuroPrice } from "@/lib/format/price";
+import { buildImageUrl, buildRecipeImageUrl } from "@/lib/media/image-url";
+import { getRecipeIngredientCount } from "@/lib/recipes/quantity";
 import type { AllergenInfo } from "@/lib/types/product";
 import type { CountryCode } from "@/lib/types/locale";
 import type { RecipeDetail, RecipeIngredient } from "@/lib/types/recipe";

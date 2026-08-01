@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useSearch } from "@tanstack/react-router";
 
-import { estimatedBundleLineTotal } from "@/lib/cart-price-estimates";
+import { estimatedBundleLineTotal } from "@/lib/cart/price-estimates";
 import type { BundleProgress, CartData, CartItem } from "@/lib/types/cart";
 
 import { ErrorView, LoadingView, useDocumentTitle } from "./browsing-components";

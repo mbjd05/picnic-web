@@ -1,4 +1,4 @@
-import type { LanguageCode } from "./types/locale";
+import type { LanguageCode } from "@/lib/types/locale";
 
 const translations = {
   NL: {

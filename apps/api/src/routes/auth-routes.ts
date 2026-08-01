@@ -13,7 +13,7 @@ import {
   switchCountrySchema,
   twoFactorVerifySchema,
   validateInput,
-} from "@/lib/api-validation";
+} from "@/lib/api/validation";
 
 import { authJson } from "../lib/http";
 import {

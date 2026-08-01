@@ -1,4 +1,4 @@
-import { renderPmlMarkdown } from "@/lib/parse-pml-markdown";
+import { renderPmlMarkdown } from "@/lib/pml/parse-markdown";
 import type { ProductHighlightItem } from "@/lib/types/product";
 
 type ProductHighlightsProps = {

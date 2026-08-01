@@ -9,7 +9,7 @@ import {
   sendDeliveryInvoiceEmailService,
   setDeliveryRatingService,
 } from "@/lib/api-services/deliveries";
-import { deliveryRatingSchema, validateInput } from "@/lib/api-validation";
+import { deliveryRatingSchema, validateInput } from "@/lib/api/validation";
 
 import { authenticatedJson } from "../lib/authenticated-handler";
 import { authRequiredResponse, jsonStatus } from "../lib/http";

@@ -1,4 +1,4 @@
-import { renderMarkdownBold } from "@/lib/render-markdown-bold";
+import { renderMarkdownBold } from "@/lib/format/render-markdown-bold";
 
 type ProductDescriptionProps = {
   description: string | null;

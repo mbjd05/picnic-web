@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { getTranslations } from "@/lib/i18n";
-import { localizeApiSectionTitle } from "@/lib/localize-api-label";
+import { localizeApiSectionTitle } from "@/lib/i18n/localize-api-label";
+import { getTranslations } from "@/lib/i18n/translations";
 
 describe("API label localization", () => {
   it("localizes known generic section labels to the display language", () => {

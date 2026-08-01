@@ -1,16 +1,16 @@
 // Parsers for content/promotional pages (campaign pages, "Nieuw" pages,
 // theme pages). Extracts product sections with headers from PML trees
 // that don't follow the standard search or category-tree layouts.
-import { containerToProduct } from "./parse-fusion-search";
+import { containerToProduct } from "@/lib/parse/fusion-search";
 import {
   collectMarkdowns,
   findNodeByIdPrefix,
   findNodeByIdSubstring,
   findSellingUnitContainers,
   stripColorTags,
-} from "./pml-helpers";
-import type { Product } from "./types/product";
-import type { SearchSection } from "./types/search";
+} from "@/lib/pml/helpers";
+import type { Product } from "@/lib/types/product";
+import type { SearchSection } from "@/lib/types/search";
 
 type PmlRecord = Record<string, unknown>;
 
