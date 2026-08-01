@@ -6,7 +6,7 @@ import type { DeliverySlotData, DeliverySlotPickerData, SlotDayGroup } from "@/t
 import { formatTime } from "@/lib/format/delivery-window";
 import type { CartData } from "@/types/cart";
 
-import { useTranslations } from "../../app/providers/country-context";
+import { useTranslations } from "../../providers/country-context";
 import { fetchJson } from "../../lib/api-client";
 import { queryKeys, queryStaleTime } from "../../lib/query-config";
 

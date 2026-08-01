@@ -6,7 +6,7 @@ import { formatEuroPrice } from "@/lib/format/price";
 import { getPreferredPaymentOption } from "@/lib/payment/options";
 import type { CheckoutPaymentResponse } from "@/types/payment";
 
-import { useTranslations } from "../../app/providers/country-context";
+import { useTranslations } from "../../providers/country-context";
 import { ApiClientError, fetchJson } from "../../lib/api-client";
 import { usePaymentProfile } from "../../hooks/use-payment-profile";
 

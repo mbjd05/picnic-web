@@ -20,8 +20,8 @@ The parser and service layers are already in decent shape:
 - `src/lib/parse/*` keeps raw upstream response parsing out of UI code.
 - `src/lib` is grouped by shared concern instead of a flat technical list.
 - `src/components/*` contains several narrow presentational components.
-- `apps/web/src/app`, `features`, `components`, `hooks`, and `stores` now follow the same broad
-  layout guidance as Bulletproof React.
+- `apps/web/src/app`, `components`, `features`, `hooks`, `providers`, and `stores` now follow the
+  same broad layout guidance as Bulletproof React.
 
 The largest remaining SOLID pressure is in oversized feature pages and route/UI code that still
 repeats low-level fetch/session wiring.
@@ -57,11 +57,13 @@ repeats low-level fetch/session wiring.
   - [x] Keep imports direct, e.g. `@/types/cart`, without `index.ts` barrels.
 - [x] Group top-level `src/lib` helpers into concern folders after checking external project
       structure guidance.
-- [x] Move web app shell/router/providers into `apps/web/src/app/`.
+- [x] Move web app shell/router into `apps/web/src/app/`.
+- [x] Move reusable web providers into `apps/web/src/providers/` so features do not import from
+      `app`.
 - [x] Move web feature pages into their owning `apps/web/src/features/*/` folders.
 - [x] Move shared web hooks and stores into `apps/web/src/hooks/` and `apps/web/src/stores/`.
 - [x] Move reusable web page state components into `apps/web/src/components/`.
-- [x] Add an ESLint guard against sibling feature imports.
+- [x] Add ESLint guards against sibling feature imports and feature/shared imports from `app`.
 - [x] Split cart context interfaces after cart extraction.
 - [x] Add Worker authenticated route helper where it reduces repeated route boilerplate.
 
@@ -190,8 +192,8 @@ between two standards.
 
 ### Cart Context Interface Split
 
-`apps/web/src/app/providers/cart-context.tsx` still owns the cart state provider, but consumers now
-use narrower hooks:
+`apps/web/src/providers/cart-context.tsx` still owns the cart state provider, but consumers now use
+narrower hooks:
 
 - `useCartQuantities`
 - `useCartTotals`
@@ -223,11 +225,8 @@ apps/web/src
     app-surfaces.tsx
     router.tsx
     router-surfaces.tsx
-    providers/
-      cart-context.tsx
-      country-context.tsx
-      theme-context.tsx
   components/
+    header-bottom-bar.tsx
     page-state.tsx
   features/
     auth/
@@ -263,6 +262,10 @@ apps/web/src
     use-wheel-quantity-adjust.ts
   stores/
     cart-ui-store.ts
+  providers/
+    cart-context.tsx
+    country-context.tsx
+    theme-context.tsx
 
 apps/api/src
   routes/
@@ -314,9 +317,9 @@ src/types
 
 Keep imports direct, e.g. `@/lib/parse/cart`, `@/types/product`, or
 `apps/web/src/hooks/use-cart-query`. Avoid `index.ts` barrels unless a future tool or package
-boundary gives a concrete reason to add one. Feature modules must not import sibling feature
-modules directly; shared web code belongs in `apps/web/src/components`, `hooks`, `stores`, or the
-repo-level shared `src/lib`/`src/types` folders.
+boundary gives a concrete reason to add one. Feature modules must not import sibling feature modules
+or `apps/web/src/app` directly; shared web code belongs in `apps/web/src/components`, `hooks`,
+`providers`, `stores`, or the repo-level shared `src/lib`/`src/types` folders.
 
 ## 1. Single Responsibility Principle
 
@@ -328,7 +331,7 @@ Status: Improved, still partial.
   reconciliation, toast handling, and page state in one place.
 - `apps/web/src/recipe-pages.tsx` mixes cookbook browsing, saved recipes, search, recipe detail,
   ingredient scaling, and add-to-cart behavior.
-- `apps/web/src/app-shell.tsx` still mixes shell layout, search, cart link, locale/theme menus, and
+- `apps/web/src/app/app-shell.tsx` still mixes shell layout, search, cart link, locale/theme menus, and
   menu content, although mobile panel behavior is now separated into a hook/component.
 
 ### Target Improvements

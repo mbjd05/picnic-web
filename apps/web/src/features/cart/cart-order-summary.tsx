@@ -1,7 +1,7 @@
 import { formatPrice } from "@/lib/format/price";
 import type { DepositEntry, FeeEntry } from "@/types/cart";
 
-import { useTranslations } from "../../app/providers/country-context";
+import { useTranslations } from "../../providers/country-context";
 
 export function CartOrderSummary({
   totalPrice,

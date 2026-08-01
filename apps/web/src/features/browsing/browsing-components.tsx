@@ -14,12 +14,8 @@ import type { Product } from "@/types/product";
 import type { SearchSection } from "@/types/search";
 import { buildSectionId } from "@/lib/config/app-constants";
 
-import {
-  useCartActions,
-  useCartBundles,
-  useCartQuantities,
-} from "../../app/providers/cart-context";
-import { useCountryCode, useTranslations } from "../../app/providers/country-context";
+import { useCartActions, useCartBundles, useCartQuantities } from "../../providers/cart-context";
+import { useCountryCode, useTranslations } from "../../providers/country-context";
 import { LoadingView } from "../../components/page-state";
 import { useWheelQuantityAdjust } from "../../hooks/use-wheel-quantity-adjust";
 

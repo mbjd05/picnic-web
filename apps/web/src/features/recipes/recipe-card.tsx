@@ -5,7 +5,7 @@ import { Link } from "@tanstack/react-router";
 import { buildRecipeImageUrl } from "@/lib/media/image-url";
 import type { RecipeItem } from "@/types/recipe";
 
-import { useCountryCode, useTranslations } from "../../app/providers/country-context";
+import { useCountryCode, useTranslations } from "../../providers/country-context";
 import { BookmarkIcon } from "./recipe-icons";
 
 const PLACEHOLDER = "/placeholder-product.svg";

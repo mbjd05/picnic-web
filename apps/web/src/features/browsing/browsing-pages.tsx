@@ -12,11 +12,11 @@ import type {
 import { parsePageIdFromDeepLink } from "@/lib/parse/deep-link";
 import type { CategoryProductsApiResponse, SearchSection } from "@/types/search";
 
-import { HeaderBottomBar } from "../../app/app-shell";
+import { HeaderBottomBar } from "../../components/header-bottom-bar";
 import { BackButton, ErrorView, LoadingView } from "../../components/page-state";
 import { useDocumentTitle } from "../../hooks/use-document-title";
 import { CategoryBrowser, ProductGrid, ResultsView, SectionNavBar } from "./browsing-components";
-import { useCountryCode, useTranslations } from "../../app/providers/country-context";
+import { useCountryCode, useTranslations } from "../../providers/country-context";
 import { useProductSearch } from "../../hooks/use-product-search";
 import { fetchJson } from "../../lib/api-client";
 import { queryGcTime, queryKeys, queryStaleTime } from "../../lib/query-config";

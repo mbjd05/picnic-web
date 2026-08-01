@@ -4,7 +4,7 @@ import { formatPrice } from "@/lib/format/price";
 import { buildImageUrl } from "@/lib/media/image-url";
 import type { SliderProduct } from "@/types/product";
 
-import { useCountryCode } from "../../app/providers/country-context";
+import { useCountryCode } from "../../providers/country-context";
 
 export function CartProductSlider({
   title,

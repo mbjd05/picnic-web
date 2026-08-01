@@ -1,17 +1,7 @@
-import {
-  type FormEvent,
-  type KeyboardEvent,
-  type ReactNode,
-  createContext,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from "react";
 
 import { useQuery } from "@tanstack/react-query";
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import { createPortal } from "react-dom";
 
 import { getTranslations } from "@/lib/i18n/translations";
 import type { AuthApiResponse } from "@/types/auth";
@@ -20,14 +10,15 @@ import { MIN_SUGGESTION_LENGTH } from "@/lib/config/app-constants";
 import { SUPPORTED_COUNTRY_CODES, SUPPORTED_LANGUAGE_CODES } from "@/types/locale";
 import type { CountryCode, LanguageCode } from "@/types/locale";
 
-import { CartProvider, useCartTotals } from "./providers/cart-context";
+import { HeaderBottomBarProvider } from "../components/header-bottom-bar";
+import { CartProvider, useCartTotals } from "../providers/cart-context";
 import {
   CountryProvider,
   useCountryCode,
   useLanguageCode,
   useSwitchCountry,
   useSwitchLanguage,
-} from "./providers/country-context";
+} from "../providers/country-context";
 import { fetchJson } from "../lib/api-client";
 import {
   CartIcon,
@@ -42,9 +33,8 @@ import {
   useMobileHeaderMenuPanel,
 } from "../features/shell/mobile-header-menu-panel";
 import { queryKeys, queryStaleTime } from "../lib/query-config";
-import { ThemeProvider, type ThemePreference, useTheme } from "./providers/theme-context";
+import { ThemeProvider, type ThemePreference, useTheme } from "../providers/theme-context";
 
-const HeaderBottomBarContext = createContext<HTMLElement | null>(null);
 const SUGGESTION_DEBOUNCE_MS = 150;
 const SEARCH_HISTORY_STORAGE_KEY = "picnic_search_history";
 const MAX_SEARCH_HISTORY_ITEMS = 6;
@@ -73,11 +63,6 @@ function writeSearchHistory(searches: string[]) {
   } catch {
     // Search history is a convenience only; ignore storage failures.
   }
-}
-
-export function HeaderBottomBar({ children }: { children: ReactNode }) {
-  const host = useContext(HeaderBottomBarContext);
-  return host ? createPortal(children, host) : null;
 }
 
 function formatCartPrice(cents: number): string {
@@ -690,12 +675,12 @@ export function AuthenticatedShell() {
     <ThemeProvider>
       <CountryProvider>
         <CartProvider>
-          <HeaderBottomBarContext.Provider value={bottomBarHost}>
+          <HeaderBottomBarProvider value={bottomBarHost}>
             <div className="flex min-h-screen flex-col">
               <AppHeader setBottomBarHost={setBottomBarHost} />
               <Outlet />
             </div>
-          </HeaderBottomBarContext.Provider>
+          </HeaderBottomBarProvider>
         </CartProvider>
       </CountryProvider>
     </ThemeProvider>

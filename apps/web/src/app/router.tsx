@@ -15,7 +15,7 @@ import {
   ShortcutProductsPage,
   SubcategoryProductsPage,
 } from "../features/browsing/browsing-pages";
-import { CountryProvider } from "./providers/country-context";
+import { CountryProvider } from "../providers/country-context";
 import { ApiClientError } from "../lib/api-client";
 import { LoginPage } from "../features/auth/login-page";
 import { AppShellError, RootNotFound } from "./router-surfaces";

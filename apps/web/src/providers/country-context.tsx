@@ -12,7 +12,7 @@ import type { CountryCode, LanguageCode } from "@/types/locale";
 import type { SwitchCountryResponse } from "@/types/auth";
 import { getTranslations } from "@/lib/i18n/translations";
 
-import { fetchJson } from "../../lib/api-client";
+import { fetchJson } from "../lib/api-client";
 
 const COUNTRY_COOKIE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 const CountryContext = createContext<CountryCode>(DEFAULT_COUNTRY_CODE);

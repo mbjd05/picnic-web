@@ -9,7 +9,7 @@ import type { AllergenInfo } from "@/types/product";
 import type { CountryCode } from "@/types/locale";
 import type { RecipeDetail, RecipeIngredient } from "@/types/recipe";
 
-import { useCountryCode, useTranslations } from "../../app/providers/country-context";
+import { useCountryCode, useTranslations } from "../../providers/country-context";
 
 const PLACEHOLDER = "/placeholder-product.svg";
 

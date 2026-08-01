@@ -1,7 +1,7 @@
 import { renderMarkdownBold } from "@/lib/format/render-markdown-bold";
 import type { RecipeDetail } from "@/types/recipe";
 
-import { useTranslations } from "../../app/providers/country-context";
+import { useTranslations } from "../../providers/country-context";
 
 export function RecipeStepsSection({ recipe }: { recipe: RecipeDetail }) {
   const t = useTranslations();

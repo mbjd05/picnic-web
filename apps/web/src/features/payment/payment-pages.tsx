@@ -13,7 +13,7 @@ import type {
 
 import { ErrorView, LoadingView } from "../../components/page-state";
 import { useDocumentTitle } from "../../hooks/use-document-title";
-import { useTranslations } from "../../app/providers/country-context";
+import { useTranslations } from "../../providers/country-context";
 import { usePaymentProfile } from "../../hooks/use-payment-profile";
 import { ApiClientError, fetchJson } from "../../lib/api-client";
 import { queryKeys } from "../../lib/query-config";

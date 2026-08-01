@@ -10,8 +10,8 @@ import type { CookbookApiResponse, RecipeCategory, RecipeDetail, RecipeItem } fr
 
 import { ErrorView, LoadingView } from "../../components/page-state";
 import { useDocumentTitle } from "../../hooks/use-document-title";
-import { useCartActions } from "../../app/providers/cart-context";
-import { useCountryCode, useTranslations } from "../../app/providers/country-context";
+import { useCartActions } from "../../providers/cart-context";
+import { useCountryCode, useTranslations } from "../../providers/country-context";
 import { CategoryDropdown, type RecipeCategoryOption } from "./category-dropdown";
 import { RecipeAddToCartPanel } from "./recipe-add-to-cart-panel";
 import { RecipeCard } from "./recipe-card";

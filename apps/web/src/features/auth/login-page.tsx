@@ -8,7 +8,7 @@ import type { AuthApiResponse, SwitchCountryResponse } from "@/types/auth";
 import type { CountryCode } from "@/types/locale";
 import { SUPPORTED_COUNTRY_CODES } from "@/types/locale";
 
-import { useCountryCode } from "../../app/providers/country-context";
+import { useCountryCode } from "../../providers/country-context";
 import { ApiClientError, fetchJson } from "../../lib/api-client";
 
 const DEFAULT_REDIRECT = "/";

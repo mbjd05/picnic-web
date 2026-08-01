@@ -22,8 +22,8 @@ import type {
 
 import { BackButton, ErrorView, LoadingView } from "../../components/page-state";
 import { useDocumentTitle } from "../../hooks/use-document-title";
-import { useCartActions, useCartQuantities } from "../../app/providers/cart-context";
-import { useCountryCode, useTranslations } from "../../app/providers/country-context";
+import { useCartActions, useCartQuantities } from "../../providers/cart-context";
+import { useCountryCode, useTranslations } from "../../providers/country-context";
 import { ApiClientError, fetchJson } from "../../lib/api-client";
 import { queryKeys, queryStaleTime } from "../../lib/query-config";
 import { useWheelQuantityAdjust } from "../../hooks/use-wheel-quantity-adjust";

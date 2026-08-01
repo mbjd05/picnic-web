@@ -8,8 +8,8 @@ import type { BundleProgress, CartData, CartItem } from "@/types/cart";
 
 import { ErrorView, LoadingView } from "../../components/page-state";
 import { useDocumentTitle } from "../../hooks/use-document-title";
-import { useCartActions, useCartBundles } from "../../app/providers/cart-context";
-import { useTranslations } from "../../app/providers/country-context";
+import { useCartActions, useCartBundles } from "../../providers/cart-context";
+import { useTranslations } from "../../providers/country-context";
 import { CartCheckoutCta } from "./cart-checkout-cta";
 import { CartItemCard } from "./cart-item-card";
 import { CartOrderSummary } from "./cart-order-summary";

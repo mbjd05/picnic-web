@@ -8,7 +8,7 @@ import { TrashIcon } from "@/components/trash-icon";
 import { buildImageUrl } from "@/lib/media/image-url";
 import type { CartItem } from "@/types/cart";
 
-import { useCountryCode, useTranslations } from "../../app/providers/country-context";
+import { useCountryCode, useTranslations } from "../../providers/country-context";
 import { useWheelQuantityAdjust } from "../../hooks/use-wheel-quantity-adjust";
 
 export function CartItemCard({

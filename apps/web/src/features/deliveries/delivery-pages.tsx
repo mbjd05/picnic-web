@@ -16,7 +16,7 @@ import { buildImageUrl } from "@/lib/media/image-url";
 
 import { ErrorView, LoadingView } from "../../components/page-state";
 import { useDocumentTitle } from "../../hooks/use-document-title";
-import { useCountryCode, useTranslations } from "../../app/providers/country-context";
+import { useCountryCode, useTranslations } from "../../providers/country-context";
 import { ApiClientError, fetchJson } from "../../lib/api-client";
 import { queryKeys, queryStaleTime } from "../../lib/query-config";
 

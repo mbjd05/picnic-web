@@ -2,7 +2,7 @@ import { useEffect } from "react";
 
 import { Link } from "@tanstack/react-router";
 
-import { useCountryCode, useTranslations } from "./providers/country-context";
+import { useCountryCode, useTranslations } from "../providers/country-context";
 
 export function LoadingSurface({ title }: { title?: string }) {
   const t = useTranslations();
