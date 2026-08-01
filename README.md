@@ -1,12 +1,10 @@
-[![GitHub license](https://img.shields.io/badge/license-AGPL3.0-blue.svg?style=flat-square)](https://github.com/MRVDH/picnic-web/blob/master/LICENSE) [![Buy me an Affligem blond](https://img.shields.io/badge/buy%20me%20an-affligem%20blond-orange?style=flat-square)](https://www.buymeacoffee.com/MRVDH) [![MAAR3267](https://img.shields.io/badge/picnic%20discount-MAAR3267-E1171E?style=flat-square)](https://picnic.app/nl/vriendenkorting/MAAR3267)
+[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue.svg?style=flat-square)](./LICENSE)
 
 # Picnic Web
 
 Unofficial web interface for the online supermarket Picnic. It uses the npm library [picnic-api](https://github.com/MRVDH/picnic-api) and runs as a Vite/React app served by a Hono API on Cloudflare Workers.
 
 This project is independent and is not affiliated with Picnic.
-
-<img alt="image" src="https://github.com/user-attachments/assets/774c2fd5-4c0e-4bcf-b789-a51c5b93a996" />
 
 ## Development
 
@@ -39,6 +37,12 @@ Validate the project:
 pnpm validate
 ```
 
+Format the project:
+
+```powershell
+pnpm format
+```
+
 Deploy the Worker and static web assets:
 
 ```powershell
@@ -60,6 +64,13 @@ pnpm smoke:api:auth
 ```
 
 Do not commit `.env`; it is intentionally ignored.
+
+## Security And Privacy
+
+- Picnic credentials are used only to obtain a Picnic auth token.
+- Auth tokens are stored in HTTP-only cookies by the Worker API.
+- Do not commit `.env`, `.dev.vars`, local logs, build output, screenshots, or Playwright artifacts.
+- Report sensitive issues privately according to [SECURITY.md](./SECURITY.md).
 
 ## FAQ
 

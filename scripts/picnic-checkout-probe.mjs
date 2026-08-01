@@ -11,7 +11,7 @@ Environment:
   $env:PICNIC_TOKEN="YOUR_AUTH_KEY"
   $env:PICNIC_COUNTRY_CODE="NL"
   $env:PICNIC_API_VERSION="17"
-  $env:PICNIC_APP_RETURN_URL="http://localhost:3000/cart/payment-return"
+  $env:PICNIC_APP_RETURN_URL="http://127.0.0.1:8787/cart/payment-return"
 
 Read-only checks:
 
@@ -43,13 +43,13 @@ Checkout/payment:
 
   node .\scripts\picnic-checkout-probe.mjs checkout-start
 
-  $env:PICNIC_APP_RETURN_URL="http://localhost:3000/cart/payment-return"; node .\scripts\picnic-checkout-probe.mjs checkout-payment
+  $env:PICNIC_APP_RETURN_URL="http://127.0.0.1:8787/cart/payment-return"; node .\scripts\picnic-checkout-probe.mjs checkout-payment
 
-  $env:PICNIC_APP_RETURN_URL="http://localhost:3000/cart/payment-return"; node .\scripts\picnic-checkout-probe.mjs checkout-payment-safe
+  $env:PICNIC_APP_RETURN_URL="http://127.0.0.1:8787/cart/payment-return"; node .\scripts\picnic-checkout-probe.mjs checkout-payment-safe
 
-  $env:PICNIC_APP_RETURN_URL="http://localhost:3000/cart/payment-return"; node .\scripts\picnic-checkout-probe.mjs full-payment-flow IDEAL asn
+  $env:PICNIC_APP_RETURN_URL="http://127.0.0.1:8787/cart/payment-return"; node .\scripts\picnic-checkout-probe.mjs full-payment-flow IDEAL asn
 
-  $env:PICNIC_APP_RETURN_URL="http://localhost:3000/cart/payment-return"; node .\scripts\picnic-checkout-probe.mjs full-payment-flow IDEAL asn --keep
+  $env:PICNIC_APP_RETURN_URL="http://127.0.0.1:8787/cart/payment-return"; node .\scripts\picnic-checkout-probe.mjs full-payment-flow IDEAL asn --keep
 
 Cancellation/status:
 
@@ -324,7 +324,7 @@ async function startCheckoutPayment() {
   print(checkout);
 
   const appReturnUrl =
-    process.env.PICNIC_APP_RETURN_URL ?? "http://localhost:3000/cart/payment-return";
+    process.env.PICNIC_APP_RETURN_URL ?? "http://127.0.0.1:8787/cart/payment-return";
 
   console.error(
     "About to call POST /cart/checkout/initiate_payment using order_id:",

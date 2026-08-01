@@ -14,7 +14,7 @@ import { ApiClientError, fetchJson } from "../../lib/api-client";
 
 const DEFAULT_REDIRECT = "/";
 const PICNIC_API_NPM_URL = "https://www.npmjs.com/package/picnic-api";
-const GITHUB_PROJECT_URL = "https://github.com/MRVDH/picnic-web";
+const GITHUB_PROJECT_URL = "https://github.com/mbjd05/picnic-web";
 
 type LoginMode = "credentials" | "token";
 
