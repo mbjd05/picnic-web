@@ -1,33 +1,33 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Dispatch, SetStateAction } from "react";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 
-import { NutritionTable } from "@/components/nutrition-table";
 import { formatEuroPrice } from "@/lib/format-price";
-import { buildImageUrl, buildRecipeImageUrl } from "@/lib/image-url";
 import { getRecipeIngredientCount } from "@/lib/recipe-quantity";
-import { renderMarkdownBold } from "@/lib/render-markdown-bold";
 import { DEBOUNCE_DELAY_MS } from "@/lib/types";
-import type {
-  AllergenInfo,
-  CookbookApiResponse,
-  CountryCode,
-  RecipeCategory,
-  RecipeDetail,
-  RecipeIngredient,
-  RecipeItem,
-} from "@/lib/types";
+import type { CookbookApiResponse, RecipeCategory, RecipeDetail, RecipeItem } from "@/lib/types";
 
 import { ErrorView, LoadingView, useDocumentTitle } from "./browsing-components";
 import { useCart } from "./cart-context";
 import { useCountryCode, useTranslations } from "./country-context";
+import { CategoryDropdown, type RecipeCategoryOption } from "./features/recipes/category-dropdown";
+import { RecipeAddToCartPanel } from "./features/recipes/recipe-add-to-cart-panel";
+import { RecipeCard } from "./features/recipes/recipe-card";
+import {
+  IngredientSection,
+  RecipeAllergenSection,
+  RecipeHeroImage,
+  RecipeNutritionSection,
+} from "./features/recipes/recipe-detail-sections";
+import { BookmarkIcon } from "./features/recipes/recipe-icons";
+import { RecipeSaveButton } from "./features/recipes/recipe-save-button";
+import { RecipeSearchInput } from "./features/recipes/recipe-search-input";
+import { RecipeStepsSection } from "./features/recipes/recipe-steps-section";
 import { fetchJson } from "./lib/api-client";
 import { queryKeys, queryStaleTime } from "./lib/query-config";
 
 const PAGE_SIZE = 24;
-const PLACEHOLDER = "/placeholder-product.svg";
 
 type RecipesState =
   | { status: "loading" }
@@ -345,181 +345,6 @@ export function CookbookPage() {
   );
 }
 
-function RecipeCard({
-  recipe,
-  isSaved,
-  isSaving,
-  onToggleSaved,
-}: {
-  recipe: RecipeItem;
-  isSaved: boolean;
-  isSaving: boolean;
-  onToggleSaved: (recipe: RecipeItem) => void;
-}) {
-  const countryCode = useCountryCode();
-  const t = useTranslations();
-  const [imageSrc, setImageSrc] = useState(
-    recipe.imageId ? buildRecipeImageUrl(recipe.imageId, countryCode) : PLACEHOLDER
-  );
-  return (
-    <div className="group relative h-full">
-      <div className="border-card-border bg-card-bg flex h-full flex-col overflow-hidden rounded-lg border shadow-sm transition-shadow group-hover:shadow-md">
-        <div className="relative h-40 w-full bg-gray-50">
-          <img
-            src={imageSrc}
-            alt={recipe.name}
-            loading="lazy"
-            className="h-full w-full object-cover"
-            onError={() => setImageSrc(PLACEHOLDER)}
-          />
-        </div>
-        <div className="flex flex-1 flex-col gap-1 p-3">
-          <h3 className="text-text-dark line-clamp-2 text-sm leading-snug font-medium">
-            {recipe.name}
-          </h3>
-          {recipe.cookingTimeMinutes !== null ? (
-            <p className="text-text-muted text-xs">
-              {recipe.cookingTimeMinutes} {t.cookingTimeMinutes}
-            </p>
-          ) : null}
-        </div>
-      </div>
-      <Link
-        to="/recipe/$id"
-        params={{ id: recipe.id }}
-        className="absolute inset-0 z-10 rounded-lg"
-        aria-label={recipe.name}
-      />
-      <button
-        type="button"
-        onClick={() => onToggleSaved(recipe)}
-        disabled={isSaving}
-        className={`absolute top-2 right-2 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 shadow-sm transition-colors hover:bg-white active:opacity-70 disabled:opacity-50 ${isSaved ? "text-picnic-red" : "text-text-muted"}`}
-        aria-label={isSaved ? t.unsaveRecipe : t.saveRecipe}
-      >
-        <BookmarkIcon filled={isSaved} />
-      </button>
-    </div>
-  );
-}
-
-type Option = { id: string | null; name: string; section?: string; count?: number };
-
-function CategoryDropdown({
-  options,
-  value,
-  onChange,
-  searchPlaceholder,
-  disabled,
-}: {
-  options: Option[];
-  value: string | null;
-  onChange: (id: string | null) => void;
-  searchPlaceholder: string;
-  disabled: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const selected = options.find((option) => option.id === value) ?? options[0];
-  const normalized = query.trim().toLowerCase();
-  const filtered = normalized
-    ? options.filter((option) =>
-        [option.name, option.section ?? ""].some((text) => text.toLowerCase().includes(normalized))
-      )
-    : options;
-  return (
-    <div className="relative inline-block min-w-48">
-      <button
-        type="button"
-        onClick={() => !disabled && setOpen((current) => !current)}
-        disabled={disabled}
-        className={`flex w-full items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium shadow-sm transition-colors ${disabled ? "cursor-not-allowed opacity-40" : "hover:border-gray-400"}`}
-      >
-        <span className="text-foreground truncate">{selected.name}</span>
-        <span aria-hidden="true">⌄</span>
-      </button>
-      {open ? (
-        <div className="absolute left-0 z-50 mt-1.5 w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
-          <div className="border-b border-gray-100 p-2">
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder={searchPlaceholder}
-              className="focus:ring-picnic-red w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2"
-            />
-          </div>
-          <ul className="max-h-72 overflow-y-auto py-1">
-            {filtered.map((option, index) => {
-              const previous = filtered[index - 1];
-              const showSection = option.section && option.section !== previous?.section;
-              const isSelected = option.id === value;
-              return (
-                <li key={option.id ?? "__featured__"}>
-                  {showSection ? (
-                    <div className="text-text-muted px-4 pt-3 pb-1 text-[11px] font-semibold tracking-wide uppercase">
-                      {option.section}
-                    </div>
-                  ) : null}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onChange(option.id);
-                      setOpen(false);
-                      setQuery("");
-                    }}
-                    className={`flex w-full items-center justify-between px-4 py-2 text-left text-sm transition-colors ${isSelected ? "text-picnic-red bg-red-50 font-semibold" : "text-foreground hover:bg-gray-50"}`}
-                  >
-                    <span>{option.name}</span>
-                    {option.count !== undefined ? (
-                      <span className="ml-2 text-xs text-gray-400">{option.count}</span>
-                    ) : null}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function RecipeSearchInput({
-  value,
-  placeholder,
-  onChange,
-}: {
-  value: string;
-  placeholder: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div className="relative flex-1 sm:max-w-xs">
-      <input
-        type="search"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-        className="focus:border-picnic-red focus:ring-picnic-red w-full rounded-xl border border-gray-200 bg-white py-2.5 pr-4 pl-4 text-sm shadow-sm transition-colors placeholder:text-gray-400 focus:ring-2 focus:outline-none"
-      />
-    </div>
-  );
-}
-
-function BookmarkIcon({ filled, className = "h-5 w-5" }: { filled: boolean; className?: string }) {
-  return (
-    <svg viewBox="0 0 20 20" className={className} aria-hidden="true">
-      <path
-        d="M5.75 3.5h8.5v13l-4.25-2.7-4.25 2.7v-13Z"
-        fill={filled ? "currentColor" : "none"}
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 type RecipePageState =
   | { status: "loading" }
   | { status: "success"; recipe: RecipeDetail }
@@ -719,64 +544,26 @@ export function RecipeDetailPage() {
         ) : (
           <div className="aspect-video w-full bg-gray-100" />
         )}
-        <button
-          type="button"
-          onClick={() => void handleToggleSaved()}
-          disabled={isSavingRecipe}
-          className={`absolute top-3 right-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/95 shadow-sm ${isSaved ? "text-picnic-red" : "text-text-muted"}`}
-          aria-label={isSaved ? t.unsaveRecipe : t.saveRecipe}
-        >
-          <BookmarkIcon filled={isSaved} />
-        </button>
+        <RecipeSaveButton
+          isSaved={isSaved}
+          isSaving={isSavingRecipe}
+          onToggle={() => void handleToggleSaved()}
+        />
       </div>
       <h1 className="text-foreground mb-3 text-2xl leading-tight font-bold">{recipe.name}</h1>
-      <div className="text-text-muted mb-6 flex flex-col gap-3 text-sm sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
-        <span className="flex items-center gap-2">
-          {t.recipePortions}:{" "}
-          <button
-            type="button"
-            onClick={() => setPortions((p) => Math.max(1, p - 1))}
-            className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-300 text-xs"
-          >
-            −
-          </button>
-          <span className="text-foreground mx-1 font-medium">{portions}</span>
-          <button
-            type="button"
-            onClick={() => setPortions((p) => p + 1)}
-            className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-300 text-xs"
-          >
-            +
-          </button>
-        </span>
-        {pricePerServing ? (
-          <span className={`leading-relaxed ${refreshing ? "opacity-40" : ""}`}>
-            <span className="text-foreground font-medium">{pricePerServing}</span>{" "}
-            <span className="text-gray-400">{t.recipePricePerServing}</span>
-            <span className="mx-1.5 text-gray-300">·</span>
-            <span className="text-foreground font-medium">{formatEuroPrice(totalCents)}</span>{" "}
-            <span className="text-gray-400">{t.recipePriceTotal}</span>
-            {recipe.cookingTimeMinutes !== null ? (
-              <>
-                <span className="mx-1.5 text-gray-300">·</span>
-                <span>
-                  {recipe.cookingTimeMinutes} {t.cookingTimeMinutes}
-                </span>
-              </>
-            ) : null}
-          </span>
-        ) : null}
-      </div>
-      {mainIngredients.length > 0 ? (
-        <button
-          type="button"
-          onClick={() => void handleAddToCart()}
-          disabled={addState !== "idle" || refreshing || checkedIds.size === 0}
-          className={`mb-8 w-full rounded-xl px-6 py-3 text-sm font-semibold text-white ${addState === "done" ? "bg-green-500" : "bg-picnic-red hover:bg-red-700 disabled:opacity-60"}`}
-        >
-          {buttonLabel}
-        </button>
-      ) : null}
+      <RecipeAddToCartPanel
+        portions={portions}
+        setPortions={setPortions}
+        pricePerServing={pricePerServing}
+        totalCents={totalCents}
+        cookingTimeMinutes={recipe.cookingTimeMinutes}
+        refreshing={refreshing}
+        showAddButton={mainIngredients.length > 0}
+        isAddDisabled={addState !== "idle" || refreshing || checkedIds.size === 0}
+        buttonLabel={buttonLabel}
+        isDone={addState === "done"}
+        onAddToCart={() => void handleAddToCart()}
+      />
       <div className={refreshing ? "pointer-events-none opacity-40" : ""}>
         <IngredientSection
           title={t.recipeIngredients}
@@ -795,237 +582,10 @@ export function RecipeDetailPage() {
           setCheckedIds={setCheckedIds}
           muted
         />
-        {recipe.steps.length > 0 ? (
-          <section className="mb-6">
-            <h2 className="text-foreground mb-3 text-base font-semibold">{t.recipeSteps}</h2>
-            {recipe.stepsPortionWarning ? (
-              <p className="mb-3 rounded-lg bg-amber-50 px-4 py-2 text-xs text-amber-700">
-                {recipe.stepsPortionWarning}
-              </p>
-            ) : null}
-            <ol className="space-y-4">
-              {recipe.steps.map((step, index) => (
-                <li key={index} className="flex gap-3">
-                  <span className="bg-picnic-red mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white">
-                    {index + 1}
-                  </span>
-                  <p className="text-text-dark text-sm leading-relaxed">
-                    {renderMarkdownBold(step)}
-                  </p>
-                </li>
-              ))}
-            </ol>
-          </section>
-        ) : null}
-        {recipe.recipeNutritionRows.length > 0 ? (
-          <section className="mb-6">
-            <h2 className="text-foreground mb-2 text-base font-semibold">{t.recipeNutrition}</h2>
-            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-              <NutritionTable rows={recipe.recipeNutritionRows} />
-            </div>
-          </section>
-        ) : null}
+        <RecipeStepsSection recipe={recipe} />
+        <RecipeNutritionSection recipe={recipe} />
       </div>
-      {recipe.allergens.confirmed.length || recipe.allergens.mayContain.length ? (
-        <section className="mb-6 rounded-xl border border-gray-200 bg-white p-4">
-          <RecipeAllergenBadges
-            allergens={recipe.allergens}
-            confirmedLabel={t.recipeAllergens}
-            mayContainLabel={t.recipeMayContain}
-          />
-        </section>
-      ) : null}
+      <RecipeAllergenSection recipe={recipe} />
     </main>
   );
-}
-
-function RecipeHeroImage({
-  imageId,
-  countryCode,
-  alt,
-}: {
-  imageId: string;
-  countryCode: CountryCode;
-  alt: string;
-}) {
-  const [show, setShow] = useState(true);
-  if (!show) return <div className="aspect-video w-full bg-gray-100" />;
-  return (
-    <img
-      src={buildRecipeImageUrl(imageId, countryCode)}
-      alt={alt}
-      className="aspect-video w-full object-cover"
-      onError={() => setShow(false)}
-    />
-  );
-}
-
-function RecipeAllergenBadges({
-  allergens,
-  confirmedLabel,
-  mayContainLabel,
-}: {
-  allergens: AllergenInfo;
-  confirmedLabel: string;
-  mayContainLabel: string;
-}) {
-  const sections = [
-    { label: confirmedLabel, items: allergens.confirmed },
-    { label: mayContainLabel, items: allergens.mayContain },
-  ].filter((section) => section.items.length > 0);
-
-  return (
-    <div className="space-y-4">
-      {sections.map((section) => (
-        <div key={section.label}>
-          <h2 className="text-foreground mb-2 text-base font-semibold">{section.label}</h2>
-          <div className="flex flex-wrap gap-2">
-            {section.items.map((allergen) => (
-              <span
-                key={`${section.label}-${allergen.text}`}
-                className="rounded-full px-3 py-1 text-xs font-semibold"
-                style={{ backgroundColor: allergen.backgroundColor, color: allergen.textColor }}
-              >
-                {allergen.text}
-              </span>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function IngredientSection({
-  title,
-  ingredients,
-  portions,
-  basePortion,
-  checkedIds,
-  setCheckedIds,
-  muted = false,
-}: {
-  title: string;
-  ingredients: RecipeIngredient[];
-  portions: number;
-  basePortion: number;
-  checkedIds: Set<string>;
-  setCheckedIds: Dispatch<SetStateAction<Set<string>>>;
-  muted?: boolean;
-}) {
-  if (!ingredients.length) return null;
-  return (
-    <section className="mb-6">
-      <h2
-        className={`${muted ? "text-text-muted text-sm" : "text-foreground text-base"} mb-2 font-semibold`}
-      >
-        {title}
-      </h2>
-      <div
-        className={`divide-y divide-gray-100 rounded-xl border ${muted ? "border-gray-100 bg-gray-50" : "border-gray-200 bg-white"} px-3 sm:px-4`}
-      >
-        {ingredients.map((ingredient) => (
-          <RecipeIngredientRow
-            key={ingredient.id}
-            ingredient={ingredient}
-            qty={getRecipeIngredientCount(ingredient, portions, basePortion)}
-            portions={portions}
-            basePortion={basePortion}
-            checked={checkedIds.has(ingredient.id)}
-            onToggle={() =>
-              setCheckedIds((current) => {
-                const next = new Set(current);
-                if (next.has(ingredient.id)) next.delete(ingredient.id);
-                else next.add(ingredient.id);
-                return next;
-              })
-            }
-          />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function RecipeIngredientRow({
-  ingredient,
-  qty,
-  portions,
-  basePortion,
-  checked,
-  onToggle,
-}: {
-  ingredient: RecipeIngredient;
-  qty: number;
-  portions: number;
-  basePortion: number;
-  checked: boolean;
-  onToggle: () => void;
-}) {
-  const countryCode = useCountryCode();
-  const [imgSrc, setImgSrc] = useState(
-    ingredient.imageId ? buildImageUrl(ingredient.imageId, countryCode) : PLACEHOLDER
-  );
-  const scaledNeeded = ingredient.recipeQuantityText
-    ? scaleNeededText(ingredient.recipeQuantityText, portions, basePortion)
-    : null;
-  const packageLabel =
-    qty > 1
-      ? `${qty} × ${ingredient.recipePackageSize ?? ingredient.unitQuantity}`
-      : (ingredient.recipePackageSize ?? ingredient.unitQuantity);
-  const title = scaledNeeded
-    ? `${scaledNeeded.replace(/^\((.*)\)$/, "$1").replace(/\s+(nodig|benötigt|benodigd|required)$/i, "")} ${ingredient.name}`
-    : ingredient.name;
-  const bundleTier = ingredient.priceRanges?.filter((tier) => tier.quantity <= qty).at(-1);
-  const totalPrice = (bundleTier ? bundleTier.pricePerUnit : ingredient.displayPrice) * qty;
-  const rawStrike = bundleTier
-    ? ingredient.displayPrice * qty
-    : ingredient.originalPrice !== null
-      ? ingredient.originalPrice * qty
-      : null;
-  const strike = rawStrike !== null && rawStrike > totalPrice ? rawStrike : null;
-  return (
-    <div
-      className={`flex items-center gap-2 py-3 sm:gap-3 ${strike ? "-mx-3 rounded-lg bg-yellow-50 px-3 sm:-mx-4 sm:px-4" : ""}`}
-    >
-      <button
-        type="button"
-        role="checkbox"
-        aria-checked={checked}
-        onClick={onToggle}
-        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 ${checked ? "border-picnic-red bg-picnic-red" : "border-gray-300 bg-white"}`}
-      >
-        {checked ? <span className="text-xs text-white">✓</span> : null}
-      </button>
-      <img
-        src={imgSrc}
-        alt={ingredient.name}
-        loading="lazy"
-        className={`h-12 w-12 shrink-0 rounded-lg bg-gray-50 object-contain p-1 ${checked ? "" : "opacity-40"}`}
-        onError={() => setImgSrc(PLACEHOLDER)}
-      />
-      <div className={`min-w-0 flex-1 ${checked ? "" : "opacity-40"}`}>
-        <p className="text-text-dark line-clamp-3 text-sm font-medium break-words sm:line-clamp-2">
-          {title}
-        </p>
-        <p className="text-text-muted text-xs">{packageLabel}</p>
-      </div>
-      <div className={`min-w-[3.5rem] shrink-0 text-right ${checked ? "" : "opacity-40"}`}>
-        <p className={`text-sm font-medium ${strike ? "text-amber-600" : "text-text-dark"}`}>
-          {formatEuroPrice(totalPrice)}
-        </p>
-        {strike ? (
-          <p className="text-xs text-gray-400 line-through">{formatEuroPrice(strike)}</p>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function scaleNeededText(text: string, portions: number, basePortion: number): string {
-  if (basePortion === 0) return text;
-  const match = /^\((\d+(?:[.,]\d+)?)\s+(.+)\)$/.exec(text);
-  if (!match) return text;
-  const scaled = (parseFloat(match[1].replace(",", ".")) * portions) / basePortion;
-  return `(${Number.isInteger(scaled) ? String(scaled) : scaled.toFixed(1).replace(".", ",")} ${match[2]})`;
 }
