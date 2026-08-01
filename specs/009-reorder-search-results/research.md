@@ -1,6 +1,6 @@
 # Research: Reorder Section in Search Results
 
-**Feature**: 009-reorder-search-results  
+**Feature**: 009-reorder-search-results
 **Date**: 2026-04-10
 
 ## Research Questions
@@ -60,11 +60,11 @@ The re-order section is a `SearchSection` like any other — once the parser cor
 
 ### RQ-5: File size compliance after changes
 
-**Decision**: `parse-fusion-search.ts` is currently 275 lines. The changes are expected to be minimal (fixing ID patterns or adding an alternative extraction path for re-order tiles). The file should remain under the 300-line constitution limit.
+**Decision**: The changes are expected to be minimal (fixing ID patterns or adding an alternative extraction path for re-order tiles). Keep the search parser cohesive; extract a helper only if the change introduces a distinct responsibility.
 
-If the fix requires substantial new logic (e.g., a completely different extraction path for re-order tiles), the new logic should be extracted to a helper function in the same file or, if that would exceed 300 lines, moved to a separate helper module.
+If the fix requires substantial new logic (e.g., a completely different extraction path for re-order tiles), the new logic should be extracted to a helper function in the same file or moved to a separate helper module when it crosses responsibility boundaries.
 
-**Rationale**: Constitution Principle III prohibits files over 300 lines.
+**Rationale**: Constitution Principle III prohibits modules that mix unrelated responsibility boundaries.
 
 ## Summary of Findings
 
@@ -74,7 +74,7 @@ If the fix requires substantial new logic (e.g., a completely different extracti
 | RQ-2: How to capture response? | Used existing `/tmp/picnic-test3.json` (Tomaten search, 3.2MB) | Done |
 | RQ-3: Rendering changes? | None needed — rendering is section-agnostic | No action |
 | RQ-4: Deduplication? | Already handled by `seenIds` + API trust | No action |
-| RQ-5: File size? | 275/300 lines, no changes needed | No action |
+| RQ-5: Responsibility boundary? | Parser changes remain in the existing search-parser ownership boundary | No action |
 
 ## Root Cause Analysis (T007)
 

@@ -1,16 +1,9 @@
-import { createRequire } from "node:module";
+import PicnicClient from "picnic-api";
 
 import type { CountryCode } from "@/types/locale";
 import { DEFAULT_COUNTRY_CODE } from "@/types/locale";
 
 const PICNIC_API_VERSION = "17";
-const require = createRequire(import.meta.url);
-
-/**
- * picnic-api uses `export = class PicnicClient` (CJS module.exports).
- * Use Node's ESM-safe createRequire to avoid CJS interop issues.
- */
-const PicnicClient = require("picnic-api") as typeof import("picnic-api");
 
 export type PicnicClientInstance = InstanceType<typeof PicnicClient>;
 

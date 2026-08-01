@@ -27,7 +27,7 @@ Display the Picnic credit settlement ("Verrekening Picnic Tegoed") as a line ite
 |-----------|--------|-------|
 | **I. SRP / DRY / DI** | PASS | Changes touch 4 files, each with a single responsibility: types (CartData), parser (extraction), component (display), page (prop passing). The credit row reuses the same display pattern as existing deduction rows (DRY). |
 | **II. Naming Conventions** | PASS | New field `creditSettlement` follows camelCase. Extraction helper (if needed) follows verb-first camelCase. |
-| **III. Forbidden Anti-Patterns** | PASS | `parse-cart.ts` is 448 lines — adding ~5 lines keeps it under 300 active code lines (excluding imports/comments). No magic strings (label comes from API or named constant). No deep nesting. |
+| **III. Forbidden Anti-Patterns** | PASS | The added cart-credit extraction remains within the cart parser responsibility boundary. No magic strings (label comes from API or named constant). No deep nesting. |
 | **IV. Self-Refactor Protocol** | PASS | Will be enforced during implementation. |
 | **V. Readability Over Cleverness** | PASS | Simple field extraction + conditional rendering. No clever constructs needed. |
 

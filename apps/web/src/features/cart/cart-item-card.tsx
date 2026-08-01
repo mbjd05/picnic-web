@@ -71,7 +71,7 @@ export function CartItemCard({
                 <button
                   type="button"
                   onClick={onRemoveAll}
-                  className="text-text-muted hover:text-picnic-red flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 transition-colors hover:bg-red-50 active:opacity-70"
+                  className="text-text-muted hover:text-picnic-red flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 transition-colors hover:bg-red-50 active:opacity-70 dark:hover:bg-red-950/35"
                   aria-label={`${t.removeItemAriaLabel}: ${item.name}`}
                   title={t.removeItemAriaLabel}
                 >

@@ -194,4 +194,4 @@ Task: "Verify PLP bundle display in src/components/product-card.tsx" (US2)
 - No test tasks included — project has no testing framework configured
 - PLP bundle display (US2) is largely pre-built; tasks focus on verification and design alignment
 - Cart bundle display (US3) relies on API-provided data; task focuses on verification after upgrade
-- The `parse-cart.ts` file (472 lines) exceeds the 300-line constitution limit — pre-existing, out of scope
+- The `parse-cart.ts` file already carries broad cart parsing responsibility — pre-existing, out of scope

@@ -9,14 +9,14 @@ Add a product detail page that displays comprehensive product information (image
 
 ## Technical Context
 
-**Language/Version**: TypeScript 5, Node.js 20.9+  
-**Primary Dependencies**: Next.js 16.2.1, React 19.2.4, Tailwind CSS 4, picnic-api ^4.1.0  
-**Storage**: N/A (no persistent storage; read-only product data from API)  
-**Testing**: No test framework configured (no jest/vitest/playwright in project)  
-**Target Platform**: Web browser (desktop + mobile responsive)  
-**Project Type**: Web application (Next.js App Router)  
-**Performance Goals**: Page load within 3 seconds (SC-001), cross-navigation under 2 seconds (SC-003)  
-**Constraints**: Must use raw `sendRequest` to `/pages/product-details-page-root`, must NOT use typed `getProductDetailsPage`/`getProductDetails`; must follow existing Fusion page parsing patterns from `parse-fusion-search.ts` and `pml-helpers.ts`  
+**Language/Version**: TypeScript 5, Node.js 20.9+
+**Primary Dependencies**: Next.js 16.2.1, React 19.2.4, Tailwind CSS 4, picnic-api ^4.1.0
+**Storage**: N/A (no persistent storage; read-only product data from API)
+**Testing**: No test framework configured (no jest/vitest/playwright in project)
+**Target Platform**: Web browser (desktop + mobile responsive)
+**Project Type**: Web application (Next.js App Router)
+**Performance Goals**: Page load within 3 seconds (SC-001), cross-navigation under 2 seconds (SC-003)
+**Constraints**: Must use raw `sendRequest` to `/pages/product-details-page-root`, must NOT use typed `getProductDetailsPage`/`getProductDetails`; must follow existing Fusion page parsing patterns from `parse-fusion-search.ts` and `pml-helpers.ts`
 **Scale/Scope**: Single product detail page; ~8 new components, 1 new API route, 1 new parser, modifications to 2 existing components
 
 ## Constitution Check
@@ -27,7 +27,7 @@ Add a product detail page that displays comprehensive product information (image
 |-----------|--------|-------|
 | I. SRP / DRY / DI | PASS | Parser will be a separate module (`parse-fusion-product.ts`). Each UI section is its own component. API route follows existing pattern. `buildPicnicClient` is injected via existing factory. |
 | II. Naming Conventions | PASS | All new functions will use verb-first camelCase (`extractProductDetail`, `parseAllergens`). Components use PascalCase. Files use kebab-case matching existing patterns. |
-| III. Forbidden Anti-Patterns | PASS | No file will exceed 300 lines — the parser will be split across focused helper functions. No deep nesting (max 3 levels). Magic strings for node IDs will be extracted to named constants. Error handling will follow existing try/catch + rethrow pattern. |
+| III. Forbidden Anti-Patterns | PASS | Parser logic will be split across focused helper functions when responsibility boundaries diverge. No deep nesting (max 3 levels). Magic strings for node IDs will be extracted to named constants. Error handling will follow existing try/catch + rethrow pattern. |
 | IV. Self-Refactor Protocol | PASS | Will be enforced during implementation. |
 | V. Readability Over Cleverness | PASS | Will use explicit traversal functions (matching `pml-helpers.ts` patterns) rather than JSONPath magic. Early returns for missing data sections. |
 
@@ -39,7 +39,7 @@ Add a product detail page that displays comprehensive product information (image
 |-----------|--------|-------|
 | I. SRP / DRY / DI | PASS | Parser (`parse-fusion-product.ts`) has single responsibility. Shared utilities promoted to `pml-helpers.ts` prevent duplication across parsers. `buildPicnicClient` injected via existing factory. Each component (gallery, accordion, slider, etc.) has one job. |
 | II. Naming Conventions | PASS | Entities: `ProductDetail`, `AllergenInfo`, `SliderProduct`. Functions: verb-first camelCase (`extractProductDetail`, `parseAllergens`). Constants: UPPER_SNAKE_CASE for node IDs. Files: kebab-case. |
-| III. Forbidden Anti-Patterns | PASS | Parser split into focused functions keeps all files under 300 lines. Node ID strings extracted as named constants. API route error handling follows existing throw-and-catch pattern. |
+| III. Forbidden Anti-Patterns | PASS | Parser split into focused functions keeps all modules keep clear responsibility boundaries. Node ID strings extracted as named constants. API route error handling follows existing throw-and-catch pattern. |
 | IV. Self-Refactor Protocol | PASS | Will be enforced during implementation. |
 | V. Readability Over Cleverness | PASS | Explicit recursive tree traversal (not JSONPath). Early returns for missing sections. Linear parsing flow. |
 

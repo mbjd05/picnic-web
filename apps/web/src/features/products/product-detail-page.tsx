@@ -24,8 +24,9 @@ import { BackButton, ErrorView, LoadingView } from "../../components/page-state"
 import { useDocumentTitle } from "../../hooks/use-document-title";
 import { useCartActions, useCartQuantities } from "../../providers/cart-context";
 import { useCountryCode, useTranslations } from "../../providers/country-context";
+import { useInAppBack } from "../../providers/navigation-history-context";
 import { ApiClientError, fetchJson } from "../../lib/api-client";
-import { queryKeys, queryStaleTime } from "../../lib/query-config";
+import { queryGcTime, queryKeys, queryStaleTime } from "../../lib/query-config";
 import { useWheelQuantityAdjust } from "../../hooks/use-wheel-quantity-adjust";
 
 const PLACEHOLDER_IMAGE = "/placeholder-product.svg";
@@ -41,17 +42,19 @@ export function ProductDetailPage() {
   const navigate = useNavigate();
   const countryCode = useCountryCode();
   const t = useTranslations();
+  const handleBack = useInAppBack(() => void navigate({ to: "/", search: {} }));
   const query = useQuery({
     queryKey: queryKeys.productDetail(id, countryCode),
     queryFn: () => fetchJson<ProductDetail>(`/api/product/${encodeURIComponent(id)}`),
     staleTime: queryStaleTime.productDetail,
+    gcTime: queryGcTime.productDetail,
   });
 
   useDocumentTitle(query.data?.name);
 
   return (
     <PageLayout>
-      <BackButton onClick={() => void navigate({ to: "/", search: {} })} />
+      <BackButton onClick={handleBack} />
       {query.isPending ? (
         <LoadingView />
       ) : query.error instanceof ApiClientError && query.error.status === 404 ? (

@@ -51,8 +51,9 @@ Reviewed against `.specify/memory/constitution.md`, `.specify/templates/*`, and
 
 ## Remaining Tightening Candidates
 
-- **Large files**: The constitution says no file may exceed 300 lines. Current oversized files
-  include `apps/web/src/features/browsing/browsing-components.tsx`,
+- **Large files**: File length is now treated as a review signal, not a hard
+  rule. Current large responsibility-boundary review candidates include
+  `apps/web/src/features/browsing/browsing-components.tsx`,
   `apps/web/src/app/app-shell.tsx`, `apps/web/src/features/auth/login-page.tsx`,
   `apps/web/src/features/recipes/recipe-pages.tsx`, `apps/web/src/features/deliveries/delivery-pages.tsx`,
   `apps/web/src/features/products/product-detail-page.tsx`, `apps/web/src/features/cart/cart-page.tsx`,
@@ -66,6 +67,6 @@ Reviewed against `.specify/memory/constitution.md`, `.specify/templates/*`, and
 - **Docs still contain old Next examples**: The inherited specs intentionally remain historical.
   If the project starts writing new specs, generated plans should use the current `apps/web`
   and `apps/api` structure instead of the old template defaults.
-- **Constitution automation can improve gradually**: `max-lines`, deeper complexity rules,
-  and stricter no-magic-string enforcement would currently create broad churn. Add them as
-  warnings or after splitting the large modules.
+- **Constitution automation can improve gradually**: responsibility-boundary heuristics,
+  deeper complexity rules, and stricter no-magic-string enforcement would currently create
+  broad churn. Add them as warnings first, then tighten after large modules are split.

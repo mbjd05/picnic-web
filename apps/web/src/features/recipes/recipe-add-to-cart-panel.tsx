@@ -72,7 +72,11 @@ export function RecipeAddToCartPanel({
           type="button"
           onClick={onAddToCart}
           disabled={isAddDisabled}
-          className={`mb-8 w-full rounded-xl px-6 py-3 text-sm font-semibold text-white ${isDone ? "bg-green-500" : "bg-picnic-red hover:bg-red-700 disabled:opacity-60"}`}
+          className={`mb-8 w-full rounded-xl px-6 py-3 text-sm font-semibold text-white ${
+            isDone
+              ? "bg-picnic-green"
+              : "bg-picnic-red hover:bg-picnic-red-dark disabled:opacity-60"
+          }`}
         >
           {buttonLabel}
         </button>

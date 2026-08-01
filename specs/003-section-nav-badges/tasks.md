@@ -1,6 +1,6 @@
 # Tasks: Section Navigation Badges
 
-**Input**: Design documents from `/specs/003-section-nav-badges/`  
+**Input**: Design documents from `/specs/003-section-nav-badges/`
 **Prerequisites**: plan.md, spec.md, research.md, data-model.md, quickstart.md
 
 **Tests**: No test runner configured. Validation via `npm run lint && npx tsc --noEmit && npm run build`.
@@ -86,7 +86,7 @@
 **Purpose**: Final validation, edge case verification, code quality review.
 
 - [X] T011 Verify edge cases in `src/components/section-nav-bar.tsx` — confirm badge bar is not rendered when sections is empty (FR-009), works correctly with exactly one section, handles long section titles without layout breakage, and horizontal scroll works with 10+ sections
-- [X] T012 Run constitution compliance check — verify all new/modified files are under 300 lines, no deep nesting, no magic strings, all names follow conventions (verb-first camelCase functions, descriptive variables, kebab-case files, UPPER_SNAKE_CASE constants)
+- [X] T012 Run constitution compliance check — verify all new/modified files are within a clear responsibility boundary, no deep nesting, no magic strings, all names follow conventions (verb-first camelCase functions, descriptive variables, kebab-case files, UPPER_SNAKE_CASE constants)
 - [X] T013 Run full validation and manual test per `quickstart.md`: `npm run lint && npx tsc --noEmit && npm run build`, then start dev server and execute all 6 test scenarios from quickstart.md
 
 ---
@@ -149,7 +149,7 @@ Task: T003 "Create SectionNavBar component in src/components/section-nav-bar.tsx
 ## Notes
 
 - No new npm dependencies needed — all features use native browser APIs
-- All new files target well under 300 lines (constitution limit)
+- All new files target one clear responsibility boundary
 - `picnic-red` color token already exists in `globals.css` — no CSS changes needed
 - The `buildSectionId` helper is the single shared utility between ProductGrid and useScrollSpy (DRY)
 - `scroll-margin-top` on section elements is the key to FR-010 (offset compensation)

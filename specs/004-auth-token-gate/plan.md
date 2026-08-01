@@ -1,6 +1,6 @@
 # Implementation Plan: Auth Token Gate
 
-**Branch**: `004-auth-token-gate` | **Date**: 2026-03-30 | **Spec**: [spec.md](./spec.md)  
+**Branch**: `004-auth-token-gate` | **Date**: 2026-03-30 | **Spec**: [spec.md](./spec.md)
 **Input**: Feature specification from `specs/004-auth-token-gate/spec.md`
 
 ## Summary
@@ -11,14 +11,14 @@ Replace the server-side `PICNIC_AUTH_TOKEN` environment variable with a per-user
 
 ## Technical Context
 
-**Language/Version**: TypeScript 5, Node.js 20.9+  
-**Primary Dependencies**: Next.js 16.2.1, React 19.2.4, Tailwind CSS 4, picnic-api ^4.1.0  
-**Storage**: HTTP-only cookie (`picnic_auth_token`) — browser-managed, server-readable  
-**Testing**: `npm run lint && npx tsc --noEmit && npm run build` (no test runner configured)  
-**Target Platform**: Web (desktop + mobile browsers)  
-**Project Type**: Web application (Next.js)  
-**Performance Goals**: Token validation must complete within 5 seconds (SC-003); returning users access instantly (no validation on every page load)  
-**Constraints**: No new npm dependencies; 300-line file limit per constitution; all files kebab-case  
+**Language/Version**: TypeScript 5, Node.js 20.9+
+**Primary Dependencies**: Next.js 16.2.1, React 19.2.4, Tailwind CSS 4, picnic-api ^4.1.0
+**Storage**: HTTP-only cookie (`picnic_auth_token`) — browser-managed, server-readable
+**Testing**: `npm run lint && npx tsc --noEmit && npm run build` (no test runner configured)
+**Target Platform**: Web (desktop + mobile browsers)
+**Project Type**: Web application (Next.js)
+**Performance Goals**: Token validation must complete within 5 seconds (SC-003); returning users access instantly (no validation on every page load)
+**Constraints**: No new npm dependencies; clear responsibility boundaries per constitution; all files kebab-case
 **Scale/Scope**: Single-user per browser session; one auth token active at a time
 
 ## Constitution Check
@@ -33,7 +33,7 @@ Replace the server-side `PICNIC_AUTH_TOKEN` environment variable with a per-user
 | **I. DRY** | PASS | Token-from-cookie extraction is a single utility function shared by all API routes. PicnicClient creation logic remains in one factory function. |
 | **I. Dependency Injection** | PASS | `getPicnicClient()` is refactored to accept `authToken` as a parameter instead of reading from `process.env` internally. API routes inject the token they read from cookies. |
 | **II. Naming** | PASS | `buildPicnicClient(authToken)` — verb-first camelCase. `isAuthenticated` — boolean prefix. `AUTH_COOKIE_NAME` — UPPER_SNAKE_CASE constant. Files: `middleware.ts`, `login/page.tsx`, `auth/login/route.ts` — kebab-case or Next.js convention. |
-| **III. No God Files** | PASS | Login page estimated ~80 lines. Middleware ~40 lines. Auth routes ~40 lines each. Modified `picnic-client.ts` shrinks (removes singleton). `page.tsx` adds sign-out button (~10 lines). All under 300 lines. |
+| **III. No God Files** | PASS | Login page, middleware, auth routes, Picnic client creation, and header sign-out each stay within a clear responsibility boundary. |
 | **III. No Deep Nesting** | PASS | Login page has flat rendering. Middleware uses early returns for unauthenticated/excluded paths. |
 | **III. No Magic Numbers** | PASS | Cookie name, cookie max-age, and public paths extracted as named constants. |
 | **III. No Error Swallowing** | PASS | Token validation errors are caught, classified (invalid vs. unreachable), and surfaced to the user. API route 401/403 responses trigger redirect with message. |

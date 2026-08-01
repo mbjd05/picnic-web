@@ -1,5 +1,6 @@
 import { isApiTokenExpiredError } from "@/lib/api/error";
 import { deliverySlotSchema, validateCartMutation, validateInput } from "@/lib/api/validation";
+import { getCartQuantityCorrections } from "@/lib/cart/validity";
 import type { DeliverySlotPickerData } from "@/types/delivery-slot";
 import { parseCartResponse } from "@/lib/parse/cart";
 import { parseDeliverySlotsPicker } from "@/lib/parse/delivery-slots";
@@ -19,20 +20,59 @@ type SendRequestClient = {
   ) => Promise<unknown>;
 };
 
+async function fetchRawCart(client: SendRequestClient): Promise<unknown> {
+  return client.sendRequest("GET", "/cart", null, true);
+}
+
+async function postSingleCartMutation(
+  client: SendRequestClient,
+  endpoint: "/cart/add_product" | "/cart/remove_product",
+  productId: string
+): Promise<unknown> {
+  return client.sendRequest(
+    "POST",
+    endpoint,
+    {
+      product_id: productId,
+      count: 1,
+    },
+    true
+  );
+}
+
+async function normalizeCartQuantities(
+  client: SendRequestClient,
+  rawCart: unknown,
+  countryCode: CountryCode
+): Promise<CartData> {
+  const parsedCart = parseCartResponse(rawCart, countryCode);
+  const corrections = getCartQuantityCorrections(parsedCart);
+  if (corrections.length === 0) return parsedCart;
+
+  for (const correction of corrections) {
+    for (let index = 0; index < correction.removeCount; index += 1) {
+      await postSingleCartMutation(client, "/cart/remove_product", correction.productId);
+    }
+  }
+
+  return parseCartResponse(await fetchRawCart(client), countryCode);
+}
+
 export async function getCartService(
   authToken: string,
   countryCode: CountryCode
 ): Promise<ApiServiceResult<CartData | ApiErrorResponse>> {
   try {
     const client = buildPicnicClient(authToken, countryCode);
-    const rawCart = await (client as unknown as SendRequestClient).sendRequest(
-      "GET",
-      "/cart",
-      null,
-      true
-    );
+    const rawCart = await fetchRawCart(client as unknown as SendRequestClient);
 
-    return { body: parseCartResponse(rawCart, countryCode) };
+    return {
+      body: await normalizeCartQuantities(
+        client as unknown as SendRequestClient,
+        rawCart,
+        countryCode
+      ),
+    };
   } catch (error) {
     if (isApiTokenExpiredError(error)) {
       return {
@@ -67,18 +107,20 @@ export async function mutateCartService(
     const client = buildPicnicClient(authToken, countryCode);
     let rawCart: unknown = null;
     for (let index = 0; index < validation.data.count; index += 1) {
-      rawCart = await (client as unknown as SendRequestClient).sendRequest(
-        "POST",
+      rawCart = await postSingleCartMutation(
+        client as unknown as SendRequestClient,
         endpoint,
-        {
-          product_id: validation.data.productId,
-          count: 1,
-        },
-        true
+        validation.data.productId
       );
     }
 
-    return { body: parseCartResponse(rawCart, countryCode) };
+    return {
+      body: await normalizeCartQuantities(
+        client as unknown as SendRequestClient,
+        rawCart,
+        countryCode
+      ),
+    };
   } catch (error) {
     if (isApiTokenExpiredError(error)) {
       return {

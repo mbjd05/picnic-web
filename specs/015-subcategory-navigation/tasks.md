@@ -71,7 +71,7 @@
 
 - [X] T011 Ensure `src/app/api/debug-category/route.ts` is deleted (research artifact — should already be removed)
 - [X] T012 Run `npm run lint && npm run build` — verify zero errors (SC-005)
-- [X] T013 Self-refactor review of all changed files against constitution: verify < 300 lines per file, max 3 nesting levels, no magic strings, verb-first function names, no duplicated logic between `parse-categories.ts` and `parse-subcategories.ts`
+- [X] T013 Self-refactor review of all changed files against constitution: verify clear responsibility boundaries per file, max 3 nesting levels, no magic strings, verb-first function names, no duplicated logic between `parse-categories.ts` and `parse-subcategories.ts`
 
 ---
 

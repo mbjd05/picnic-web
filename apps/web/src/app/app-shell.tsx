@@ -2,6 +2,7 @@ import { type FormEvent, type KeyboardEvent, useEffect, useMemo, useRef, useStat
 
 import { useQuery } from "@tanstack/react-query";
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
+import { flushSync } from "react-dom";
 
 import { getTranslations } from "@/lib/i18n/translations";
 import type { AuthApiResponse } from "@/types/auth";
@@ -32,8 +33,11 @@ import {
   MobileHeaderMenuPanel,
   useMobileHeaderMenuPanel,
 } from "../features/shell/mobile-header-menu-panel";
+import { CurrentThemePreferenceLabel, ThemeMenu } from "../features/shell/theme-menu";
 import { queryKeys, queryStaleTime } from "../lib/query-config";
-import { ThemeProvider, type ThemePreference, useTheme } from "../providers/theme-context";
+import { ThemeProvider, useTheme } from "../providers/theme-context";
+import { NavigationHistoryProvider } from "../providers/navigation-history-context";
+import { useSearchNavigationStore } from "../stores/search-navigation-store";
 
 const SUGGESTION_DEBOUNCE_MS = 150;
 const SEARCH_HISTORY_STORAGE_KEY = "picnic_search_history";
@@ -93,6 +97,9 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLocaleMenuOpen, setIsLocaleMenuOpen] = useState(false);
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
+  const setSubmittedProductSearch = useSearchNavigationStore(
+    (state) => state.setSubmittedProductSearch
+  );
   const searchRef = useRef<HTMLFormElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const localeMenuRef = useRef<HTMLDivElement>(null);
@@ -209,23 +216,30 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!trimmedQuery) {
+      setSubmittedProductSearch(null);
       setShowSuggestions(false);
       setActiveSuggestionIndex(-1);
-      void navigate({ to: "/", search: {} });
+      void navigate({ to: "/", search: {}, hash: "" });
       return;
     }
     saveSearchTerm(trimmedQuery);
-    setShowSuggestions(false);
-    setActiveSuggestionIndex(-1);
-    void navigate({ to: "/", search: { q: trimmedQuery } });
+    flushSync(() => {
+      setSubmittedProductSearch(trimmedQuery);
+      setShowSuggestions(false);
+      setActiveSuggestionIndex(-1);
+    });
+    void navigate({ to: "/", search: { q: trimmedQuery }, hash: "" });
   }
 
   function selectSearchTerm(term: string) {
     saveSearchTerm(term);
-    setQuery(term);
-    setShowSuggestions(false);
-    setActiveSuggestionIndex(-1);
-    void navigate({ to: "/", search: { q: term } });
+    flushSync(() => {
+      setQuery(term);
+      setSubmittedProductSearch(term);
+      setShowSuggestions(false);
+      setActiveSuggestionIndex(-1);
+    });
+    void navigate({ to: "/", search: { q: term }, hash: "" });
   }
 
   function handleSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
@@ -293,40 +307,6 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
     );
   }
 
-  function renderThemeOption(preference: ThemePreference) {
-    const selected = themePreference === preference;
-    return (
-      <button
-        key={preference}
-        type="button"
-        onClick={() => {
-          setThemePreference(preference);
-          setIsThemeMenuOpen(false);
-        }}
-        className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm font-medium transition-colors ${
-          selected
-            ? "bg-picnic-red text-white"
-            : "hover:text-foreground text-gray-600 hover:bg-gray-50"
-        }`}
-        aria-pressed={selected}
-      >
-        <span className="flex items-center gap-2">
-          <ThemePreferenceIcon preference={preference} />
-          {preference === "system"
-            ? t.themeSystem
-            : preference === "dark"
-              ? t.themeDark
-              : t.themeLight}
-        </span>
-        {preference === "system" ? (
-          <span className={selected ? "text-white/80" : "text-gray-400"}>
-            {systemTheme === "dark" ? t.themeDark : t.themeLight}
-          </span>
-        ) : null}
-      </button>
-    );
-  }
-
   function renderLocaleMenuContent() {
     return (
       <>
@@ -358,10 +338,12 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
 
   function renderThemeMenuContent() {
     return (
-      <div className="p-1.5">
-        <p className="px-3 py-1 text-xs font-semibold text-gray-400">{t.themeMenu}</p>
-        {(["system", "light", "dark"] as const).map(renderThemeOption)}
-      </div>
+      <ThemeMenu
+        preference={themePreference}
+        systemTheme={systemTheme}
+        t={t}
+        onSelect={setThemePreference}
+      />
     );
   }
 
@@ -606,11 +588,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
             >
               <ThemePreferenceIcon preference={themePreference} />
               <span className="hidden sm:inline">
-                {themePreference === "system"
-                  ? t.themeSystem
-                  : themePreference === "dark"
-                    ? t.themeDark
-                    : t.themeLight}
+                <CurrentThemePreferenceLabel preference={themePreference} t={t} />
               </span>
             </button>
             <div
@@ -679,10 +657,12 @@ export function AuthenticatedShell() {
       <CountryProvider>
         <CartProvider>
           <HeaderBottomBarProvider value={bottomBarHost}>
-            <div className="flex min-h-screen flex-col">
-              <AppHeader setBottomBarHost={setBottomBarHost} />
-              <Outlet />
-            </div>
+            <NavigationHistoryProvider>
+              <div className="flex min-h-screen flex-col">
+                <AppHeader setBottomBarHost={setBottomBarHost} />
+                <Outlet />
+              </div>
+            </NavigationHistoryProvider>
           </HeaderBottomBarProvider>
         </CartProvider>
       </CountryProvider>
@@ -694,9 +674,11 @@ export function StandaloneShell() {
   return (
     <ThemeProvider>
       <CountryProvider>
-        <div className="flex min-h-screen flex-col">
-          <Outlet />
-        </div>
+        <NavigationHistoryProvider>
+          <div className="flex min-h-screen flex-col">
+            <Outlet />
+          </div>
+        </NavigationHistoryProvider>
       </CountryProvider>
     </ThemeProvider>
   );

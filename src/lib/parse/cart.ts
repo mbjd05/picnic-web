@@ -357,6 +357,45 @@ function mapOrderLineToCartItem(rawLine: unknown): CartItem | null {
   };
 }
 
+function mergeCartItemBadges(
+  current: CartItem["badges"],
+  next: CartItem["badges"]
+): CartItem["badges"] {
+  const seen = new Set(current.map((badge) => `${badge.variant}:${badge.text}`));
+  const merged = [...current];
+  for (const badge of next) {
+    const key = `${badge.variant}:${badge.text}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    merged.push(badge);
+  }
+  return merged;
+}
+
+function coalesceCartItemsByProduct(items: CartItem[]): CartItem[] {
+  const byProductId = new Map<string, CartItem>();
+  for (const item of items) {
+    const existing = byProductId.get(item.productId);
+    if (!existing) {
+      byProductId.set(item.productId, item);
+      continue;
+    }
+
+    const maxCount = Math.max(existing.maxCount, item.maxCount);
+    const preferred = item.quantity > existing.quantity ? item : existing;
+    byProductId.set(item.productId, {
+      ...preferred,
+      maxCount,
+      badges: mergeCartItemBadges(existing.badges, item.badges),
+      priceRanges: preferred.priceRanges ?? existing.priceRanges ?? item.priceRanges,
+      isUnavailable: existing.isUnavailable || item.isUnavailable,
+      unavailableExplanation: existing.unavailableExplanation ?? item.unavailableExplanation,
+      replacements: [...existing.replacements, ...item.replacements],
+    });
+  }
+  return Array.from(byProductId.values());
+}
+
 // ─── Main transformer ─────────────────────────────────────────────────────────
 
 /**
@@ -376,9 +415,9 @@ export function parseCartResponse(rawData: unknown, countryCode: CountryCode): C
   const rawItems = applyDecoratorOverrides(asArray(rawData["items"]), overridesMap);
 
   // Map order lines to CartItems
-  const items: CartItem[] = rawItems
-    .map(mapOrderLineToCartItem)
-    .filter((item): item is CartItem => item !== null);
+  const items: CartItem[] = coalesceCartItemsByProduct(
+    rawItems.map(mapOrderLineToCartItem).filter((item): item is CartItem => item !== null)
+  );
 
   // Move unavailable items to the bottom while preserving relative order
   items.sort((a, b) => {

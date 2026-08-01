@@ -1,6 +1,6 @@
 # Implementation Plan: Reorder Section in Search Results
 
-**Branch**: `009-reorder-search-results` | **Date**: 2026-04-10 | **Spec**: [spec.md](./spec.md)  
+**Branch**: `009-reorder-search-results` | **Date**: 2026-04-10 | **Spec**: [spec.md](./spec.md)
 **Input**: Feature specification from `/specs/009-reorder-search-results/spec.md`
 
 ## Summary
@@ -9,14 +9,14 @@ Display the "Opnieuw bestellen" (reorder) section in search results when the ups
 
 ## Technical Context
 
-**Language/Version**: TypeScript 5, Node.js 20.9+  
-**Primary Dependencies**: Next.js 16.2.1, React 19.2.4, Tailwind CSS 4, picnic-api ^4.1.0  
-**Storage**: N/A (no persistent storage; search state is URL + client memory)  
-**Testing**: No test framework configured (no test runner, no test files)  
-**Target Platform**: Web browser (Next.js App Router, client-side rendering for search)  
-**Project Type**: Web application (Next.js)  
-**Performance Goals**: N/A (feature is parsing + rendering, no new performance-critical paths)  
-**Constraints**: Files under 300 lines (constitution), no god objects, SRP/DRY  
+**Language/Version**: TypeScript 5, Node.js 20.9+
+**Primary Dependencies**: Next.js 16.2.1, React 19.2.4, Tailwind CSS 4, picnic-api ^4.1.0
+**Storage**: N/A (no persistent storage; search state is URL + client memory)
+**Testing**: No test framework configured (no test runner, no test files)
+**Target Platform**: Web browser (Next.js App Router, client-side rendering for search)
+**Project Type**: Web application (Next.js)
+**Performance Goals**: N/A (feature is parsing + rendering, no new performance-critical paths)
+**Constraints**: Files within a clear responsibility boundary (constitution), no god objects, SRP/DRY
 **Scale/Scope**: Single feature touching 1-2 parser files and 0-1 component files
 
 ## Constitution Check
@@ -27,7 +27,7 @@ Display the "Opnieuw bestellen" (reorder) section in search results when the ups
 |-----------|--------|-------|
 | I. SRP / DRY / Dependency Injection | PASS | Changes scoped to search parser (`parse-fusion-search.ts`). No new components expected — existing `ProductGrid`, `SectionNavBar`, `ProductCard` already handle sections generically. Shared utilities (`containerToProduct`, `extractProductsFromWrappers`) are reused. |
 | II. Naming Conventions | PASS | All existing names follow verb-first camelCase for functions, descriptive nouns for variables. No new names expected to violate. |
-| III. Forbidden Anti-Patterns | PASS | `parse-fusion-search.ts` is 275 lines (under 300 limit). Parser changes are scoped additions, not expanding the file significantly. No deep nesting, no magic strings (constants already extracted). |
+| III. Forbidden Anti-Patterns | PASS | Parser changes stay inside the existing search-parser responsibility boundary. No deep nesting, no magic strings (constants already extracted). |
 | IV. Mandatory Self-Refactor Protocol | PASS | Will be enforced during implementation. |
 | V. Readability Over Cleverness | PASS | Parser uses explicit loops and guard clauses. No clever constructs. |
 
@@ -39,7 +39,7 @@ Display the "Opnieuw bestellen" (reorder) section in search results when the ups
 |-----------|--------|-------|
 | I. SRP / DRY / DI | PASS | No new entities, no new components. Changes scoped to parser functions. Existing shared utilities reused. |
 | II. Naming Conventions | PASS | No new public APIs. Any new helpers follow existing verb-first camelCase convention. |
-| III. Forbidden Anti-Patterns | PASS | File stays under 300 lines. No new nesting, no magic strings. |
+| III. Forbidden Anti-Patterns | PASS | File stays within a clear responsibility boundary. No new nesting, no magic strings. |
 | IV. Self-Refactor Protocol | PASS | Enforced during implementation. |
 | V. Readability Over Cleverness | PASS | No change to existing explicit style. |
 

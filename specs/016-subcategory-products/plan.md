@@ -9,14 +9,14 @@ Complete the category browsing hierarchy by displaying products when users tap a
 
 ## Technical Context
 
-**Language/Version**: TypeScript 5, Node.js 20.9+  
-**Primary Dependencies**: Next.js 16.2.1 (App Router), React 19.2.4, Tailwind CSS 4, picnic-api ^4.1.0  
-**Storage**: N/A (no persistent storage; product data fetched on demand from Picnic API)  
-**Testing**: No test framework configured; validation via `npm run lint && npm run build`  
-**Target Platform**: Web browser (mobile-first responsive)  
-**Project Type**: Web application (Next.js App Router)  
-**Performance Goals**: Product list renders within standard web app expectations  
-**Constraints**: Max 300 lines per file, max 3 nesting levels, all constitution rules  
+**Language/Version**: TypeScript 5, Node.js 20.9+
+**Primary Dependencies**: Next.js 16.2.1 (App Router), React 19.2.4, Tailwind CSS 4, picnic-api ^4.1.0
+**Storage**: N/A (no persistent storage; product data fetched on demand from Picnic API)
+**Testing**: No test framework configured; validation via `npm run lint && npm run build`
+**Target Platform**: Web browser (mobile-first responsive)
+**Project Type**: Web application (Next.js App Router)
+**Performance Goals**: Product list renders within standard web app expectations
+**Constraints**: Clear responsibility boundaries per module, max 3 nesting levels, all constitution rules
 **Scale/Scope**: Single page state extension + 1 new API route + 1 new parser + refactoring for shared extraction
 
 ## Constitution Check
@@ -27,7 +27,7 @@ Complete the category browsing hierarchy by displaying products when users tap a
 |-----------|--------|-------|
 | I. SRP/DRY/DI | PASS | `containerToProduct` extracted to shared module for DRY reuse; new parser is single-purpose |
 | II. Naming | PASS | verb-first functions (`parseL2ProductPage`, `fetchCategoryProducts`), kebab-case files |
-| III. Forbidden Anti-Patterns | PASS | All files under 300 lines; no deep nesting; named constants for PML IDs |
+| III. Forbidden Anti-Patterns | PASS | All modules keep clear responsibility boundaries; no deep nesting; named constants for PML IDs |
 | IV. Self-Refactor Protocol | PASS | Will be enforced during implementation |
 | V. Readability Over Cleverness | PASS | Linear control flow; explicit state machine |
 

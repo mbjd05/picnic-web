@@ -120,6 +120,6 @@ The cart page currently uses `SharedHeader` without `CartProvider`. The header's
 | Risk | Impact | Mitigation |
 |------|--------|------------|
 | Nested interactive elements in CartItemCard | High (a11y, broken clicks) | Restructure Link to exclude stepper area |
-| Cart page exceeding 300-line limit | Medium (constitution violation) | Extract mutation logic into a custom hook if needed |
+| Cart page mixing rendering and mutation coordination | Medium (constitution violation) | Extract mutation logic into a custom hook if needed |
 | Stale state after rapid mutations | Low (already solved) | Mutation queue ensures sequential processing per product |
 | PLP regression from CartItem type change | Low | Adding a field is non-breaking; PLP doesn't use maxCount on CartItem |

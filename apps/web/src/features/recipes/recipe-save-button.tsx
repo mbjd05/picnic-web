@@ -16,7 +16,9 @@ export function RecipeSaveButton({
       type="button"
       onClick={onToggle}
       disabled={isSaving}
-      className={`absolute top-3 right-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/95 shadow-sm ${isSaved ? "text-picnic-red" : "text-text-muted"}`}
+      className={`hover:text-picnic-red absolute top-3 right-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/95 shadow-sm transition-colors hover:bg-white active:opacity-70 disabled:opacity-50 ${
+        isSaved ? "text-picnic-red" : "text-text-muted"
+      }`}
       aria-label={isSaved ? t.unsaveRecipe : t.saveRecipe}
     >
       <BookmarkIcon filled={isSaved} />

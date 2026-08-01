@@ -1,6 +1,6 @@
 # Quickstart: Product Detail Page
 
-**Feature**: 005-product-detail-page  
+**Feature**: 005-product-detail-page
 **Date**: 2026-03-30
 
 ## Prerequisites
@@ -54,10 +54,10 @@ npm run build
 ## Testing a Product Detail Page
 
 1. Start the dev server: `npm run dev`
-2. Navigate to `http://localhost:3000/login` and authenticate
+2. Navigate to `http://127.0.0.1:8787/login` and authenticate
 3. Search for a product (e.g. "melk")
 4. Click any product card to navigate to its detail page
-5. Or navigate directly: `http://localhost:3000/product/s1001524` (replace with a valid ID)
+5. Or navigate directly: `http://127.0.0.1:8787/product/s1001524` (replace with a valid ID)
 
 ## Architecture Overview
 
@@ -94,4 +94,4 @@ Browser                    Next.js Server               Picnic API
 - **Do NOT use** `client.catalog.getProductDetailsPage()` or `client.catalog.getProductDetails()` from picnic-api
 - **Do use** `client.sendRequest("GET", "/pages/product-details-page-root?id=...", null, true)` directly
 - Follow the same parsing pattern as `parse-fusion-search.ts` — use local `pml-helpers.ts` utilities, not `jsonpath-plus`
-- All new files must comply with the project constitution (max 300 lines, SRP, no deep nesting, named constants)
+- All new files must comply with the project constitution (clear responsibility boundaries, SRP, no deep nesting, named constants)

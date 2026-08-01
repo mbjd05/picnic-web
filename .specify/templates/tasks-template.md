@@ -20,26 +20,33 @@ description: "Task list template for feature implementation"
 
 ## Path Conventions
 
-- **Single project**: `src/`, `tests/` at repository root
-- **Web app**: `backend/src/`, `frontend/src/`
-- **Mobile**: `api/src/`, `ios/src/` or `android/src/`
-- Paths shown below assume single project - adjust based on plan.md structure
+- **Frontend routes/UI**: `apps/web/src/features`, `apps/web/src/app`,
+  `apps/web/src/components`, `apps/web/src/hooks`, `apps/web/src/providers`,
+  `apps/web/src/stores`
+- **Worker API**: `apps/api/src/routes`, `apps/api/src/lib`
+- **Shared domain logic**: `src/lib`
+- **Shared domain types**: `src/types`
+- **Shared presentation components**: `src/components`
+- **Local tooling/probes**: `scripts`
+- **Project notes/research**: `docs`
+- Historical specs may mention `src/app`, `src/app/api`, `NextRequest`, or
+  `NextResponse`; translate those to the current paths above before creating tasks.
 
-<!-- 
+<!--
   ============================================================================
   IMPORTANT: The tasks below are SAMPLE TASKS for illustration purposes only.
-  
+
   The /speckit.tasks command MUST replace these with actual tasks based on:
   - User stories from spec.md (with their priorities P1, P2, P3...)
   - Feature requirements from plan.md
   - Entities from data-model.md
   - Endpoints from contracts/
-  
+
   Tasks MUST be organized by user story so each story can be:
   - Implemented independently
   - Tested independently
   - Delivered as an MVP increment
-  
+
   DO NOT keep these sample tasks in the generated tasks.md file.
   ============================================================================
 -->
@@ -156,6 +163,9 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] TXXX [P] Additional unit tests (if requested) in tests/unit/
 - [ ] TXXX Security hardening
 - [ ] TXXX Run quickstart.md validation
+- [ ] TXXX Verify responsibility boundaries: modules are cohesive, shared logic
+      is in `src/lib` or shared components, and large files remain justified by
+      a single clear ownership boundary.
 
 ---
 

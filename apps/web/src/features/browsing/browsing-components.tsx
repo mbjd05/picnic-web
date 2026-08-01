@@ -1,4 +1,12 @@
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import { Link } from "@tanstack/react-router";
 
@@ -21,12 +29,50 @@ import { useWheelQuantityAdjust } from "../../hooks/use-wheel-quantity-adjust";
 
 const PLACEHOLDER_IMAGE = "/placeholder-product.svg";
 const STICKY_HEADER_OFFSET_PX = 144;
-const VIEWPORT_FOCUS_RATIO = 0.45;
 const INITIAL_PRODUCT_IMAGE_PRELOAD_COUNT = 12;
+const BACKGROUND_PRODUCT_IMAGE_PRELOAD_LIMIT = 120;
+const BACKGROUND_PRODUCT_IMAGE_PRELOAD_CONCURRENCY = 4;
+const SECTION_LEAD_IMAGE_PRELOAD_COUNT = 24;
+const SECTION_LEAD_IMAGE_PRELOAD_CONCURRENCY = 4;
+const SECTION_INTENT_IMAGE_PRELOAD_COUNT = 30;
+const SECTION_INTENT_IMAGE_PRELOAD_CONCURRENCY = 8;
 const PRODUCT_IMAGE_PRELOAD_TIMEOUT_MS = 1200;
 const SECTION_SCROLL_GAP_PX = 12;
+const SECTION_ACTIVE_VIEWPORT_RATIO = 0.38;
 const MAX_LOADED_PRODUCT_IMAGE_URLS = 500;
 const loadedProductImageUrls = new Set<string>();
+const pendingProductImagePreloads = new Map<string, Promise<void>>();
+const activeSectionByLocation = new Map<string, number>();
+
+function getSectionIndexFromHash(sectionCount: number): number | null {
+  const id = window.location.hash.slice(1);
+  if (!id.startsWith("section-")) return null;
+  const index = Number(id.slice("section-".length));
+  return Number.isInteger(index) && index >= 0 && index < sectionCount ? index : null;
+}
+
+function getSectionLocationKey(): string {
+  return `${window.location.pathname}${window.location.search}`;
+}
+
+function getSavedSectionIndex(sectionCount: number): number | null {
+  const index = activeSectionByLocation.get(getSectionLocationKey());
+  return typeof index === "number" && index >= 0 && index < sectionCount ? index : null;
+}
+
+function saveSectionIndex(index: number) {
+  activeSectionByLocation.set(getSectionLocationKey(), index);
+}
+
+function replaceUrlSectionHash(index: number) {
+  const nextHash = `#${buildSectionId(index)}`;
+  if (window.location.hash === nextHash) return;
+  window.history.replaceState(
+    window.history.state,
+    "",
+    `${window.location.pathname}${window.location.search}${nextHash}`
+  );
+}
 
 function ProductImage({
   src,
@@ -50,6 +96,7 @@ function ProductImage({
       loading={loading}
       fetchPriority={fetchPriority}
       className={className}
+      onLoad={() => markProductImageLoaded(imageSrc)}
       onError={() => setFailedSrc(src)}
     />
   );
@@ -150,7 +197,7 @@ function QuantityControl({
     <div
       className="flex flex-col items-center gap-1"
       ref={wheelAdjustRef}
-      onClickCapture={stop}
+      onClick={stop}
       aria-label={t.inCartLabel}
     >
       <div className="quantity-control-surface grid w-24 grid-cols-[1.75rem_2.5rem_1.75rem] items-center rounded-full">
@@ -316,6 +363,8 @@ export function ProductGrid({
     [gridProducts]
   );
   const initialImagesReady = useInitialProductImagesReady(gridProducts, countryCode);
+  useBackgroundProductImagePreload(gridProducts, countryCode, initialImagesReady);
+  useSectionLeadImagePreload(sections ?? [], countryCode, initialImagesReady);
 
   useEffect(() => {
     const entries = new Map<string, BundleThreshold[]>();
@@ -409,12 +458,145 @@ function useInitialProductImagesReady(products: Product[], countryCode: CountryC
   return readySignature === imageSignature;
 }
 
-function preloadImage(src: string) {
+function useBackgroundProductImagePreload(
+  products: Product[],
+  countryCode: CountryCode,
+  enabled: boolean
+) {
+  const imageUrls = useMemo(() => {
+    return buildProductImageUrls(
+      products,
+      countryCode,
+      INITIAL_PRODUCT_IMAGE_PRELOAD_COUNT,
+      BACKGROUND_PRODUCT_IMAGE_PRELOAD_LIMIT
+    );
+  }, [countryCode, products]);
+
+  useEffect(() => {
+    if (!enabled || imageUrls.length === 0) return;
+
+    let cancelled = false;
+    let idleCallbackId: number | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    const schedule = (callback: () => void) => {
+      if ("requestIdleCallback" in window) {
+        idleCallbackId = window.requestIdleCallback(callback, { timeout: 1200 });
+      } else {
+        timeoutId = globalThis.setTimeout(callback, 100);
+      }
+    };
+
+    schedule(() => {
+      void preloadImageUrls(
+        imageUrls,
+        BACKGROUND_PRODUCT_IMAGE_PRELOAD_CONCURRENCY,
+        () => cancelled
+      );
+    });
+
+    return () => {
+      cancelled = true;
+      if (idleCallbackId !== null && "cancelIdleCallback" in window) {
+        window.cancelIdleCallback(idleCallbackId);
+      }
+      if (timeoutId !== null) window.clearTimeout(timeoutId);
+    };
+  }, [enabled, imageUrls]);
+}
+
+function useSectionLeadImagePreload(
+  sections: SearchSection[],
+  countryCode: CountryCode,
+  enabled: boolean
+) {
+  const imageUrls = useMemo(() => {
+    const urls = sections.flatMap((section) =>
+      buildProductImageUrls(section.products, countryCode, 0, SECTION_LEAD_IMAGE_PRELOAD_COUNT)
+    );
+    return [...new Set(urls)];
+  }, [countryCode, sections]);
+
+  useEffect(() => {
+    if (!enabled || imageUrls.length === 0) return;
+
+    let cancelled = false;
+    const timeoutId = window.setTimeout(() => {
+      void preloadImageUrls(imageUrls, SECTION_LEAD_IMAGE_PRELOAD_CONCURRENCY, () => cancelled);
+    }, 100);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [enabled, imageUrls]);
+}
+
+function preloadProductImages(
+  products: Product[],
+  countryCode: CountryCode,
+  limit: number,
+  concurrency: number
+) {
+  const imageUrls = buildProductImageUrls(products, countryCode, 0, limit);
+  return preloadImageUrls(imageUrls, concurrency);
+}
+
+function buildProductImageUrls(
+  products: Product[],
+  countryCode: CountryCode,
+  start: number,
+  end: number
+) {
+  const urls = products
+    .slice(start, end)
+    .map((product) =>
+      product.imageId ? buildImageUrl(product.imageId, countryCode) : PLACEHOLDER_IMAGE
+    );
+  return [...new Set(urls)].filter(
+    (url) => !loadedProductImageUrls.has(url) && !pendingProductImagePreloads.has(url)
+  );
+}
+
+function preloadImageUrls(
+  imageUrls: string[],
+  concurrency: number,
+  isCancelled: () => boolean = () => false
+) {
   return new Promise<void>((resolve) => {
-    if (loadedProductImageUrls.has(src)) {
-      resolve();
-      return;
-    }
+    let cursor = 0;
+    let active = 0;
+
+    const pump = () => {
+      if (isCancelled()) {
+        resolve();
+        return;
+      }
+      while (active < concurrency && cursor < imageUrls.length) {
+        const url = imageUrls[cursor];
+        cursor++;
+        if (!url || loadedProductImageUrls.has(url)) continue;
+        active++;
+        preloadImage(url).finally(() => {
+          active--;
+          pump();
+        });
+      }
+      if (cursor >= imageUrls.length && active === 0) resolve();
+    };
+
+    pump();
+  });
+}
+
+function preloadImage(src: string) {
+  if (loadedProductImageUrls.has(src)) {
+    return Promise.resolve();
+  }
+  const pending = pendingProductImagePreloads.get(src);
+  if (pending) return pending;
+
+  const promise = new Promise<void>((resolve) => {
     const image = new Image();
     image.decoding = "async";
     image.onload = () => {
@@ -431,7 +613,9 @@ function preloadImage(src: string) {
       markProductImageLoaded(src);
       resolve();
     }
-  });
+  }).finally(() => pendingProductImagePreloads.delete(src));
+  pendingProductImagePreloads.set(src, promise);
+  return promise;
 }
 
 function markProductImageLoaded(src: string) {
@@ -574,29 +758,148 @@ function List({ title, children }: { title: string; children: ReactNode }) {
 
 export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
   const t = useTranslations();
-  const [active, setActive] = useState(0);
+  const countryCode = useCountryCode();
+  const [active, setActive] = useState(() =>
+    typeof window === "undefined"
+      ? 0
+      : (getSectionIndexFromHash(sections.length) ?? getSavedSectionIndex(sections.length) ?? 0)
+  );
   const navRef = useRef<HTMLElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const badgeRefs = useRef(new Map<number, HTMLButtonElement>());
   const manualSectionRef = useRef<number | null>(null);
+  const canSyncHashRef = useRef(false);
   const sectionSignature = useMemo(
     () => sections.map((section) => section.title).join("\n"),
     [sections]
   );
 
-  function stickyOffset() {
+  const stickyOffset = useCallback(() => {
     const navBottom = navRef.current?.getBoundingClientRect().bottom;
     return (
       (navBottom && navBottom > 0 ? navBottom : STICKY_HEADER_OFFSET_PX) + SECTION_SCROLL_GAP_PX
     );
+  }, []);
+
+  const findViewportSectionIndex = useCallback(() => {
+    if (window.scrollY <= 2) return 0;
+
+    const offset = stickyOffset();
+    const focusY =
+      offset + Math.max(80, (window.innerHeight - offset) * SECTION_ACTIVE_VIEWPORT_RATIO);
+    if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2) {
+      return sections.length - 1;
+    }
+
+    let best = 0;
+    let nearestDistance = Number.POSITIVE_INFINITY;
+    sections.forEach((_, index) => {
+      const element = document.getElementById(buildSectionId(index));
+      if (!element) return;
+      const rect = element.getBoundingClientRect();
+      if (rect.top <= focusY && rect.bottom > focusY) {
+        best = index;
+        nearestDistance = 0;
+        return;
+      }
+
+      const distance = Math.min(Math.abs(rect.top - focusY), Math.abs(rect.bottom - focusY));
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        best = index;
+      }
+    });
+    return best;
+  }, [sections, stickyOffset]);
+
+  const scrollBadgeIntoView = useCallback((index: number, behavior: ScrollBehavior = "auto") => {
+    const badge = badgeRefs.current.get(index);
+    const container = containerRef.current;
+    if (!badge || !container) return;
+    const badgeRect = badge.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    if (badgeRect.left < containerRect.left + 16 || badgeRect.right > containerRect.right - 16) {
+      container.scrollTo({
+        left:
+          container.scrollLeft +
+          badgeRect.left -
+          containerRect.left -
+          containerRect.width / 2 +
+          badgeRect.width / 2,
+        behavior,
+      });
+    }
+  }, []);
+
+  const scrollSectionIntoView = useCallback(
+    (index: number, behavior: ScrollBehavior = "auto") => {
+      const section = document.getElementById(buildSectionId(index));
+      if (!section) return;
+      window.scrollTo({
+        top: section.getBoundingClientRect().top + window.scrollY - stickyOffset(),
+        behavior,
+      });
+    },
+    [stickyOffset]
+  );
+
+  const preloadSectionImages = useCallback(
+    (index: number) => {
+      const section = sections[index];
+      if (!section) return Promise.resolve();
+      return preloadProductImages(
+        section.products,
+        countryCode,
+        SECTION_INTENT_IMAGE_PRELOAD_COUNT,
+        SECTION_INTENT_IMAGE_PRELOAD_CONCURRENCY
+      );
+    },
+    [countryCode, sections]
+  );
+
+  function selectSection(index: number) {
+    const section = document.getElementById(buildSectionId(index));
+    if (!section) return;
+
+    void preloadSectionImages(index);
+    manualSectionRef.current = index;
+    setActive(index);
+    saveSectionIndex(index);
+    replaceUrlSectionHash(index);
+    scrollSectionIntoView(index, "smooth");
   }
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     manualSectionRef.current = null;
-    containerRef.current?.scrollTo({ left: 0 });
-    const frame = requestAnimationFrame(() => setActive(0));
-    return () => cancelAnimationFrame(frame);
-  }, [sectionSignature]);
+    canSyncHashRef.current = false;
+
+    const hashIndex = getSectionIndexFromHash(sections.length);
+    const nextActive = hashIndex ?? getSavedSectionIndex(sections.length) ?? 0;
+    setActive(nextActive);
+    saveSectionIndex(nextActive);
+    scrollBadgeIntoView(nextActive);
+
+    if (hashIndex !== null) {
+      scrollSectionIntoView(hashIndex);
+    }
+
+    let innerFrame: number | null = null;
+    const frame = requestAnimationFrame(() => {
+      innerFrame = requestAnimationFrame(() => {
+        canSyncHashRef.current = true;
+      });
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      if (innerFrame !== null) cancelAnimationFrame(innerFrame);
+    };
+  }, [
+    findViewportSectionIndex,
+    scrollBadgeIntoView,
+    scrollSectionIntoView,
+    sectionSignature,
+    sections.length,
+  ]);
 
   useEffect(() => {
     let frame: number | null = null;
@@ -606,32 +909,20 @@ export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
         setActive(manualSectionRef.current);
         return;
       }
-      const focusY = Math.max(stickyOffset(), window.innerHeight * VIEWPORT_FOCUS_RATIO);
-      if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2) {
-        setActive(sections.length - 1);
-        return;
-      }
-      let best = 0;
-      let distance = Number.POSITIVE_INFINITY;
-      sections.forEach((_, index) => {
-        const element = document.getElementById(buildSectionId(index));
-        if (!element) return;
-        const rect = element.getBoundingClientRect();
-        const nextDistance =
-          rect.top <= focusY && rect.bottom > focusY
-            ? 0
-            : Math.min(Math.abs(rect.top - focusY), Math.abs(rect.bottom - focusY));
-        if (nextDistance < distance) {
-          distance = nextDistance;
-          best = index;
-        }
-      });
-      setActive(best);
+      const nextActive = findViewportSectionIndex();
+      setActive(nextActive);
+      saveSectionIndex(nextActive);
+      if (canSyncHashRef.current) replaceUrlSectionHash(nextActive);
     };
     const schedule = () => {
       if (frame === null) frame = requestAnimationFrame(update);
     };
-    update();
+    if (
+      getSectionIndexFromHash(sections.length) === null &&
+      getSavedSectionIndex(sections.length) === null
+    ) {
+      update();
+    }
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", schedule);
     return () => {
@@ -639,7 +930,22 @@ export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
     };
-  }, [sections]);
+  }, [findViewportSectionIndex, sections]);
+
+  useEffect(() => {
+    const scrollToHashSection = () => {
+      const index = getSectionIndexFromHash(sections.length);
+      if (index === null) return;
+      manualSectionRef.current = index;
+      setActive(index);
+      saveSectionIndex(index);
+      scrollBadgeIntoView(index);
+      scrollSectionIntoView(index);
+    };
+
+    window.addEventListener("hashchange", scrollToHashSection);
+    return () => window.removeEventListener("hashchange", scrollToHashSection);
+  }, [scrollBadgeIntoView, scrollSectionIntoView, sections]);
 
   useEffect(() => {
     const clearManualSelection = () => {
@@ -667,34 +973,8 @@ export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
   }, []);
 
   useEffect(() => {
-    const badge = badgeRefs.current.get(active);
-    const container = containerRef.current;
-    if (!badge || !container) return;
-    const badgeRect = badge.getBoundingClientRect();
-    const containerRect = container.getBoundingClientRect();
-    if (badgeRect.left < containerRect.left + 16 || badgeRect.right > containerRect.right - 16) {
-      container.scrollTo({
-        left:
-          container.scrollLeft +
-          badgeRect.left -
-          containerRect.left -
-          containerRect.width / 2 +
-          badgeRect.width / 2,
-      });
-    }
-  }, [active]);
-
-  function selectSection(index: number) {
-    const section = document.getElementById(buildSectionId(index));
-    if (!section) return;
-
-    manualSectionRef.current = index;
-    setActive(index);
-    window.scrollTo({
-      top: section.getBoundingClientRect().top + window.scrollY - stickyOffset(),
-      behavior: "smooth",
-    });
-  }
+    scrollBadgeIntoView(active, "smooth");
+  }, [active, scrollBadgeIntoView]);
 
   return (
     <nav
@@ -714,6 +994,8 @@ export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
               if (node) badgeRefs.current.set(index, node);
               else badgeRefs.current.delete(index);
             }}
+            onPointerEnter={() => void preloadSectionImages(index)}
+            onFocus={() => void preloadSectionImages(index)}
             onClick={() => selectSection(index)}
             aria-current={active === index ? "true" : undefined}
             className={`shrink-0 rounded-full px-3 py-1 text-sm font-medium whitespace-nowrap ${active === index ? "bg-picnic-red text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}

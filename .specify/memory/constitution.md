@@ -2,8 +2,11 @@
   ============================================================================
   SYNC IMPACT REPORT
   ============================================================================
-  Version change: N/A (initial) → 1.0.0
-  Modified principles: N/A (first ratification)
+  Version change: 1.0.0 → 1.1.0
+  Modified principles:
+    - III. Forbidden Anti-Patterns (replaced file-size thresholding with
+      responsibility-boundary and module-cohesion review)
+    - Development Workflow (clarified current Vite/Hono project stack)
   Added sections:
     - Core Principles (5 principles)
     - Forbidden Anti-Patterns (dedicated section)
@@ -25,7 +28,8 @@
     - .specify/templates/agent-file-template.md ✅ No update needed
       (Code Style section will reference constitution at generation time)
   Follow-up TODOs:
-    - RATIFICATION_DATE set to today (2026-03-20) as initial adoption.
+    - Historical specs may retain Next-era implementation notes, but current
+      work must follow this constitution and the current project structure.
   ============================================================================
 -->
 
@@ -83,9 +87,16 @@ prohibited.
 The following patterns are unconditionally prohibited. Any occurrence
 MUST be refactored immediately upon detection.
 
-- **God Objects/Files**: No file MAY exceed 300 lines of code
-  (excluding imports and comments). No class or object MAY accumulate
-  responsibilities beyond its single defined purpose.
+- **God Objects/Files**: No module MAY accumulate responsibilities
+  beyond one clear ownership boundary. Size is a warning signal, not
+  the rule itself: large files MUST be split when they mix independent
+  reasons to change, unrelated domain concepts, UI state plus parsing
+  or service logic, or reusable helpers hidden inside feature pages.
+  Large but cohesive data tables, translation maps, generated types,
+  and defensive API parsers MAY remain together when splitting would
+  reduce navigability or create artificial indirection. Reviewers MAY
+  ask for a responsibility-boundary split whenever a file is hard to
+  scan, test, or modify safely.
 - **Deep Nesting**: No function MAY exceed 3 levels of indentation.
   Use early returns, guard clauses, and extracted helper functions to
   flatten logic.
@@ -112,7 +123,7 @@ MUST be refactored immediately upon detection.
 
 ### IV. Mandatory Self-Refactor Protocol (Strict Enforcement)
 
-Before outputting any code to the user, you MUST silently perform a self-review against all guidelines listed above. If your drafted code violates ANY of these rules (e.g., a function exceeds the line limit, a variable name is abbreviated or generic, or a file is too large), you must completely refactor the code internally to achieve full compliance before presenting the final result. Do not explain the refactoring process; only output the final, compliant code.
+Before outputting any code to the user, you MUST silently perform a self-review against all guidelines listed above. If your drafted code violates ANY of these rules (e.g., a function has unclear responsibility boundaries, a variable name is abbreviated or generic, or a module mixes independent reasons to change), you must completely refactor the code internally to achieve full compliance before presenting the final result. Do not explain the refactoring process; only output the final, compliant code.
 
 ### V. Readability Over Cleverness
 
@@ -170,6 +181,27 @@ The following workflow applies to all implementation work:
 5. **Commit**: Commit clean, principle-compliant code with a
    descriptive commit message.
 
+## Current Project Stack and Structure
+
+Current implementation work MUST target the migrated architecture:
+
+- `apps/web`: Vite, React, Tailwind CSS, TanStack Router, TanStack Query.
+- `apps/api`: Hono on Cloudflare Workers, serving API routes and static
+  Vite assets.
+- `src/lib`: shared Picnic API services, parsers, domain helpers, and
+  pure utilities.
+- `src/types`: shared domain/API types.
+- `src/components`: shared presentation components that are not tied to
+  a web feature route.
+- `scripts`: local maintenance, probe, and smoke-test scripts.
+- `docs`: project research, migration notes, and review documents.
+
+The retired Next.js App Router implementation is historical context only.
+New code MUST NOT add `next/*` imports, Next middleware, or Next route
+handlers. Historical specs that mention `src/app`, `src/app/api`,
+`NextRequest`, `NextResponse`, `next/image`, or `localhost:3000` must be
+translated to the current Vite/Hono layout before implementation.
+
 ## Governance
 
 This constitution is the authoritative source of coding standards
@@ -196,4 +228,4 @@ personal preferences, and legacy patterns.
   `.specify/templates/agent-file-template.md`) for runtime
   development guidance including tech stack details and commands.
 
-**Version**: 1.0.0 | **Ratified**: 2026-03-20 | **Last Amended**: 2026-03-20
+**Version**: 1.1.0 | **Ratified**: 2026-03-20 | **Last Amended**: 2026-08-01

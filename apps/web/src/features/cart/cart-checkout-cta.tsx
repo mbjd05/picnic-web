@@ -33,6 +33,8 @@ export function CartCheckoutCta({
   const isBelowMinimum =
     minimumOrderValue !== null && minimumOrderValue > 0 && totalPrice < minimumOrderValue;
   const bankName = preferredOption ? storedBankMetadata[preferredOption.id]?.bankName : null;
+  const isCheckoutDisabled =
+    checkoutState.status === "loading" || hasKnownMissingPayment || isBelowMinimum;
 
   async function handleCheckout() {
     if (isBelowMinimum || hasKnownMissingPayment) return;
@@ -58,11 +60,11 @@ export function CartCheckoutCta({
 
   return (
     <div className="space-y-3">
-      <div className="border-card-border rounded-xl border bg-white p-4">
+      <div className="border-card-border bg-card-bg rounded-xl border p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-semibold text-gray-900">{t.paymentMethodTitle}</p>
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="text-foreground text-sm font-semibold">{t.paymentMethodTitle}</p>
+            <p className="text-text-muted mt-1 text-sm">
               {preferredOption?.display_name ?? t.noPreferredPaymentMethod}
               {bankName ? ` · ${bankName}` : ""}
             </p>
@@ -79,13 +81,17 @@ export function CartCheckoutCta({
       <button
         type="button"
         onClick={() => void handleCheckout()}
-        disabled={checkoutState.status === "loading" || hasKnownMissingPayment || isBelowMinimum}
-        className="bg-picnic-red block w-full rounded-xl py-4 text-center text-base font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+        disabled={isCheckoutDisabled}
+        className={`block w-full rounded-xl py-4 text-center text-base font-semibold transition-colors ${
+          isCheckoutDisabled
+            ? "bg-card-border text-text-muted cursor-not-allowed"
+            : "bg-picnic-red hover:bg-picnic-red-dark text-white"
+        }`}
       >
         {checkoutState.status === "loading" ? t.checkoutStarting : t.checkoutLabel}
       </button>
       {hasKnownMissingPayment ? (
-        <p className="text-sm text-gray-600">
+        <p className="text-text-muted text-sm">
           {t.noPreferredPaymentMethod}{" "}
           <Link
             to="/account/payment"
@@ -97,14 +103,14 @@ export function CartCheckoutCta({
         </p>
       ) : null}
       {isBelowMinimum ? (
-        <p className="text-sm text-gray-600">
+        <p className="text-text-muted text-sm">
           {t.minimumCheckoutMessage
             .replace("{minimum}", formatEuroPrice(minimumOrderValue ?? 0))
             .replace("{current}", formatEuroPrice(totalPrice))}
         </p>
       ) : null}
       {checkoutState.status === "error" ? (
-        <p className="text-sm text-red-600" role="alert">
+        <p className="text-sm text-red-600 dark:text-red-300" role="alert">
           {checkoutState.message}
         </p>
       ) : null}

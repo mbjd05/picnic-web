@@ -11,14 +11,14 @@ The "Deze week" promotional section from the spec was dropped — it is not avai
 
 ## Technical Context
 
-**Language/Version**: TypeScript 5, Node.js 20.9+  
-**Primary Dependencies**: Next.js 16.2.1 (App Router), React 19.2.4, Tailwind CSS 4, picnic-api ^4.1.0  
-**Storage**: N/A (no persistent storage; category data is fetched on demand from Picnic API)  
-**Testing**: No test framework configured (lint + build validation only)  
-**Target Platform**: Web (responsive: mobile 320px, tablet 768px, desktop 1280px+)  
-**Project Type**: Web application (Next.js App Router, server-side API routes + client-side components)  
-**Performance Goals**: Category grid visible within 2 seconds of page load on standard connection (SC-001)  
-**Constraints**: All files under 300 lines (constitution). Responsive layout without horizontal scroll (SC-003).  
+**Language/Version**: TypeScript 5, Node.js 20.9+
+**Primary Dependencies**: Next.js 16.2.1 (App Router), React 19.2.4, Tailwind CSS 4, picnic-api ^4.1.0
+**Storage**: N/A (no persistent storage; category data is fetched on demand from Picnic API)
+**Testing**: No test framework configured (lint + build validation only)
+**Target Platform**: Web (responsive: mobile 320px, tablet 768px, desktop 1280px+)
+**Project Type**: Web application (Next.js App Router, server-side API routes + client-side components)
+**Performance Goals**: Category grid visible within 2 seconds of page load on standard connection (SC-001)
+**Constraints**: All modules keep clear responsibility boundaries (constitution). Responsive layout without horizontal scroll (SC-003).
 **Scale/Scope**: Single page change (home page), 4 new files + 1 modified file
 
 ## Constitution Check
@@ -29,7 +29,7 @@ The "Deze week" promotional section from the spec was dropped — it is not avai
 |-----------|--------|-------|
 | **I. SRP / DRY / DI** | PASS | Each new file has a single responsibility: types (`category-types.ts`), parsing (`parse-categories.ts`), API route (`categories/route.ts`), UI (`category-grid.tsx`). Parsing follows the same DI-friendly pattern as `parse-fusion-search.ts`. `buildPicnicClient` is injected via token. |
 | **II. Naming Conventions** | PASS | Functions use verb-first camelCase (`parseCategoryPage`, `extractCategoryFromPmlItem`, `buildImageUrl`). Types use PascalCase (`CategoryItem`, `CategoriesApiResponse`). Files use kebab-case (`category-types.ts`, `parse-categories.ts`). Constants use UPPER_SNAKE_CASE (`CATEGORY_LIST_BLOCK_ID`, `CATEGORY_ITEM_PREFIX`). |
-| **III. Forbidden Anti-Patterns** | PASS | No file exceeds 300 lines. No deep nesting (max 3 levels). Magic strings extracted to named constants (`CATEGORY_LIST_BLOCK_ID`, `CATEGORY_ITEM_PREFIX`). Error handling is explicit (auth errors handled, upstream failures surfaced with message). No global mutable state. |
+| **III. Forbidden Anti-Patterns** | PASS | Modules keep clear responsibility boundaries. No deep nesting (max 3 levels). Magic strings extracted to named constants (`CATEGORY_LIST_BLOCK_ID`, `CATEGORY_ITEM_PREFIX`). Error handling is explicit (auth errors handled, upstream failures surfaced with message). No global mutable state. |
 | **IV. Self-Refactor Protocol** | PASS | Will be enforced during implementation. |
 | **V. Readability Over Cleverness** | PASS | Explicit extraction logic with named steps. No chained method calls beyond 3 levels. Guard clauses used for early returns. |
 

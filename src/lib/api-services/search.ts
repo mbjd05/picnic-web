@@ -11,6 +11,13 @@ import type { ApiServiceResult } from "./types";
 
 type RawSellingUnits = Parameters<typeof extractProducts>[0];
 
+const ALL_RESULTS_SECTION_TITLES = new Set([
+  "alle resultaten",
+  "alle ergebnisse",
+  "tous les résultats",
+  "all results",
+]);
+
 type SearchMetadataClient = {
   sendRequest: (
     method: string,
@@ -77,17 +84,16 @@ export async function searchProductsService(
     const products = orderedFallbackProducts.map(
       (product) => enrichedProductsById.get(product.id) ?? product
     );
+    const sections = buildMergedSearchSections(
+      parsedSections,
+      products,
+      `${t.allResultsFor} "${query}"`
+    );
 
     return {
       body: {
         products,
-        sections: [
-          {
-            title: `${t.allResultsFor} "${query}"`,
-            products,
-          },
-          ...parsedSections,
-        ],
+        sections,
         query,
       },
     };
@@ -107,4 +113,33 @@ export async function searchProductsService(
       status: 502,
     };
   }
+}
+
+function buildMergedSearchSections(
+  parsedSections: SearchSection[],
+  catalogProducts: SearchApiResponse["products"],
+  allResultsTitle: string
+): SearchSection[] {
+  if (parsedSections.length === 0) {
+    return [{ title: allResultsTitle, products: catalogProducts }];
+  }
+
+  const seenIds = new Set(parsedSections.flatMap((section) => section.products.map((p) => p.id)));
+  const catalogOnlyProducts = catalogProducts.filter((product) => !seenIds.has(product.id));
+  const allResultsIndex = parsedSections.findIndex((section) => isAllResultsSection(section.title));
+  if (allResultsIndex === -1) {
+    return catalogOnlyProducts.length
+      ? [{ title: allResultsTitle, products: catalogOnlyProducts }, ...parsedSections]
+      : parsedSections;
+  }
+
+  return parsedSections.map((section, index) =>
+    index === allResultsIndex
+      ? { title: allResultsTitle, products: [...section.products, ...catalogOnlyProducts] }
+      : section
+  );
+}
+
+function isAllResultsSection(title: string): boolean {
+  return ALL_RESULTS_SECTION_TITLES.has(title.trim().toLocaleLowerCase());
 }

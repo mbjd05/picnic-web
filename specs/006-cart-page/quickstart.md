@@ -14,7 +14,7 @@
 npm run dev
 ```
 
-Then navigate to `http://localhost:3000/cart`.
+Then navigate to `http://127.0.0.1:8787/cart`.
 
 ## Key Files to Create
 

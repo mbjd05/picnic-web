@@ -67,7 +67,7 @@ export function DeliverySlotPicker({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="flex max-h-[min(600px,90vh)] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-xl">
+      <div className="bg-card-bg flex max-h-[min(600px,90vh)] w-full max-w-md flex-col overflow-hidden rounded-2xl shadow-xl">
         <PickerHeader onClose={onClose} />
         {slotsQuery.isPending ? <PickerLoading /> : null}
         {slotsQuery.isError ? <PickerError message={slotErrorMessage} onRetry={loadSlots} /> : null}
@@ -89,16 +89,18 @@ export function DeliverySlotPicker({
 function PickerHeader({ onClose }: { onClose: () => void }) {
   const t = useTranslations();
   return (
-    <div className="border-b border-gray-200 px-4 pt-4 pb-3">
+    <div className="border-card-border border-b px-4 pt-4 pb-3">
       <div className="flex items-start justify-between">
         <div>
           <h2 className="text-foreground text-lg font-bold">{t.pickerTitle}</h2>
-          <p className="text-sm text-green-700">{t.freeDeliveryLabel}</p>
+          <p className="text-sm font-medium text-green-700 dark:text-green-300">
+            {t.freeDeliveryLabel}
+          </p>
         </div>
         <button
           type="button"
           onClick={onClose}
-          className="rounded-full p-1 text-gray-500 hover:bg-gray-100"
+          className="text-text-muted rounded-full p-1 hover:bg-gray-100"
           aria-label={t.closeAriaLabel}
         >
           <CloseIcon />
@@ -120,7 +122,7 @@ function PickerError({ message, onRetry }: { message: string; onRetry: () => voi
   const t = useTranslations();
   return (
     <div className="flex min-h-[200px] flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-      <p className="text-sm text-gray-600">{message}</p>
+      <p className="text-text-muted text-sm">{message}</p>
       <button
         type="button"
         onClick={onRetry}
@@ -151,7 +153,7 @@ function SlotListBody({
   if (data.dayGroups.length === 0) {
     return (
       <div className="flex min-h-[200px] flex-1 items-center justify-center px-6 text-center">
-        <p className="text-sm text-gray-500">{t.noSlotsLabel}</p>
+        <p className="text-text-muted text-sm">{t.noSlotsLabel}</p>
       </div>
     );
   }
@@ -165,7 +167,7 @@ function SlotListBody({
       <DayTabs groups={data.dayGroups} activeIndex={dayIndex} onChange={onDayChange} />
       <div className="flex-1 overflow-y-auto px-4 pb-6">
         {selectionError ? (
-          <div className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          <div className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-200">
             {selectionError}
           </div>
         ) : null}
@@ -200,7 +202,7 @@ function DayTabs({
   onChange: (index: number) => void;
 }) {
   return (
-    <div className="flex gap-1 overflow-x-auto border-b border-gray-100 px-4 py-2">
+    <div className="border-card-border flex gap-1 overflow-x-auto border-b px-4 py-2">
       {groups.map((group, index) => (
         <button
           key={group.date}
@@ -209,7 +211,7 @@ function DayTabs({
           className={`flex shrink-0 flex-col items-center rounded-lg px-3 py-1.5 text-xs transition-colors ${
             index === activeIndex
               ? "bg-picnic-red text-white"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              : "text-foreground hover:bg-background bg-gray-100"
           }`}
         >
           <span className="font-medium">{group.dayLabel}</span>
@@ -310,8 +312,8 @@ function DefaultDayView({
 function SectionHeader({ text, icon }: { text: string; icon?: "leaf" }) {
   return (
     <div className="mt-4 mb-2 flex items-center gap-1.5">
-      {icon === "leaf" ? <LeafIcon /> : null}
-      <span className="text-xs font-semibold tracking-wide text-gray-500 uppercase">{text}</span>
+      {icon === "leaf" ? <LeafIcon className="text-picnic-green" /> : null}
+      <span className="text-text-muted text-xs font-semibold tracking-wide uppercase">{text}</span>
     </div>
   );
 }
@@ -338,13 +340,13 @@ function SlotRow({
       disabled={isDisabled || !slot.isAvailable}
       className={`mb-1.5 flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left transition-colors ${
         isCurrentlySelected
-          ? "border-green-500 bg-green-50"
-          : "border-gray-200 bg-white hover:bg-gray-50"
+          ? "border-green-500 bg-green-50 text-green-950 dark:border-green-400 dark:bg-green-950/40 dark:text-green-100"
+          : "border-card-border bg-card-bg text-foreground hover:bg-gray-100"
       } ${isDisabled || !slot.isAvailable ? "opacity-50" : ""}`}
     >
       <div className="flex items-center gap-2">
-        {slot.isGreenChoice ? <LeafIcon /> : null}
-        <span className="text-foreground text-sm font-medium">
+        {slot.isGreenChoice ? <LeafIcon className="text-picnic-green" /> : null}
+        <span className="text-sm font-medium">
           {startTime} - {endTime}
         </span>
       </div>
@@ -379,13 +381,20 @@ function CloseIcon() {
   );
 }
 
-function LeafIcon() {
+function LeafIcon({ className }: { className?: string }) {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden="true"
+      className={className}
+    >
       <path
         d="M13 3s-1 5-5 7C4 12 3 13 3 13s0-5 4-7c1.5-1 3.5-2 6-3Z"
-        fill="#22c55e"
-        stroke="#16a34a"
+        fill="currentColor"
+        stroke="currentColor"
         strokeWidth="0.5"
       />
     </svg>
@@ -394,8 +403,15 @@ function LeafIcon() {
 
 function CheckIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-      <circle cx="10" cy="10" r="9" fill="#22c55e" />
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      aria-hidden="true"
+      className="text-picnic-green"
+    >
+      <circle cx="10" cy="10" r="9" fill="currentColor" />
       <path
         d="M6 10l3 3 5-6"
         stroke="white"

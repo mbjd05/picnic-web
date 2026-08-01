@@ -1,17 +1,20 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useNavigate, useParams } from "@tanstack/react-router";
+import { useNavigate, useParams } from "@tanstack/react-router";
 
 import { formatEuroPrice } from "@/lib/format/price";
+import { buildRecipeImageUrl } from "@/lib/media/image-url";
 import { getRecipeIngredientCount } from "@/lib/recipes/quantity";
 import { DEBOUNCE_DELAY_MS } from "@/lib/config/app-constants";
+import type { CountryCode } from "@/types/locale";
 import type { RecipeCategory, RecipeDetail, RecipeItem } from "@/types/recipe";
 
 import { ErrorView, LoadingView } from "../../components/page-state";
 import { useDocumentTitle } from "../../hooks/use-document-title";
 import { useCartActions } from "../../providers/cart-context";
 import { useCountryCode, useTranslations } from "../../providers/country-context";
+import { useInAppBack } from "../../providers/navigation-history-context";
 import { CategoryDropdown } from "./category-dropdown";
 import { RecipeAddToCartPanel } from "./recipe-add-to-cart-panel";
 import { RecipeCard } from "./recipe-card";
@@ -27,9 +30,15 @@ import { RecipeSearchInput } from "./recipe-search-input";
 import { RecipeStepsSection } from "./recipe-steps-section";
 import { useCookbookSearch, useCookbookView, useSavedRecipes } from "./use-cookbook-query";
 import { fetchJson } from "../../lib/api-client";
-import { queryKeys, queryStaleTime } from "../../lib/query-config";
+import { queryGcTime, queryKeys, queryStaleTime } from "../../lib/query-config";
 
 const PAGE_SIZE = 24;
+const INITIAL_RECIPE_IMAGE_COUNT = 20;
+const BACKGROUND_RECIPE_IMAGE_PRELOAD_LIMIT = 72;
+const RECIPE_IMAGE_PRELOAD_CONCURRENCY = 4;
+const MAX_LOADED_RECIPE_IMAGE_URLS = 700;
+const loadedRecipeImageUrls = new Set<string>();
+const pendingRecipeImagePreloads = new Map<string, Promise<void>>();
 
 type RecipesState =
   | { status: "loading" }
@@ -42,6 +51,7 @@ export function CookbookPage() {
   const t = useTranslations();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const handleBack = useInAppBack(() => void navigate({ to: "/", search: {} }));
   useDocumentTitle(t.cookbookTitle);
 
   const [categories, setCategories] = useState<RecipeCategory[]>([]);
@@ -111,25 +121,14 @@ export function CookbookPage() {
     useGlobalSearch,
   ]);
 
-  const loadedRecipes = recipesState.status === "success" ? recipesState.recipes : [];
-  const recipesForDisplay =
-    hasActiveQuery && !useGlobalSearch
+  const recipesForDisplay = useMemo(() => {
+    const loadedRecipes = recipesState.status === "success" ? recipesState.recipes : [];
+    return hasActiveQuery && !useGlobalSearch
       ? loadedRecipes.filter((recipe) =>
           recipe.name.toLowerCase().includes(debouncedQuery.toLowerCase())
         )
       : loadedRecipes;
-
-  useEffect(() => {
-    if (recipesForDisplay.length === 0) return;
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting)
-        setVisibleCount((count) => Math.min(count + PAGE_SIZE, recipesForDisplay.length));
-    });
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [recipesForDisplay.length]);
+  }, [debouncedQuery, hasActiveQuery, recipesState, useGlobalSearch]);
 
   const handleSelectCategory = useCallback((catId: string | null) => {
     setLastBrowseCategory(catId);
@@ -204,6 +203,27 @@ export function CookbookPage() {
   );
 
   const visibleRecipes = recipesForDisplay.slice(0, visibleCount);
+  const initialImagesReady = useInitialRecipeImagesReady(recipesForDisplay, countryCode);
+  useBackgroundRecipeImagePreload(recipesForDisplay, countryCode, initialImagesReady, visibleCount);
+  useEffect(() => {
+    if (!initialImagesReady || recipesForDisplay.length === 0) return;
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting)
+          setVisibleCount((count) => Math.min(count + PAGE_SIZE, recipesForDisplay.length));
+      },
+      { rootMargin: "600px 0px" }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [initialImagesReady, recipesForDisplay.length]);
+  const priorityRecipeIds = useMemo(
+    () =>
+      new Set(recipesForDisplay.slice(0, INITIAL_RECIPE_IMAGE_COUNT).map((recipe) => recipe.id)),
+    [recipesForDisplay]
+  );
   const resultSummary = debouncedQuery
     ? `${recipesForDisplay.length} ${recipesForDisplay.length === 1 ? t.resultSingular : t.resultPlural} ${t.resultFor} "${debouncedQuery}"`
     : `${recipesForDisplay.length} ${recipesForDisplay.length === 1 ? t.recipeSingular : t.recipePlural}`;
@@ -219,7 +239,7 @@ export function CookbookPage() {
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <button
           type="button"
-          onClick={() => void navigate({ to: "/", search: {} })}
+          onClick={handleBack}
           className="text-text-muted hover:text-foreground shrink-0 text-sm transition-colors"
         >
           ← {t.backButton}
@@ -230,7 +250,7 @@ export function CookbookPage() {
           onClick={handleSelectSaved}
           className={`ml-auto flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium shadow-sm transition-colors ${
             selectedCategory === "__saved__" && !debouncedQuery
-              ? "border-picnic-red text-picnic-red bg-red-50"
+              ? "border-picnic-red text-picnic-red bg-red-50 dark:bg-red-950/35"
               : "text-foreground border-gray-200 bg-white hover:border-gray-400"
           }`}
         >
@@ -283,7 +303,7 @@ export function CookbookPage() {
                 }}
                 className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                   searchScope === option.value
-                    ? "text-picnic-red bg-red-50"
+                    ? "text-picnic-red bg-red-50 dark:bg-red-950/35"
                     : "text-text-muted hover:text-foreground"
                 }`}
               >
@@ -310,7 +330,10 @@ export function CookbookPage() {
       {recipesState.status === "success" && recipesForDisplay.length === 0 ? (
         <p className="text-text-muted text-sm">{t.noRecipes}</p>
       ) : null}
-      {recipesState.status === "success" && recipesForDisplay.length > 0 ? (
+      {recipesState.status === "success" && recipesForDisplay.length > 0 && !initialImagesReady ? (
+        <LoadingView />
+      ) : null}
+      {recipesState.status === "success" && recipesForDisplay.length > 0 && initialImagesReady ? (
         <>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {visibleRecipes.map((recipe) => (
@@ -319,6 +342,7 @@ export function CookbookPage() {
                 recipe={recipe}
                 isSaved={savedRecipeIds.has(recipe.id)}
                 isSaving={savingRecipeIds.has(recipe.id)}
+                priorityImage={priorityRecipeIds.has(recipe.id)}
                 onToggleSaved={handleToggleSaved}
               />
             ))}
@@ -334,6 +358,127 @@ export function CookbookPage() {
   );
 }
 
+function useInitialRecipeImagesReady(recipes: RecipeItem[], countryCode: CountryCode) {
+  const imageSignature = useMemo(() => {
+    const urls = buildRecipeImageUrls(recipes, countryCode, 0, INITIAL_RECIPE_IMAGE_COUNT);
+    return urls.join("\n");
+  }, [countryCode, recipes]);
+  const [readySignature, setReadySignature] = useState(() =>
+    areRecipeImagesLoaded(imageSignature.split("\n").filter(Boolean)) ? imageSignature : ""
+  );
+
+  useEffect(() => {
+    const urls = buildRecipeImageUrls(recipes, countryCode, 0, INITIAL_RECIPE_IMAGE_COUNT);
+    const nextSignature = urls.join("\n");
+    if (!nextSignature || areRecipeImagesLoaded(urls)) {
+      setReadySignature(nextSignature);
+      return;
+    }
+
+    let cancelled = false;
+    setReadySignature("");
+    preloadRecipeImageUrls(urls, RECIPE_IMAGE_PRELOAD_CONCURRENCY, () => cancelled).then(() => {
+      if (!cancelled) setReadySignature(nextSignature);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [countryCode, recipes]);
+
+  return !imageSignature || readySignature === imageSignature;
+}
+
+function useBackgroundRecipeImagePreload(
+  recipes: RecipeItem[],
+  countryCode: CountryCode,
+  enabled: boolean,
+  visibleCount: number
+) {
+  useEffect(() => {
+    if (!enabled || recipes.length === 0) return;
+    let cancelled = false;
+    const limit = Math.min(
+      Math.max(visibleCount + PAGE_SIZE, INITIAL_RECIPE_IMAGE_COUNT),
+      BACKGROUND_RECIPE_IMAGE_PRELOAD_LIMIT
+    );
+    const urls = buildRecipeImageUrls(recipes, countryCode, 0, limit);
+    void preloadRecipeImageUrls(urls, RECIPE_IMAGE_PRELOAD_CONCURRENCY, () => cancelled);
+    return () => {
+      cancelled = true;
+    };
+  }, [countryCode, enabled, recipes, visibleCount]);
+}
+
+function buildRecipeImageUrls(
+  recipes: RecipeItem[],
+  countryCode: CountryCode,
+  start: number,
+  limit: number
+) {
+  return recipes
+    .slice(start, start + limit)
+    .map((recipe) =>
+      recipe.imageId ? buildRecipeImageUrl(recipe.imageId, countryCode) : "/placeholder-product.svg"
+    );
+}
+
+async function preloadRecipeImageUrls(
+  urls: string[],
+  concurrency: number,
+  isCancelled: () => boolean = () => false
+) {
+  let nextIndex = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, urls.length) }, async () => {
+      while (!isCancelled()) {
+        const url = urls[nextIndex];
+        nextIndex += 1;
+        if (!url) return;
+        if (loadedRecipeImageUrls.has(url)) continue;
+        await preloadRecipeImage(url);
+      }
+    })
+  );
+}
+
+function preloadRecipeImage(src: string) {
+  if (loadedRecipeImageUrls.has(src)) return Promise.resolve();
+  const pending = pendingRecipeImagePreloads.get(src);
+  if (pending) return pending;
+
+  const promise = new Promise<void>((resolve) => {
+    const image = new Image();
+    image.onload = () => {
+      markRecipeImageLoaded(src);
+      resolve();
+    };
+    image.onerror = () => {
+      markRecipeImageLoaded(src);
+      resolve();
+    };
+    image.src = src;
+    if (image.complete) {
+      markRecipeImageLoaded(src);
+      resolve();
+    }
+  }).finally(() => pendingRecipeImagePreloads.delete(src));
+  pendingRecipeImagePreloads.set(src, promise);
+  return promise;
+}
+
+function markRecipeImageLoaded(src: string) {
+  if (loadedRecipeImageUrls.has(src)) return;
+  if (loadedRecipeImageUrls.size >= MAX_LOADED_RECIPE_IMAGE_URLS) {
+    const oldest = loadedRecipeImageUrls.values().next().value;
+    if (oldest) loadedRecipeImageUrls.delete(oldest);
+  }
+  loadedRecipeImageUrls.add(src);
+}
+
+function areRecipeImagesLoaded(urls: string[]) {
+  return urls.every((url) => loadedRecipeImageUrls.has(url));
+}
+
 type RecipePageState =
   | { status: "loading" }
   | { status: "success"; recipe: RecipeDetail }
@@ -344,25 +489,39 @@ export function RecipeDetailPage() {
   const { id } = useParams({ from: "/authenticated/recipe/$id" });
   const countryCode = useCountryCode();
   const t = useTranslations();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { refresh } = useCartActions();
-  const [pageState, setPageState] = useState<RecipePageState>({ status: "loading" });
-  const [portions, setPortions] = useState(2);
-  const [confirmedPortions, setConfirmedPortions] = useState<number | null>(null);
-  const [checkedIds, setCheckedIds] = useState<Set<string>>(() => new Set());
-  const [addState, setAddState] = useState<AddState>("idle");
-  const [isSaved, setIsSaved] = useState(false);
-  const [isSavingRecipe, setIsSavingRecipe] = useState(false);
+  const handleBack = useInAppBack(() => void navigate({ to: "/cookbook" }));
   const recipeQuery = useQuery({
     queryKey: queryKeys.recipeDetail(id, null, countryCode),
     queryFn: () => fetchJson<RecipeDetail>(`/api/recipe/${encodeURIComponent(id)}`),
     staleTime: queryStaleTime.cookbookView,
+    gcTime: queryGcTime.recipeDetail,
   });
+  const [pageState, setPageState] = useState<RecipePageState>(() =>
+    recipeQuery.data ? { status: "success", recipe: recipeQuery.data } : { status: "loading" }
+  );
+  const [portions, setPortions] = useState(recipeQuery.data?.portions ?? 2);
+  const [confirmedPortions, setConfirmedPortions] = useState<number | null>(
+    recipeQuery.data?.portions ?? null
+  );
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(
+    () =>
+      new Set(
+        recipeQuery.data?.ingredients
+          .filter((ingredient) => !ingredient.isCondiment)
+          .map((ingredient) => ingredient.id) ?? []
+      )
+  );
+  const [addState, setAddState] = useState<AddState>("idle");
+  const [isSaved, setIsSaved] = useState(false);
+  const [isSavingRecipe, setIsSavingRecipe] = useState(false);
   const detailSavedQuery = useSavedRecipes(countryCode);
   useDocumentTitle(pageState.status === "success" ? pageState.recipe.name : t.cookbookTitle);
 
   useEffect(() => {
-    if (recipeQuery.isPending) {
+    if (recipeQuery.isPending && !recipeQuery.data) {
       setPageState({ status: "loading" });
       return;
     }
@@ -411,7 +570,9 @@ export function RecipeDetailPage() {
         signal: controller.signal,
       })
         .then((fetched) => {
-          queryClient.setQueryData(queryKeys.recipeDetail(id, portions, countryCode), fetched);
+          queryClient.setQueryData(queryKeys.recipeDetail(id, portions, countryCode), fetched, {
+            updatedAt: Date.now(),
+          });
           setConfirmedPortions(portions);
           setPageState((current) =>
             current.status === "success"
@@ -517,12 +678,13 @@ export function RecipeDetailPage() {
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
-      <Link
-        to="/cookbook"
-        className="text-text-muted hover:text-foreground mb-6 inline-flex items-center gap-1 text-sm transition-colors"
+      <button
+        type="button"
+        onClick={handleBack}
+        className="text-picnic-red mb-6 inline-flex items-center gap-1 text-sm font-medium transition-colors hover:underline"
       >
         ← {t.cookbookTitle}
-      </Link>
+      </button>
       <div className="relative mb-8 overflow-hidden rounded-2xl bg-gray-50">
         {recipe.imageId ? (
           <RecipeHeroImage imageId={recipe.imageId} countryCode={countryCode} alt={recipe.name} />

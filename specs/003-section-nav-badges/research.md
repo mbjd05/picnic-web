@@ -1,7 +1,7 @@
 # Research: Section Navigation Badges
 
-**Feature**: 003-section-nav-badges  
-**Date**: 2026-03-29  
+**Feature**: 003-section-nav-badges
+**Date**: 2026-03-29
 **Purpose**: Resolve all technical unknowns before implementation planning.
 
 ## R-001: Scroll-Spy Implementation Strategy
@@ -49,7 +49,7 @@
 1. `src/components/section-nav-bar.tsx` — The badge bar container (sticky, horizontally scrollable, renders badges).
 2. `src/hooks/use-scroll-spy.ts` — Custom hook that observes section elements and returns the active section index.
 
-**Rationale**: Follows SRP (constitution Principle I) — the component handles rendering, the hook handles scroll observation. Both files will be well under the 300-line limit. The hook is reusable and testable in isolation.
+**Rationale**: Follows SRP (constitution Principle I) — the component handles rendering, the hook handles scroll observation. The hook is reusable and testable in isolation.
 
 **Naming**: `section-nav-bar` (kebab-case file, `SectionNavBar` export) clearly describes the component's purpose. `useScrollSpy` follows verb-first camelCase for hooks.
 

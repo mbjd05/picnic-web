@@ -27,7 +27,7 @@ Make "Snel naar" shortcut tiles clickable so they navigate to the corresponding 
 |-----------|--------|-------|
 | I. SRP/DRY/DI | PASS | Deep-link parser is a separate utility (SRP). Navigation callback pattern reused from CategoryGrid (DRY). |
 | II. Naming | PASS | `onShortcutTap`, `handleShortcutTap`, `parseCategoryIdFromDeepLink` — verb-first camelCase, descriptive. |
-| III. Forbidden Anti-Patterns | PASS | No god objects, no deep nesting, no magic strings. All files stay well under 300 lines. |
+| III. Forbidden Anti-Patterns | PASS | No god objects, no deep nesting, no magic strings. All touched modules keep clear responsibility boundaries. |
 | IV. Self-Refactor | PASS | Will apply before output. |
 | V. Readability | PASS | Follows established patterns; no clever constructs. |
 

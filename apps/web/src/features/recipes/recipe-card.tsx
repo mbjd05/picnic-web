@@ -14,11 +14,13 @@ export function RecipeCard({
   recipe,
   isSaved,
   isSaving,
+  priorityImage = false,
   onToggleSaved,
 }: {
   recipe: RecipeItem;
   isSaved: boolean;
   isSaving: boolean;
+  priorityImage?: boolean;
   onToggleSaved: (recipe: RecipeItem) => void;
 }) {
   const countryCode = useCountryCode();
@@ -33,7 +35,8 @@ export function RecipeCard({
           <img
             src={imageSrc}
             alt={recipe.name}
-            loading="lazy"
+            loading={priorityImage ? "eager" : "lazy"}
+            fetchPriority={priorityImage ? "high" : "auto"}
             className="h-full w-full object-cover"
             onError={() => setImageSrc(PLACEHOLDER)}
           />

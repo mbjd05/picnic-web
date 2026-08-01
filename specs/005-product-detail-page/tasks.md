@@ -1,7 +1,7 @@
 # Tasks: Product Detail Page
 
-**Input**: Design documents from `/specs/005-product-detail-page/`  
-**Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/product-detail-api.md, quickstart.md  
+**Input**: Design documents from `/specs/005-product-detail-page/`
+**Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/product-detail-api.md, quickstart.md
 **Tests**: No test framework configured. Test tasks are omitted.
 
 ## Format: `[ID] [P?] [Story] Description`
@@ -28,7 +28,7 @@
 
 - [X] T003 [US1] Add ProductDetail types to `src/lib/types.ts` — add `ProductDetail`, `AllergenInfo`, `ProductInfoSection`, `ProductPromotion`, `BundleOption`, `SliderProduct` interfaces and any constants (node ID constants as UPPER_SNAKE_CASE) per data-model.md
 - [X] T004 [P] [US1] Extend `src/lib/pml-helpers.ts` — add `findNodeById(obj, id)` (exact match), `findNodeByIdPrefix(obj, prefix)` (prefix match), and `collectPropertyValues(node, key)` (recursive deep property search) per research.md R-004
-- [X] T005 [US1] Create `src/lib/parse-fusion-product.ts` — implement the Fusion product page parser. Primary export: `parseProductDetailPage(rawPage, productId): ProductDetail`. Must extract all fields defined in data-model.md using the node IDs from research.md R-001. Follow the same pattern as `parse-fusion-search.ts`: use `pml-helpers.ts` utilities, not `jsonpath-plus`. Allergen categorization must track "Bevat" / "Bevat mogelijk" headings per R-006. Accordion sections extracted from `accordion-list` node. Bundles from `product-page-bundles-*` prefix. Similar products from `alternatives-container`. Price extraction with multi-step fallback per R-001. Keep under 300 lines; extract focused helper functions as needed.
+- [X] T005 [US1] Create `src/lib/parse-fusion-product.ts` — implement the Fusion product page parser. Primary export: `parseProductDetailPage(rawPage, productId): ProductDetail`. Must extract all fields defined in data-model.md using the node IDs from research.md R-001. Follow the same pattern as `parse-fusion-search.ts`: use `pml-helpers.ts` utilities, not `jsonpath-plus`. Allergen categorization must track "Bevat" / "Bevat mogelijk" headings per R-006. Accordion sections extracted from `accordion-list` node. Bundles from `product-page-bundles-*` prefix. Similar products from `alternatives-container`. Price extraction with multi-step fallback per R-001. Keep within a clear responsibility boundary; extract focused helper functions as needed.
 - [X] T006 [US1] Create `src/app/api/product/[id]/route.ts` — implement `GET` handler following the pattern in `src/app/api/search/route.ts`: `readAuthToken` -> `buildPicnicClient` -> `sendRequest("GET", "/pages/product-details-page-root?id=...")` -> `parseProductDetailPage` -> return JSON. Error responses: 401/TOKEN_EXPIRED for auth errors, 404 for product not found, 502 for API failures. Per contracts/product-detail-api.md.
 
 **Checkpoint**: API route returns correctly parsed `ProductDetail` JSON for any valid product ID. Foundation ready for UI.
@@ -39,7 +39,7 @@
 
 **Goal**: User navigates to `/product/{id}` and sees the full product detail page with all available sections.
 
-**Independent Test**: Navigate to `http://localhost:3000/product/s1001524` (or any valid product ID) and verify all sections render with correct data from the API.
+**Independent Test**: Navigate to `http://127.0.0.1:8787/product/s1001524` (or any valid product ID) and verify all sections render with correct data from the API.
 
 ### Implementation for User Story 1
 
@@ -108,7 +108,7 @@
 
 - [X] T022 Run `npm run lint` and fix any violations across all new and modified files
 - [X] T023 Run `npm run build` and fix any type errors or build failures
-- [X] T024 Self-refactor review against constitution.md — verify all files under 300 lines, no magic strings, verb-first camelCase, SRP, no deep nesting (max 3 levels)
+- [X] T024 Self-refactor review against constitution.md — verify all modules keep clear responsibility boundaries, no magic strings, verb-first camelCase, SRP, no deep nesting (max 3 levels)
 
 ---
 

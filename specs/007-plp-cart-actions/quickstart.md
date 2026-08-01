@@ -14,7 +14,7 @@
 npm run dev
 ```
 
-Then navigate to `http://localhost:3000?q=roomboter` to see search results with cart actions.
+Then navigate to `http://127.0.0.1:8787?q=roomboter` to see search results with cart actions.
 
 ## Key Files to Create
 

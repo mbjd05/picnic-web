@@ -19,7 +19,10 @@ export const queryStaleTime = {
 
 export const queryGcTime = {
   productLists: 30 * 60 * 1000,
+  productDetail: 30 * 60 * 1000,
   search: 30 * 60 * 1000,
+  cookbook: 30 * 60 * 1000,
+  recipeDetail: 30 * 60 * 1000,
 } as const;
 
 export const queryKeys = {

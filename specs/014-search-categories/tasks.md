@@ -85,7 +85,7 @@
 
 **Purpose**: Constitution compliance check and final validation
 
-- [x] T011 Verify constitution compliance across all new/modified files: all files under 300 lines, verb-first camelCase functions, PascalCase types, kebab-case file names, UPPER_SNAKE_CASE constants, no deep nesting (max 3 levels), no magic strings, error handling is explicit (no swallowed catches)
+- [x] T011 Verify constitution compliance across all new/modified files: all modules keep clear responsibility boundaries, verb-first camelCase functions, PascalCase types, kebab-case file names, UPPER_SNAKE_CASE constants, no deep nesting (max 3 levels), no magic strings, error handling is explicit (no swallowed catches)
 - [x] T012 Run full validation: `npm run lint && npm run build` — both must pass with zero errors (SC-005)
 - [ ] T013 Manual validation per quickstart.md verification section: (1) Load home page while logged in → category grid appears with images and names. (2) Verify all ~26 categories displayed in API order (SC-002). (3) Verify category images load from CDN via `buildImageUrl`. (4) Verify responsive layout: 2 cols at 320px, 3 at 768px, 4-5 at 1280px (SC-003). (5) Type a search query → categories disappear, search results appear (FR-007). (6) Clear the search query → categories reappear. (7) Page loads within 2 seconds on standard connection (SC-001).
 
@@ -155,5 +155,5 @@ Task: "Modify src/app/page.tsx to integrate categories"
 - [US1]/[US2] labels map tasks to specific user stories for traceability
 - US2 (category navigation) is explicitly deferred per research.md R6 — the `deepLinkTarget` field preserves the navigation target for future implementation
 - FR-001 (Deze week section) cannot be implemented with current endpoint — dropped per research.md R3
-- All new files are well under the 300-line constitution limit (largest is parse-categories.ts at ~99 lines)
+- All new files have clear responsibility boundaries
 - No test tasks included — no test framework is configured in this project

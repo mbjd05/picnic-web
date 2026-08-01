@@ -90,7 +90,7 @@
 **Purpose**: Final validation, edge case hardening, and cleanup
 
 - [ ] T019 Verify all edge cases from spec.md: no slots available, expired selected slot, single-day availability, no green-choice slots for a day, API failure during selection
-- [ ] T020 Verify constitution compliance: check all new files are under 300 lines, check naming conventions, check no deep nesting (max 3 levels), check no magic strings (all labels are constants or from API)
+- [ ] T020 Verify constitution compliance: check all new files keep clear responsibility boundaries, check naming conventions, check no deep nesting (max 3 levels), check no magic strings (all labels are constants or from API)
 - [ ] T021 Run full validation: `npm run lint && npm run build` — both must pass with zero errors
 - [ ] T022 Manual validation per quickstart.md: load cart → verify banner text → open picker → verify day tabs → verify green/regular grouping → select slot → verify banner updates → reopen picker → verify "Geselecteerd door jou" section → close with X → verify no change
 

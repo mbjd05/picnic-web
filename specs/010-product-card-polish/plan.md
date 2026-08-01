@@ -9,14 +9,14 @@ Product card prices appear at inconsistent vertical positions across a grid row 
 
 ## Technical Context
 
-**Language/Version**: TypeScript 5, Node.js 20.9+  
-**Primary Dependencies**: Next.js 16.2.1, React 19.2.4, Tailwind CSS 4, picnic-api ^4.1.0  
-**Storage**: N/A (no persistent storage; pure CSS layout change)  
-**Testing**: No test framework exists in this project. All validation is manual via the browser.  
-**Target Platform**: Web — desktop and mobile browsers  
-**Project Type**: Web application (Next.js)  
-**Performance Goals**: N/A (CSS-only change, no runtime impact)  
-**Constraints**: Product card file (`product-card.tsx`) is 248 lines, must stay under 300 lines. Changes are CSS/layout only — no data model or API changes.  
+**Language/Version**: TypeScript 5, Node.js 20.9+
+**Primary Dependencies**: Next.js 16.2.1, React 19.2.4, Tailwind CSS 4, picnic-api ^4.1.0
+**Storage**: N/A (no persistent storage; pure CSS layout change)
+**Testing**: No test framework exists in this project. All validation is manual via the browser.
+**Target Platform**: Web — desktop and mobile browsers
+**Project Type**: Web application (Next.js)
+**Performance Goals**: N/A (CSS-only change, no runtime impact)
+**Constraints**: Product card file (`product-card.tsx`) is 248 lines, must stay within a clear responsibility boundary. Changes are CSS/layout only — no data model or API changes.
 **Scale/Scope**: Single component (`ProductCard`) used in search results grid.
 
 ## Constitution Check
@@ -27,7 +27,7 @@ Product card prices appear at inconsistent vertical positions across a grid row 
 |-----------|--------|-------|
 | I. SRP, DRY, Dependency Injection | PASS | Single component change. No new responsibilities added. No duplication. |
 | II. Naming Conventions | PASS | No new variables, functions, or files. Existing names unchanged. |
-| III. Forbidden Anti-Patterns | PASS | `product-card.tsx` is 248 lines, well under 300. No deep nesting added. No magic numbers (spacing uses Tailwind's semantic scale). |
+| III. Forbidden Anti-Patterns | PASS | Product-card changes remain within one product-card responsibility boundary. No deep nesting added. No magic numbers (spacing uses Tailwind's semantic scale). |
 | IV. Mandatory Self-Refactor Protocol | PASS | Will self-review all class changes before committing. |
 | V. Readability Over Cleverness | PASS | Tailwind utility classes are explicit and self-documenting. No clever CSS tricks. |
 

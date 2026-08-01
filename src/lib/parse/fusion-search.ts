@@ -120,6 +120,10 @@ const HEADER_PREFIX = "client-side-filtering-section-header-wrapper-";
 const WRAPPER_PREFIX = "client-side-filtering-section-wrapper-";
 const VISUAL_SECTIONS_ID = "structured-selling-unit-search-result-visual-sections";
 
+function extractWrapperSectionKey(wrapperId: string): string {
+  return wrapperId.slice(WRAPPER_PREFIX.length).replace(/__\d+$/u, "");
+}
+
 /**
  * Parse a Fusion search page into sections with headers and a flat product list.
  *
@@ -231,6 +235,25 @@ function parseSectionsFromChildren(
       }
 
       i = j; // Skip past the wrappers we just consumed
+    } else if (childId.startsWith(WRAPPER_PREFIX)) {
+      const sectionKey = extractWrapperSectionKey(childId);
+      const wrappers: PmlRecord[] = [];
+      let j = i;
+      while (j < children.length) {
+        const nextId = (children[j].id as string) ?? "";
+        if (!nextId.startsWith(WRAPPER_PREFIX) || extractWrapperSectionKey(nextId) !== sectionKey) {
+          break;
+        }
+        wrappers.push(children[j]);
+        j++;
+      }
+
+      const products = extractProductsFromWrappers(wrappers, seenIds);
+      if (products.length > 0) {
+        sections.push({ title: sectionKey, products });
+      }
+
+      i = j;
     } else {
       i++;
     }

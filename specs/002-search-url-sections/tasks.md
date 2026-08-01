@@ -27,17 +27,17 @@
 
 **Purpose**: Shared type definitions and parser file split that MUST be complete before either user story can be implemented.
 
-**Why blocking**: Both US1 and US2 depend on the updated `SearchApiResponse` type. US2 depends on the parser file being split to stay within the 300-line constitution limit. The file split must happen before rewriting the parser for section extraction.
+**Why blocking**: Both US1 and US2 depend on the updated `SearchApiResponse` type. US2 depends on the parser file being split so each module has one clear responsibility. The file split must happen before rewriting the parser for section extraction.
 
 - [x] T001 Add `SearchSection` type and update `SearchApiResponse` to include `sections` field in `src/lib/types.ts`. The `SearchSection` type has `title: string` and `products: Product[]`. The `SearchApiResponse` gains a `sections: SearchSection[]` field alongside the existing `products` and `query` fields. Also update the `SearchResult` type to include `sections: SearchSection[]`. See `data-model.md` for the exact type definitions.
 
-- [x] T002 Extract PML helper functions from `src/lib/parse-fusion-search.ts` into a new `src/lib/pml-helpers.ts` file. Move these functions: `stripColorTags`, `cleanMarkdown`, `extractInnerColor`, `collectMarkdowns`, `findIconNodes`, and `findSellingUnitContainers`. Each function should be exported. Update `parse-fusion-search.ts` to import them from `pml-helpers.ts`. Ensure both files stay under 300 lines (constitution Principle III).
+- [x] T002 Extract PML helper functions from `src/lib/parse-fusion-search.ts` into a new `src/lib/pml-helpers.ts` file. Move these functions: `stripColorTags`, `cleanMarkdown`, `extractInnerColor`, `collectMarkdowns`, `findIconNodes`, and `findSellingUnitContainers`. Each function should be exported. Update `parse-fusion-search.ts` to import them from `pml-helpers.ts`. Ensure both files keep clear responsibility boundaries (constitution Principle III).
 
-- [x] T003 Extract per-tile data extraction functions from `src/lib/parse-fusion-search.ts` into a new `src/lib/extract-tile-data.ts` file. Move these functions: `extractPromotionLabel`, `findTextStackChildren`, `extractTextStackInfo`, `extractUnavailabilityFromPml`, `extractOriginalPriceFromPml`, and the `SIZE_LABELS` constant. Also move the `SellingUnitTileContainer`, `RawSellingUnit`, `AnalyticsContext`, and `PmlNode` type aliases. Each function should be exported. Update `parse-fusion-search.ts` to import them. Verify all three files (`parse-fusion-search.ts`, `pml-helpers.ts`, `extract-tile-data.ts`) are under 300 lines.
+- [x] T003 Extract per-tile data extraction functions from `src/lib/parse-fusion-search.ts` into a new `src/lib/extract-tile-data.ts` file. Move these functions: `extractPromotionLabel`, `findTextStackChildren`, `extractTextStackInfo`, `extractUnavailabilityFromPml`, `extractOriginalPriceFromPml`, and the `SIZE_LABELS` constant. Also move the `SellingUnitTileContainer`, `RawSellingUnit`, `AnalyticsContext`, and `PmlNode` type aliases. Each function should be exported. Update `parse-fusion-search.ts` to import them. Verify all three files (`parse-fusion-search.ts`, `pml-helpers.ts`, `extract-tile-data.ts`) are within a clear responsibility boundary.
 
 - [x] T004 Run validation: `npm run lint && npx tsc --noEmit && npm run build`. Confirm all three parser files compile correctly and the existing search functionality still works (no behavioral changes yet — just a refactor).
 
-**Checkpoint**: Types updated, parser split into 3 files under 300 lines each. No behavioral changes. Existing search still works.
+**Checkpoint**: Types updated, parser split into 3 files within a clear responsibility boundary each. No behavioral changes. Existing search still works.
 
 ---
 
@@ -87,7 +87,7 @@
 
 **Purpose**: Final cleanup, edge case handling, and validation across both stories.
 
-- [x] T014 Verify all files are under 300 lines (constitution Principle III). Run `wc -l` on: `src/lib/parse-fusion-search.ts`, `src/lib/pml-helpers.ts`, `src/lib/extract-tile-data.ts`, `src/app/page.tsx`, `src/components/product-grid.tsx`, `src/components/search-bar.tsx`, `src/app/api/search/route.ts`, `src/lib/types.ts`. If any file exceeds 300 lines, extract logic into additional helper files.
+- [x] T014 Verify all changed files are within a clear responsibility boundary (constitution Principle III). If a module mixes independent reasons to change, extract focused helper modules.
 
 - [x] T015 Verify edge cases: (1) URL with `?q=` (empty value) shows landing page. (2) URL with `?q=xyznotfound` shows "no results" with URL preserved. (3) Very long query string is handled gracefully. (4) API error still shows error view with URL preserved.
 

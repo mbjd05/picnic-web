@@ -108,4 +108,4 @@ No test runner is configured — validation is lint + typecheck + build.
 2. **Flat `products` array retained**: For backward compatibility and easy total count (`products.length`).
 3. **`router.push` for history**: Each search creates a history entry for back/forward navigation.
 4. **Suspense boundary**: Required by Next.js for `useSearchParams()` in client components.
-5. **Parser file stays under 300 lines**: The section extraction logic replaces (not adds to) the current flat extraction, keeping the file within the constitution's 300-line limit. Helper functions may need to be extracted to a separate file if the limit is threatened.
+5. **Parser file stays within a clear responsibility boundary**: The section extraction logic replaces (not adds to) the current flat extraction, keeping the parser cohesive. Extract helper functions to a separate file if the parser starts mixing independent reasons to change.

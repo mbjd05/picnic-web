@@ -4,7 +4,7 @@ import type { CookbookApiResponse } from "@/types/recipe";
 import type { CountryCode } from "@/types/locale";
 
 import { fetchJson } from "../../lib/api-client";
-import { queryKeys, queryStaleTime } from "../../lib/query-config";
+import { queryGcTime, queryKeys, queryStaleTime } from "../../lib/query-config";
 
 export function useCookbookView(
   categoryId: string | null,
@@ -19,6 +19,7 @@ export function useCookbookView(
       ),
     enabled,
     staleTime: queryStaleTime.cookbookView,
+    gcTime: queryGcTime.cookbook,
   });
 }
 
@@ -29,6 +30,7 @@ export function useCookbookSearch(query: string, countryCode: CountryCode, enabl
       fetchJson<CookbookApiResponse>(`/api/cookbook/search?q=${encodeURIComponent(query)}`),
     enabled,
     staleTime: queryStaleTime.search,
+    gcTime: queryGcTime.cookbook,
   });
 }
 

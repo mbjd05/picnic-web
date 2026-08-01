@@ -16,7 +16,7 @@ export function DeliverySlotBanner({
       onClick={onTap}
       className="group flex w-full items-center gap-3 rounded-2xl bg-gray-100 px-4 py-3 text-left transition-all hover:bg-gray-200 hover:shadow-md active:scale-[0.99] sm:gap-3.5 sm:px-5 sm:py-4"
     >
-      <div className="relative shrink-0 rounded-xl bg-white p-2 shadow-sm">
+      <div className="text-text-dark relative shrink-0 rounded-xl bg-white p-2 shadow-sm">
         <TruckIcon />
         <div className="absolute -right-0.5 -bottom-0.5">
           <ClockIcon />
@@ -40,7 +40,7 @@ function TruckIcon() {
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
         d="M3 4h13v10H3V4Zm13 4h3l2 3v3h-5V8ZM6.5 18a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Zm11 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Z"
-        stroke="#1f2937"
+        stroke="currentColor"
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -52,10 +52,10 @@ function TruckIcon() {
 function ClockIcon() {
   return (
     <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-      <circle cx="6" cy="6" r="5" fill="white" stroke="#1f2937" strokeWidth="1" />
+      <circle cx="6" cy="6" r="5" fill="var(--card-bg)" stroke="currentColor" strokeWidth="1" />
       <path
         d="M6 3.5V6l2 1"
-        stroke="#1f2937"
+        stroke="currentColor"
         strokeWidth="1"
         strokeLinecap="round"
         strokeLinejoin="round"

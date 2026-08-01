@@ -187,7 +187,11 @@ function RecipeIngredientRow({
   const strike = rawStrike !== null && rawStrike > totalPrice ? rawStrike : null;
   return (
     <div
-      className={`flex items-center gap-2 py-3 sm:gap-3 ${strike ? "-mx-3 rounded-lg bg-yellow-50 px-3 sm:-mx-4 sm:px-4" : ""}`}
+      className={`flex items-center gap-2 py-3 sm:gap-3 ${
+        strike
+          ? "bg-picnic-yellow/20 dark:bg-picnic-yellow/10 -mx-3 rounded-lg px-3 sm:-mx-4 sm:px-4"
+          : ""
+      }`}
     >
       <button
         type="button"
@@ -212,7 +216,7 @@ function RecipeIngredientRow({
         <p className="text-text-muted text-xs">{packageLabel}</p>
       </div>
       <div className={`min-w-[3.5rem] shrink-0 text-right ${checked ? "" : "opacity-40"}`}>
-        <p className={`text-sm font-medium ${strike ? "text-amber-600" : "text-text-dark"}`}>
+        <p className={`text-sm font-medium ${strike ? "text-price-discount" : "text-text-dark"}`}>
           {formatEuroPrice(totalPrice)}
         </p>
         {strike ? (

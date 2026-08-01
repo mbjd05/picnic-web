@@ -16,7 +16,7 @@ Enable drill-down navigation from top-level categories to their sub-categories. 
 **Target Platform**: Web (mobile-first responsive)
 **Project Type**: Web application (Next.js App Router)
 **Performance Goals**: Sub-category fetch + render within 2 seconds (SC-001)
-**Constraints**: All files < 300 lines, max 3 levels nesting
+**Constraints**: All files clear responsibility boundaries, max 3 levels nesting
 **Scale/Scope**: 26 top-level categories, ~5-10 sub-categories per parent
 
 ## Constitution Check
@@ -27,7 +27,7 @@ Enable drill-down navigation from top-level categories to their sub-categories. 
 |-----------|--------|-------|
 | I. SRP/DRY/DI | PASS | Parser logic shared via extracted helper; new route has single responsibility; client injected via `buildPicnicClient` |
 | II. Naming | PASS | `parseSubcategoryPage`, `extractPageTitle`, `SubcategoriesApiResponse`, `CategoryNavState` — all follow conventions |
-| III. Forbidden Anti-Patterns | PASS | No file exceeds 300 lines; no deep nesting; constants extracted (`L1_PAGE_PREFIX`, `CATEGORY_ITEM_PREFIX`); no empty catches |
+| III. Forbidden Anti-Patterns | PASS | Modules keep clear responsibility boundaries; no deep nesting; constants extracted (`L1_PAGE_PREFIX`, `CATEGORY_ITEM_PREFIX`); no empty catches |
 | IV. Self-Refactor | PASS | Will enforce at implementation time |
 | V. Readability | PASS | Linear control flow with early returns; explicit types; no clever constructs |
 
@@ -74,4 +74,4 @@ src/
 
 ## Complexity Tracking
 
-No constitution violations. All new files well under 300-line limit. No new dependencies.
+No constitution violations. All new files have clear responsibility boundaries. No new dependencies.

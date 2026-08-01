@@ -346,7 +346,7 @@ function DeliveryDetailPanel({
               type="button"
               onClick={handleCancelDelivery}
               disabled={cancelDeliveryMutation.isPending}
-              className="rounded-full border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-50 disabled:cursor-wait disabled:opacity-60"
+              className="rounded-full border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-50 disabled:cursor-wait disabled:opacity-60 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
             >
               {cancelDeliveryMutation.isPending ? t.cancellingDelivery : t.cancelDelivery}
             </button>
@@ -417,7 +417,7 @@ function DeliveryDetailPanel({
         />
 
         {orderStatusQuery.isError ? (
-          <p className="mt-3 text-sm text-red-600">
+          <p className="mt-3 text-sm text-red-600 dark:text-red-300">
             {orderStatusQuery.error instanceof ApiClientError
               ? orderStatusQuery.error.message
               : t.deliveryOrderStatusError}
@@ -468,7 +468,9 @@ function DeliveryDetailPanel({
       {delivery.status === "CURRENT" ? (
         <section className="border-card-border rounded-lg border bg-white p-4">
           <h2 className="text-base font-semibold text-gray-900">{t.deliveryTracking}</h2>
-          {trackingError ? <p className="mt-2 text-sm text-red-600">{trackingError}</p> : null}
+          {trackingError ? (
+            <p className="mt-2 text-sm text-red-600 dark:text-red-300">{trackingError}</p>
+          ) : null}
           {tracking ? (
             <div className="mt-3 grid gap-3 md:grid-cols-2">
               <RawPayload title={t.deliveryScenario} value={tracking.scenario} />
@@ -494,13 +496,13 @@ function DeliveryActionFeedback({
 }) {
   if (error) {
     return (
-      <p className="mt-3 text-sm text-red-600">
+      <p className="mt-3 text-sm text-red-600 dark:text-red-300">
         {error instanceof ApiClientError ? error.message : fallbackError}
       </p>
     );
   }
   if (success) {
-    return <p className="mt-3 text-sm text-green-700">{success}</p>;
+    return <p className="mt-3 text-sm text-green-700 dark:text-green-300">{success}</p>;
   }
   return null;
 }

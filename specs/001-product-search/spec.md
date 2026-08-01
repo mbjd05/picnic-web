@@ -52,7 +52,7 @@ As a user types into the search bar, the system suggests matching search terms i
 - What happens when a product has no brand/company information? The product card MUST still render correctly, omitting the brand field without breaking layout.
 - What happens when a product has many labels (5+)? All labels MUST still be displayed without overflowing or hiding content.
 - What happens when the user presses Enter with an empty search bar? No search request is made.
-- What happens when a user tries to click on a product card? Nothing — product cards are display-only and MUST NOT be clickable or link to any detail page.
+- What happens when a user tries to click on a product card? Current behavior is defined by `005-product-detail-page`: product cards may link to product detail pages while preserving the display requirements from this search spec.
 
 ## Requirements *(mandatory)*
 
@@ -71,7 +71,7 @@ As a user types into the search bar, the system suggests matching search terms i
 - **FR-011**: System MUST NOT submit a search request when the input is empty or contains only whitespace.
 - **FR-012**: System MUST display a placeholder image when a product has no image available.
 - **FR-013**: Product images MUST be loaded from the Picnic CDN using the format `https://storefront-prod.${COUNTRY_CODE}.picnicinternational.com/static/images/${imageId}/${size}.png` (always `.png`, never `.webp`).
-- **FR-014**: Product cards MUST NOT be clickable or link to any detail page. They are display-only.
+- **FR-014**: Product cards MUST preserve the display requirements in this spec. The older display-only constraint is superseded by `005-product-detail-page`, so product cards may be clickable when linking to product detail pages.
 
 ### Key Entities
 
@@ -97,7 +97,7 @@ As a user types into the search bar, the system suggests matching search terms i
 
 - Q: What is the canonical image URL format? → A: Always `.png` — `https://storefront-prod.${COUNTRY_CODE}.picnicinternational.com/static/images/${imageId}/${size}.png`. No `.webp` variant exists despite some code references.
 - Q: What should the user see before performing any search? → A: Search bar only — clean page with prominent search bar and Picnic branding, no extra content.
-- Q: Should product cards be clickable / link to a product detail page? → A: No. Product cards are NOT clickable. Product detail pages are out of scope for v1.
+- Q: Should product cards be clickable / link to a product detail page? → A: For the initial search-only version, no. Current behavior is superseded by `005-product-detail-page`, where product cards link to product detail pages.
 
 ## Assumptions
 
@@ -106,5 +106,5 @@ As a user types into the search bar, the system suggests matching search terms i
 - Authentication with the upstream API is pre-configured on the server side; users of the website do not need to log in for product search functionality.
 - Mobile/responsive design is out of scope for this initial version; the primary target is desktop browsers.
 - Cart functionality (adding products to cart, checkout) is out of scope for this initial version.
-- Product detail pages (clicking through to a full product description) are out of scope for this initial version.
+- Product detail pages were out of scope for the initial version. They are now in scope via `005-product-detail-page`.
 - The website serves a single geographic region (NL or DE), pre-configured on the server.

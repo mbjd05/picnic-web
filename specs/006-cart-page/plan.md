@@ -29,7 +29,7 @@ Build a read-only cart page at `/cart` that displays the user's shopping cart co
 | I. DRY | PASS | `isApiAuthError` extracted to shared `src/lib/api-error.ts`; reusable components (`PriceDisplay`, `Badge`, `ProductSlider`) reused directly; shared header component replaces per-page inline headers |
 | I. Dependency Injection | PASS | `buildPicnicClient(token)` injects auth; `parseCartResponse(rawData)` is a pure function accepting injected data |
 | II. Naming Conventions | PASS | All names follow verb-first camelCase for functions, noun-based camelCase for variables, kebab-case for files |
-| III. No God Objects | PASS | No file exceeds 300 lines; transformer logic split by concern |
+| III. No God Objects | PASS | Modules keep clear responsibility boundaries; transformer logic split by concern |
 | III. No Deep Nesting | PASS | Early returns for auth checks; guard clauses for missing data |
 | III. No Magic Numbers | PASS | All prices in cents (integer arithmetic); no magic strings |
 | III. No Catch-All Error Swallowing | PASS | Errors are caught, classified (auth vs. upstream), and handled with appropriate responses |

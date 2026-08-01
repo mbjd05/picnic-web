@@ -16,7 +16,7 @@ Add delivery slot viewing and selection to the cart page. A banner at the top of
 **Target Platform**: Web browser (desktop), Dutch locale (`lang="nl"`)
 **Project Type**: Web application (Next.js App Router, client components)
 **Performance Goals**: Slot picker must load and display all slots within 1 second of opening (SC-003)
-**Constraints**: All page components are `"use client"`. Raw API response is `unknown` — all field access must be defensive (runtime type guards). Three existing files exceed the 300-line constitution limit (`page.tsx` 320, `parse-cart.ts` 460, `types.ts` 398) — new code must go into new files, not inflate these further.
+**Constraints**: All page components are `"use client"`. Raw API response is `unknown` — all field access must be defensive (runtime type guards). Existing cart page, cart parser, and shared type files already cover broad responsibilities — new delivery-slot concerns should go into focused files instead of inflating them further.
 **Scale/Scope**: 4 existing files modified, 5 new files created
 
 ## Constitution Check
@@ -27,7 +27,7 @@ Add delivery slot viewing and selection to the cart page. A banner at the top of
 |-----------|--------|-------|
 | **I. SRP / DRY / DI** | PASS | New responsibilities are isolated into dedicated files: banner component (display), picker component (interaction), date formatter (utility), slot parser (extraction), API route (server). The cart page only adds a banner slot and state wiring. |
 | **II. Naming Conventions** | PASS | New files: `delivery-slot-banner.tsx`, `delivery-slot-picker.tsx`, `format-delivery-window.ts`, `parse-delivery-slots.ts`. New types: `DeliverySlotData`, `SelectedSlotData`, `SlotGroup`. Functions: `parseDeliverySlots`, `formatDeliveryWindow`, `identifyGreenSlots`. All verb-first camelCase or descriptive noun-based. |
-| **III. Forbidden Anti-Patterns** | WARNING | Three existing files already exceed 300 lines. New delivery slot parsing MUST go into a new `parse-delivery-slots.ts` file, NOT into `parse-cart.ts` (460 lines). New types MUST go into a new section or dedicated file. Cart page changes must be minimal — the `CartPageContent` component just adds one `<DeliverySlotBanner>` element. |
+| **III. Forbidden Anti-Patterns** | WARNING | Several existing files already have broad responsibilities. New delivery slot parsing MUST go into a dedicated parser module, NOT into `parse-cart.ts`. New types MUST go into a dedicated type area. Cart page changes must be minimal — the `CartPageContent` component just adds one `<DeliverySlotBanner>` element. |
 | **IV. Self-Refactor Protocol** | PASS | Will be enforced during implementation. |
 | **V. Readability Over Cleverness** | PASS | Green-choice heuristic (paired window_start, longer duration) will use explicit comparisons, not bitwise or chained tricks. Date formatting uses a simple map of Dutch day names. |
 
@@ -69,7 +69,7 @@ src/
     └── format-delivery-window.ts            # NEW: Dutch day names, relative labels, time formatting
 ```
 
-**Structure Decision**: Next.js App Router single-project structure. New delivery slot logic is separated into dedicated files to respect the 300-line constitution limit on existing files. The `parse-delivery-slots.ts` file is a sibling to `parse-cart.ts`, following the same defensive extraction pattern but for slot-specific data. The delivery slots API route follows the same pattern as the existing cart route.
+**Structure Decision**: Historical Next.js App Router single-project structure. New delivery slot logic is separated into dedicated files to respect existing responsibility boundaries. The `parse-delivery-slots.ts` file is a sibling to `parse-cart.ts`, following the same defensive extraction pattern but for slot-specific data. The delivery slots API route follows the same HTTP behavior as the existing cart route.
 
 ## Complexity Tracking
 

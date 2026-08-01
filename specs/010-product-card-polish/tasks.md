@@ -1,6 +1,6 @@
 # Tasks: Product Card Layout Polish
 
-**Input**: Design documents from `/specs/010-product-card-polish/`  
+**Input**: Design documents from `/specs/010-product-card-polish/`
 **Prerequisites**: plan.md, spec.md, research.md, data-model.md, quickstart.md
 
 **Tests**: No test framework exists in this project. No tests requested. All validation is manual via the browser.
@@ -55,7 +55,7 @@
 
 **Purpose**: Verify no regressions, pass lint/build, confirm file size.
 
-- [X] T011 Verify `src/components/product-card.tsx` remains under 300 lines (constitution Principle III) — 251 lines ✓
+- [X] T011 Verify `src/components/product-card.tsx` remains within a clear product-card presentation responsibility boundary (constitution Principle III)
 - [ ] T012 Verify cart action overlay (add button / quantity stepper) remains functional and correctly positioned in `src/components/product-card.tsx`
 - [X] T013 Run `npm run lint` and fix any linting violations — PASS ✓
 - [X] T014 Run `npm run build` and fix any build errors — PASS ✓

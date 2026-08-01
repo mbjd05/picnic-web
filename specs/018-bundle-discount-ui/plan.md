@@ -27,7 +27,7 @@ Update picnic-api to ^4.3.0 to unlock bundle discount data, remove the "Bundelko
 |-----------|--------|-------|
 | I. SRP/DRY/DI | PASS | Each component has single responsibility; bundle logic is shared via cart context; new components (tier grid, bundle badge) follow same pattern |
 | II. Naming | PASS | All new functions/components will use verb-first camelCase; existing patterns followed |
-| III. Forbidden Anti-Patterns | PASS | No files exceed 300 lines; no deep nesting; no magic numbers (price constants from API) |
+| III. Forbidden Anti-Patterns | PASS | Changed modules keep clear responsibility boundaries; no deep nesting; no magic numbers (price constants from API) |
 | IV. Self-Refactor | PASS | Will be applied during implementation |
 | V. Readability | PASS | Explicit over implicit; early returns; Tailwind for styling consistency |
 

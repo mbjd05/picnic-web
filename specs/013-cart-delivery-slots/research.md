@@ -149,7 +149,7 @@ States:
 
 **Decision**: Create `src/lib/delivery-slot-types.ts` for all new types (`DeliverySlotData`, `SelectedSlotData`, `SlotGroup`, `DeliveryBannerData`). In `types.ts`, add only a re-export line and the minimal additions to `CartData` (2-3 new fields referencing the imported types).
 
-**Rationale**: The constitution's 300-line limit is already violated. Adding ~40 lines of new type definitions would push `types.ts` to ~440 lines. A dedicated file keeps the new types isolated and under the limit. The re-export from `types.ts` maintains the existing import pattern (`import type { ... } from "@/lib/types"`).
+**Rationale**: The existing shared type file already covers broad cart concerns. A dedicated file keeps delivery-slot types isolated and makes the ownership boundary clearer. The re-export from `types.ts` maintains the existing import pattern (`import type { ... } from "@/lib/types"`).
 
 **Alternatives considered**:
 - Add everything to `types.ts` and accept the violation: Explicitly prohibited by the constitution. The plan's Constitution Check already flagged this.

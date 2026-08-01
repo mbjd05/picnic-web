@@ -12,7 +12,7 @@ export function ErrorView({ message, onRetry }: { message: string; onRetry?: () 
   const t = useTranslations();
   return (
     <div className="py-16 text-center">
-      <p className="text-sm text-red-600" role="alert">
+      <p className="text-sm text-red-600 dark:text-red-300" role="alert">
         {message}
       </p>
       {onRetry ? (

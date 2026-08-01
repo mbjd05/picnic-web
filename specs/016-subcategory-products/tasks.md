@@ -84,7 +84,7 @@
 **Purpose**: Cleanup, validation, and constitution compliance
 
 - [X] T012 Run `npm run lint && npm run build` — verify zero errors
-- [X] T013 Self-refactor review: all changed files < 300 lines, no unused imports, no magic strings, no duplicated logic, max 3 nesting levels
+- [X] T013 Self-refactor review: all changed files keep clear responsibility boundaries, no unused imports, no magic strings, no duplicated logic, max 3 nesting levels
 
 ---
 

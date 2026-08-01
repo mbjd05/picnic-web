@@ -1,6 +1,6 @@
 # Quickstart: Auth Token Gate
 
-**Feature**: 004-auth-token-gate  
+**Feature**: 004-auth-token-gate
 **Date**: 2026-03-30
 
 ## Prerequisites
@@ -59,7 +59,7 @@ Authentication gating for the entire application:
 
 ### Happy Path
 1. Clear all cookies for localhost (or use incognito)
-2. Visit `http://localhost:3000` — should redirect to `/login`
+2. Visit `http://127.0.0.1:8787` — should redirect to `/login`
 3. Enter a valid Picnic auth token in the masked input
 4. Click "Inloggen" — should redirect to the main search page
 5. Search for "tomaten" — should return results (confirms token is being used)
@@ -73,13 +73,13 @@ Authentication gating for the entire application:
 ### Sign Out
 1. While logged in, click "Uitloggen" in the header
 2. Should redirect to `/login`
-3. Should not be able to access `http://localhost:3000` without entering a token again
+3. Should not be able to access `http://127.0.0.1:8787` without entering a token again
 
 ### Expired Token
 1. Log in with a valid token
 2. If the token expires (or is revoked externally), the next search should redirect to `/login` with an expiry message
 
 ### Deep Link
-1. Clear cookies, then visit `http://localhost:3000/?q=melk`
+1. Clear cookies, then visit `http://127.0.0.1:8787/?q=melk`
 2. Should redirect to `/login`
 3. After entering a valid token, should redirect back to `/?q=melk`

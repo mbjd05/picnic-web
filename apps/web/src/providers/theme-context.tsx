@@ -4,6 +4,8 @@ export type ThemePreference = "system" | "light" | "dark";
 export type ResolvedTheme = "light" | "dark";
 
 const THEME_STORAGE_KEY = "picnic_theme";
+const THEME_TRANSITION_CLASS = "theme-transitioning";
+const THEME_TRANSITION_DURATION_MS = 180;
 
 const ThemeContext = createContext<{
   preference: ThemePreference;
@@ -37,6 +39,35 @@ function applyResolvedTheme(theme: ResolvedTheme): void {
   document.documentElement.dataset.theme = theme;
 }
 
+function withThemeTransition(updateTheme: () => void): void {
+  if (typeof document === "undefined") {
+    updateTheme();
+    return;
+  }
+
+  const root = document.documentElement;
+  const startViewTransition = document.startViewTransition;
+  root.classList.add(THEME_TRANSITION_CLASS);
+
+  const finish = () => {
+    window.setTimeout(
+      () => root.classList.remove(THEME_TRANSITION_CLASS),
+      THEME_TRANSITION_DURATION_MS
+    );
+  };
+
+  if (
+    typeof startViewTransition === "function" &&
+    !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  ) {
+    startViewTransition.call(document, updateTheme).finished.finally(finish);
+    return;
+  }
+
+  updateTheme();
+  finish();
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [preference, setPreferenceState] = useState(readStoredThemePreference);
   const [systemTheme, setSystemTheme] = useState<ResolvedTheme>(getSystemTheme);
@@ -58,9 +89,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const setPreference = useMemo(
     () => (nextPreference: ThemePreference) => {
       localStorage.setItem(THEME_STORAGE_KEY, nextPreference);
-      setPreferenceState(nextPreference);
+      const nextResolvedTheme = resolveTheme(nextPreference, systemTheme);
+      if (nextResolvedTheme === resolvedTheme) {
+        setPreferenceState(nextPreference);
+        return;
+      }
+      withThemeTransition(() => setPreferenceState(nextPreference));
     },
-    []
+    [resolvedTheme, systemTheme]
   );
 
   const value = useMemo(

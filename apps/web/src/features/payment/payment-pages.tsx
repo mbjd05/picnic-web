@@ -238,7 +238,7 @@ export function PaymentAccountPage() {
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="bg-picnic-red rounded-lg px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+                  className="bg-picnic-red hover:bg-picnic-red-dark rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-gray-300"
                 >
                   {isSaving ? t.savingPaymentMethod : t.addAndUsePaymentMethod}
                 </button>
@@ -272,7 +272,7 @@ export function PaymentAccountPage() {
                       type="button"
                       onClick={() => void handleRemovePaymentOption(option.id)}
                       disabled={isSaving}
-                      className="text-sm font-semibold text-red-600 disabled:text-gray-400"
+                      className="text-sm font-semibold text-red-600 disabled:text-gray-400 dark:text-red-300"
                     >
                       {t.removePaymentMethod}
                     </button>
@@ -285,7 +285,7 @@ export function PaymentAccountPage() {
           </section>
 
           {actionError ? (
-            <p className="text-sm text-red-600" role="alert">
+            <p className="text-sm text-red-600 dark:text-red-300" role="alert">
               {actionError}
             </p>
           ) : null}
@@ -455,7 +455,7 @@ export function PaymentReturnPage() {
               type="button"
               onClick={() => void handleCancel()}
               disabled={isCancelling}
-              className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white disabled:bg-gray-300"
+              className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:bg-gray-300 dark:bg-red-700 dark:hover:bg-red-600"
             >
               {isCancelling ? t.paymentCancelling : t.cancelPayment}
             </button>

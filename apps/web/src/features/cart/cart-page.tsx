@@ -116,6 +116,7 @@ export function CartPage() {
   const pendingDeltasRef = useRef(new Map<string, number>());
   const pendingTimersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const pendingRequestCountRef = useRef(0);
+  const mutationChainRef = useRef(Promise.resolve());
 
   const hasPendingCartMutations = useCallback(
     () =>
@@ -147,6 +148,24 @@ export function CartPage() {
         : { status: "success", cart: confirmed, isReconciling: false }
     );
   }, []);
+
+  const recoverFromMutationFailure = useCallback(async () => {
+    try {
+      const cart = await fetchJson<CartData>("/api/cart");
+      confirmedCartRef.current = cart;
+      queryClient.setQueryData(queryKeys.cart(), cart);
+      if (
+        pendingDeltasRef.current.size === 0 &&
+        pendingTimersRef.current.size === 0 &&
+        pendingRequestCountRef.current <= 1
+      ) {
+        reconcileFromServer(cart);
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }, [queryClient, reconcileFromServer]);
 
   const cartQuery = useCartQuery();
 
@@ -204,8 +223,10 @@ export function CartPage() {
         queryClient.setQueryData(queryKeys.cart(), result);
         confirmedCartRef.current = result;
       } catch {
-        rollbackProduct();
-        setToastMessage(t.cartMutationError);
+        if (!(await recoverFromMutationFailure())) {
+          rollbackProduct();
+          setToastMessage(t.cartMutationError);
+        }
       } finally {
         pendingRequestCountRef.current -= 1;
         if (result && !hasPendingCartMutations()) reconcileFromServer(result);
@@ -215,6 +236,7 @@ export function CartPage() {
       hasPendingCartMutations,
       queryClient,
       reconcileFromServer,
+      recoverFromMutationFailure,
       rollbackProduct,
       t.cartMutationError,
     ]
@@ -230,7 +252,12 @@ export function CartPage() {
       if (existingTimer) clearTimeout(existingTimer);
       pendingTimersRef.current.set(
         productId,
-        setTimeout(() => void flushProductDelta(productId), CART_MUTATION_DEBOUNCE_MS)
+        setTimeout(() => {
+          mutationChainRef.current = mutationChainRef.current
+            .catch(() => undefined)
+            .then(() => flushProductDelta(productId));
+          void mutationChainRef.current;
+        }, CART_MUTATION_DEBOUNCE_MS)
       );
     },
     [flushProductDelta]

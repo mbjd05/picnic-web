@@ -137,6 +137,24 @@ export function CartProvider({ children }: { children: ReactNode }) {
       .finally(() => setIsLoading(false));
   }, [cartQuery, hasPendingCartWork, queryClient, reconcile, setIsLoading]);
 
+  const recoverFromMutationFailure = useCallback(async () => {
+    try {
+      const cart = await fetchJson<CartData>("/api/cart");
+      queryClient.setQueryData(queryKeys.cart(), cart);
+      confirmedRef.current = quantitiesFromCart(cart);
+      confirmedTotalsRef.current = {
+        totalPrice: cart.totalPrice,
+        totalCount: cart.totalCount,
+      };
+      if (pendingDeltasRef.current.size === 0 && requestCountRef.current <= 1) reconcile(cart);
+      return true;
+    } catch {
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [queryClient, reconcile, setIsLoading]);
+
   useEffect(() => {
     if (cartQuery.data) {
       confirmedRef.current = quantitiesFromCart(cartQuery.data);
@@ -173,21 +191,32 @@ export function CartProvider({ children }: { children: ReactNode }) {
         confirmedTotalsRef.current = { totalPrice: cart.totalPrice, totalCount: cart.totalCount };
         if (pendingDeltasRef.current.size === 0 && requestCountRef.current === 1) reconcile(cart);
       } catch {
-        const next = new Map(visibleQuantitiesRef.current);
-        const confirmed = confirmedRef.current.get(productId) ?? 0;
-        if (confirmed === 0) next.delete(productId);
-        else next.set(productId, confirmed);
-        visibleQuantitiesRef.current = new Map(next);
-        visibleTotalsRef.current = confirmedTotalsRef.current;
-        applyQuantities(next);
-        applyTotals(confirmedTotalsRef.current);
-        setToast("Er ging iets mis. Probeer het opnieuw.");
-        refresh();
+        if (!(await recoverFromMutationFailure())) {
+          const next = new Map(visibleQuantitiesRef.current);
+          const confirmed = confirmedRef.current.get(productId) ?? 0;
+          if (confirmed === 0) next.delete(productId);
+          else next.set(productId, confirmed);
+          visibleQuantitiesRef.current = new Map(next);
+          visibleTotalsRef.current = confirmedTotalsRef.current;
+          applyQuantities(next);
+          applyTotals(confirmedTotalsRef.current);
+          setToast(t.cartMutationError);
+          refresh();
+        }
       } finally {
         requestCountRef.current -= 1;
       }
     },
-    [applyQuantities, applyTotals, queryClient, reconcile, refresh, setToast]
+    [
+      applyQuantities,
+      applyTotals,
+      queryClient,
+      reconcile,
+      recoverFromMutationFailure,
+      refresh,
+      setToast,
+      t.cartMutationError,
+    ]
   );
 
   const scheduleFlush = useCallback(

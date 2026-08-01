@@ -17,14 +17,14 @@
   the iteration process.
 -->
 
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
-**Project Type**: [e.g., library/cli/web-service/mobile-app/compiler/desktop-app or NEEDS CLARIFICATION]  
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
+**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]
+**Primary Dependencies**: [For this project prefer: Vite, React, Tailwind CSS, TanStack Router, TanStack Query, Hono, Cloudflare Workers, picnic-api, Valibot, Ky]
+**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
+**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]
+**Target Platform**: [For this project prefer: Cloudflare Workers free tier + modern browsers]
+**Project Type**: [For this project prefer: Vite React SPA plus Hono Worker API]
+**Performance Goals**: [Prioritize fast and reliable Picnic API interaction, responsive UI, small Worker CPU cost]
+**Constraints**: [Cloudflare Worker compatibility, no SSR dependency, no browser-visible auth tokens, private data no-store]
 **Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
 
 ## Constitution Check
@@ -56,43 +56,38 @@ specs/[###-feature]/
 -->
 
 ```text
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
+apps/
+├── api/
+│   └── src/
+│       ├── lib/
+│       └── routes/
+└── web/
+    └── src/
+        ├── app/
+        ├── components/
+        ├── features/
+        ├── hooks/
+        ├── lib/
+        ├── providers/
+        └── stores/
+
 src/
-├── models/
-├── services/
-├── cli/
-└── lib/
+├── components/
+├── lib/
+└── types/
 
+scripts/
+docs/
 tests/
-├── contract/
-├── integration/
 └── unit/
-
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
-backend/
-├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
-└── tests/
-
-frontend/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
-
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
-
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
 ```
 
 **Structure Decision**: [Document the selected structure and reference the real
 directories captured above]
+
+**Legacy Spec Translation**: [If the source spec mentions Next.js paths such as
+`src/app` or `src/app/api`, document the equivalent current paths in `apps/web`,
+`apps/api`, `src/lib`, and `src/types`. Do not implement new Next.js files.]
 
 ## Complexity Tracking
 

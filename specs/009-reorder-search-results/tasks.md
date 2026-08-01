@@ -1,6 +1,6 @@
 # Tasks: Reorder Section in Search Results
 
-**Input**: Design documents from `/specs/009-reorder-search-results/`  
+**Input**: Design documents from `/specs/009-reorder-search-results/`
 **Prerequisites**: plan.md, spec.md, research.md, data-model.md, quickstart.md
 
 **Tests**: No test framework exists in this project. No tests requested. All validation is manual via the browser.
@@ -101,7 +101,7 @@
 
 - [X] T022 Remove temporary debug logging from `src/app/api/search/route.ts`
 - [~] T023 Delete the debug response file `specs/009-reorder-search-results/debug/roomboter-response.json` (or move to a test fixtures directory if useful for future reference) — **N/A: debug dir was never populated**
-- [X] T024 Verify `src/lib/parse-fusion-search.ts` remains under 300 lines (constitution Principle III) — **275 lines ✅**
+- [X] T024 Verify `src/lib/parse-fusion-search.ts` remains within a clear responsibility boundary (constitution Principle III) — **275 lines ✅**
 - [X] T025 Run `npm run lint` and fix any linting violations — **passes clean ✅**
 - [X] T026 Run `npm run build` and fix any build errors — **builds successfully ✅**
 - [ ] T027 Final end-to-end validation: search "Roomboter", "Tomaten", and a no-reorder term — verify all acceptance scenarios from spec.md pass

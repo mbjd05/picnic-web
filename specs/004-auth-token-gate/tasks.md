@@ -1,6 +1,6 @@
 # Tasks: Auth Token Gate
 
-**Input**: Design documents from `/specs/004-auth-token-gate/`  
+**Input**: Design documents from `/specs/004-auth-token-gate/`
 **Prerequisites**: plan.md, spec.md, research.md, data-model.md, quickstart.md
 
 **Tests**: No test framework is configured. Validation is `npm run lint && npx tsc --noEmit && npm run build`.
@@ -43,7 +43,7 @@
 
 **Goal**: Users can enter their Picnic auth token on a login page, have it validated, and gain access to the application. Token persists across sessions via HTTP-only cookie.
 
-**Independent Test**: Clear all cookies, visit http://localhost:3000 — should redirect to /login. Enter a valid Picnic token, click "Inloggen" — should redirect to the main search page. Search for "tomaten" — should return results. Close and reopen browser — should still be logged in.
+**Independent Test**: Clear all cookies, visit http://127.0.0.1:8787 — should redirect to /login. Enter a valid Picnic token, click "Inloggen" — should redirect to the main search page. Search for "tomaten" — should return results. Close and reopen browser — should still be logged in.
 
 ### Implementation for User Story 1
 
@@ -78,7 +78,7 @@
 
 **Goal**: Authenticated users can sign out via a button in the site header, clearing their token and returning to the login screen.
 
-**Independent Test**: Log in with a valid token. Click "Uitloggen" in the header. Verify redirect to /login. Verify that navigating to http://localhost:3000 redirects back to /login (token fully cleared).
+**Independent Test**: Log in with a valid token. Click "Uitloggen" in the header. Verify redirect to /login. Verify that navigating to http://127.0.0.1:8787 redirects back to /login (token fully cleared).
 
 ### Implementation for User Story 3
 

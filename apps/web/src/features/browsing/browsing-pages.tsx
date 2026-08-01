@@ -1,6 +1,6 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
 
 import type {
@@ -10,16 +10,18 @@ import type {
   SubcategoriesApiResponse,
 } from "@/types/category";
 import { parsePageIdFromDeepLink } from "@/lib/parse/deep-link";
-import type { CategoryProductsApiResponse, SearchSection } from "@/types/search";
+import type { CategoryProductsApiResponse, SearchApiResponse, SearchSection } from "@/types/search";
 
 import { HeaderBottomBar } from "../../components/header-bottom-bar";
 import { BackButton, ErrorView, LoadingView } from "../../components/page-state";
 import { useDocumentTitle } from "../../hooks/use-document-title";
 import { CategoryBrowser, ProductGrid, ResultsView, SectionNavBar } from "./browsing-components";
 import { useCountryCode, useTranslations } from "../../providers/country-context";
+import { useInAppBack } from "../../providers/navigation-history-context";
 import { useProductSearch } from "../../hooks/use-product-search";
 import { fetchJson } from "../../lib/api-client";
 import { queryGcTime, queryKeys, queryStaleTime } from "../../lib/query-config";
+import { useSearchNavigationStore } from "../../stores/search-navigation-store";
 
 function PageLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -30,9 +32,14 @@ function PageLayout({ children }: { children: React.ReactNode }) {
 export function HomePage() {
   const { q } = useSearch({ from: "/authenticated/" });
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const countryCode = useCountryCode();
   const t = useTranslations();
   const query = q?.trim() ?? "";
+  const submittedProductSearch = useSearchNavigationStore((state) => state.submittedProductSearch);
+  const setSubmittedProductSearch = useSearchNavigationStore(
+    (state) => state.setSubmittedProductSearch
+  );
 
   const categories = useQuery({
     queryKey: queryKeys.categories(countryCode),
@@ -43,6 +50,12 @@ export function HomePage() {
   const search = useProductSearch(query, countryCode);
 
   useDocumentTitle(query ? `"${query}"` : undefined);
+
+  useEffect(() => {
+    if (!submittedProductSearch || submittedProductSearch === query) {
+      setSubmittedProductSearch(null);
+    }
+  }, [query, setSubmittedProductSearch, submittedProductSearch]);
 
   function openCategory(category: CategoryItem) {
     void navigate({ to: "/categories/$categoryId", params: { categoryId: category.id } });
@@ -58,7 +71,19 @@ export function HomePage() {
     void navigate({ to: "/pages", search: { pageId, title: shortcut.name } });
   }
 
-  const sections = search.data?.sections ?? [];
+  const submittedSearchData =
+    submittedProductSearch && submittedProductSearch !== query
+      ? queryClient.getQueryData<SearchApiResponse>(
+          queryKeys.productSearch(submittedProductSearch, countryCode)
+        )
+      : undefined;
+  const effectiveSearchData = submittedSearchData ?? search.data;
+  const effectiveQuery =
+    submittedSearchData && submittedProductSearch ? submittedProductSearch : query;
+  const sections = effectiveSearchData?.sections ?? [];
+  const isWaitingForSearchData =
+    Boolean(submittedProductSearch && submittedProductSearch !== query && !submittedSearchData) ||
+    search.isPending;
   return (
     <>
       {sections.length ? (
@@ -67,13 +92,17 @@ export function HomePage() {
         </HeaderBottomBar>
       ) : null}
       <PageLayout>
-        {query ? (
-          search.isPending ? (
+        {effectiveQuery ? (
+          isWaitingForSearchData ? (
             <LoadingView />
           ) : search.isError ? (
             <ErrorView message={t.searchError} onRetry={() => void search.refetch()} />
           ) : (
-            <ResultsView query={query} products={search.data.products} sections={sections} />
+            <ResultsView
+              query={effectiveQuery}
+              products={effectiveSearchData?.products ?? []}
+              sections={sections}
+            />
           )
         ) : categories.isPending ? (
           <LoadingView />
@@ -115,12 +144,13 @@ export function CategoryPage() {
   )?.name;
   const title =
     query.data?.title && query.data.title !== categoryId ? query.data.title : categoryName;
+  const handleBack = useInAppBack(() => void navigate({ to: "/", search: {} }));
 
   useDocumentTitle(title);
 
   return (
     <PageLayout>
-      <BackButton onClick={() => void navigate({ to: "/", search: {} })} />
+      <BackButton onClick={handleBack} />
       <h2 className="text-foreground mb-3 text-lg font-semibold">
         {title ?? t.categoryFallbackTitle}
       </h2>
@@ -249,13 +279,10 @@ export function SubcategoryProductsPage() {
     [...queryKeys.categoryProducts(subcategoryId, countryCode)],
     `/api/categories/${encodeURIComponent(subcategoryId)}/products`
   );
-  return (
-    <ProductsPageView
-      query={query}
-      fallbackTitle={t.defaultPageTitle}
-      back={() => void navigate({ to: "/categories/$categoryId", params: { categoryId } })}
-    />
+  const handleBack = useInAppBack(
+    () => void navigate({ to: "/categories/$categoryId", params: { categoryId } })
   );
+  return <ProductsPageView query={query} fallbackTitle={t.defaultPageTitle} back={handleBack} />;
 }
 
 export function ShortcutProductsPage() {
@@ -268,21 +295,18 @@ export function ShortcutProductsPage() {
     `/api/pages/products?pageId=${encodeURIComponent(pageId ?? "")}`,
     Boolean(pageId)
   );
+  const handleBack = useInAppBack(() => void navigate({ to: "/", search: {} }));
 
   if (!pageId) {
     return (
       <PageLayout>
-        <BackButton onClick={() => void navigate({ to: "/", search: {} })} />
+        <BackButton onClick={handleBack} />
         <ErrorView message={t.noPageSpecified} />
       </PageLayout>
     );
   }
 
   return (
-    <ProductsPageView
-      query={query}
-      fallbackTitle={title ?? t.defaultPageTitle}
-      back={() => void navigate({ to: "/", search: {} })}
-    />
+    <ProductsPageView query={query} fallbackTitle={title ?? t.defaultPageTitle} back={handleBack} />
   );
 }

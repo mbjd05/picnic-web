@@ -98,7 +98,7 @@
 **Purpose**: Final cleanup, lint pass, and manual testing
 
 - [x] T017 [P] Run `npm run lint` and fix all errors/warnings
-- [x] T018 [P] Verify all files stay under 300 lines (constitution III)
+- [x] T018 [P] Verify all files keep clear responsibility boundaries (constitution III)
 - [ ] T019 Manual browser testing: run through all acceptance scenarios from spec.md (US1 §1-3, US2 §1-4, US3 §1-4, US4 §1-2, edge cases)
 - [ ] T020 Verify toast error feedback with simulated network failure (e.g., disable network in DevTools)
 
@@ -158,5 +158,5 @@
 - All prices are in cents (integer arithmetic, no floating-point)
 - All user-facing text is in Dutch
 - Bundle UI is built against known data shapes but currently no products have active bundles — test with mock data
-- Constitution: max 300 lines per file, SRP, no deep nesting, no magic numbers
+- Constitution: clear responsibility boundaries per module, SRP, no deep nesting, no magic numbers
 - Commit after each task or logical group

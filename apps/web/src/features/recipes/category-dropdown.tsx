@@ -69,7 +69,11 @@ export function CategoryDropdown({
                       setOpen(false);
                       setQuery("");
                     }}
-                    className={`flex w-full items-center justify-between px-4 py-2 text-left text-sm transition-colors ${isSelected ? "text-picnic-red bg-red-50 font-semibold" : "text-foreground hover:bg-gray-50"}`}
+                    className={`flex w-full items-center justify-between px-4 py-2 text-left text-sm transition-colors ${
+                      isSelected
+                        ? "text-picnic-red bg-red-50 font-semibold dark:bg-red-950/35"
+                        : "text-foreground hover:bg-gray-50"
+                    }`}
                   >
                     <span>{option.name}</span>
                     {option.count !== undefined ? (

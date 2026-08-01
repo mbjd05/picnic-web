@@ -1,5 +1,7 @@
 import { type RefCallback, useCallback, useEffect, useRef } from "react";
 
+import { isWheelQuantityAdjustmentEvent } from "@/lib/cart/wheel-quantity-adjust";
+
 const WHEEL_ADJUST_COOLDOWN_MS = 120;
 
 export function useWheelQuantityAdjust({
@@ -22,11 +24,10 @@ export function useWheelQuantityAdjust({
   }, [canDecrement, canIncrement, onDecrement, onIncrement]);
 
   const handleWheel = useCallback((event: WheelEvent) => {
-    if (event.deltaY === 0) return;
+    if (!isWheelQuantityAdjustmentEvent(event)) return;
 
     event.preventDefault();
     event.stopPropagation();
-    if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
 
     const now = performance.now();
     if (now - lastAdjustmentAtRef.current < WHEEL_ADJUST_COOLDOWN_MS) return;

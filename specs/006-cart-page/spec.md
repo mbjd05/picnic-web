@@ -1,8 +1,8 @@
 # Feature Specification: Cart Page
 
-**Feature Branch**: `006-cart-page`  
-**Created**: 2026-03-31  
-**Status**: Draft  
+**Feature Branch**: `006-cart-page`
+**Created**: 2026-03-31
+**Status**: Draft
 **Input**: User description: "Create the cart page with product list, pricing summary, suggestions, and additional cart data"
 
 ## Clarifications
@@ -186,7 +186,7 @@ A logged-in user sees a cart icon in the header on every page. The icon has a re
 - **FR-019**: System MUST display a user-friendly error message in Dutch with a retry option if the cart data fails to load.
 - **FR-020**: System MUST redirect the user to the login page if their session expires during use.
 - **FR-021**: System MUST show a placeholder image when a product image fails to load.
-- **FR-022**: System MUST NOT provide controls to modify item quantities or remove items from the cart — the cart page is read-only.
+- **FR-022**: System MAY provide controls to modify item quantities or remove items from the cart. The older read-only constraint is superseded by `008-cart-page-actions`; cart mutations must use authenticated Picnic cart API calls, keep UI state consistent, and roll back or reconcile from the authoritative cart response on failure.
 - **FR-023**: System MUST make each product in the cart clickable, navigating to the product detail page when clicked.
 - **FR-024**: System MUST display a cart icon in the header on all authenticated pages (search, product detail, cart) that navigates to the cart page (`/cart`) when clicked.
 - **FR-025**: System MUST display a red badge on the cart icon showing the total cart price after discounts (sourced from `checkout_total_price`), formatted in Dutch locale.
@@ -228,7 +228,7 @@ A logged-in user sees a cart icon in the header on every page. The icon has a re
 - Discount per line item is calculated as the difference between `price` (original) and `display_price` (current) on each line item. Total discount is the sum of these per-line differences. This is an approximation since the active cart does not expose a `total_savings` field.
 - Delivery slot selection and modification are explicitly out of scope. The selected slot is used read-only to determine minimum order value.
 - Checkout functionality is explicitly out of scope. Only a static message directing users to the Picnic app is shown.
-- Cart modification (changing quantities, removing items) is explicitly out of scope. The cart page is read-only.
+- Cart modification was out of scope for the original cart page. It is now in scope via `008-cart-page-actions`, including quantity changes, removing one product line, and reconciliation against the authoritative cart response.
 - The "save products to new recipe" feature is explicitly out of scope.
 - All user-facing text is in Dutch, consistent with the rest of the application.
 - Product images are loaded from the same CDN used by the product detail and search pages.

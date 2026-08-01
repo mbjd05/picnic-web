@@ -10,7 +10,11 @@ import { openDB } from "idb";
 const DB_NAME = "picnic-web-product-browsing";
 const DB_VERSION = 1;
 const STORE_NAME = "query-cache";
-const CACHE_KEY = "product-browsing-v1";
+export const PRODUCT_BROWSING_CACHE_KEY = "product-browsing-v3-detail-content";
+const OLD_PRODUCT_BROWSING_CACHE_KEYS = [
+  "product-browsing-v1",
+  "product-browsing-v2-fusion-sections",
+];
 const CACHE_MAX_AGE_MS = 30 * 60 * 1000;
 const PERSIST_DEBOUNCE_MS = 750;
 
@@ -20,7 +24,11 @@ const PERSISTED_QUERY_ROOTS = new Set([
   "product-search",
   "category-products",
   "shortcut-products",
+  "product-detail",
+  "recipe-detail",
 ]);
+
+const PERSISTED_COOKBOOK_QUERY_TYPES = new Set(["view", "search"]);
 
 type PersistedProductQueryCache = {
   savedAt: number;
@@ -28,7 +36,9 @@ type PersistedProductQueryCache = {
 };
 
 export function isPersistableProductBrowsingQuery(queryKey: readonly unknown[]): boolean {
-  return typeof queryKey[0] === "string" && PERSISTED_QUERY_ROOTS.has(queryKey[0]);
+  if (typeof queryKey[0] !== "string") return false;
+  if (PERSISTED_QUERY_ROOTS.has(queryKey[0])) return true;
+  return queryKey[0] === "cookbook" && PERSISTED_COOKBOOK_QUERY_TYPES.has(String(queryKey[1]));
 }
 
 export function isFreshProductQueryCache(savedAt: number, now = Date.now()): boolean {
@@ -46,11 +56,12 @@ export async function installProductQueryPersistence(queryClient: QueryClient): 
     },
   });
 
-  const persisted = await db.get(STORE_NAME, CACHE_KEY);
+  const persisted = await db.get(STORE_NAME, PRODUCT_BROWSING_CACHE_KEY);
+  await Promise.all(OLD_PRODUCT_BROWSING_CACHE_KEYS.map((key) => db.delete(STORE_NAME, key)));
   if (isPersistedProductQueryCache(persisted) && isFreshProductQueryCache(persisted.savedAt)) {
     hydrate(queryClient, persisted.state);
   } else if (persisted) {
-    await db.delete(STORE_NAME, CACHE_KEY);
+    await db.delete(STORE_NAME, PRODUCT_BROWSING_CACHE_KEY);
   }
 
   let timer: number | null = null;
@@ -60,7 +71,9 @@ export async function installProductQueryPersistence(queryClient: QueryClient): 
         query.state.status === "success" && isPersistableProductBrowsingQuery(query.queryKey),
     });
 
-    void db.put(STORE_NAME, { savedAt: Date.now(), state }, CACHE_KEY).catch(() => undefined);
+    void db
+      .put(STORE_NAME, { savedAt: Date.now(), state }, PRODUCT_BROWSING_CACHE_KEY)
+      .catch(() => undefined);
   };
 
   queryClient.getQueryCache().subscribe(() => {

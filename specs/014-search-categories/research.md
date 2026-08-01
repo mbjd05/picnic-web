@@ -185,7 +185,7 @@ The native app renders these at 64x64px. For our web grid, we may want to use a 
 - `src/components/category-grid.tsx` — grid component: renders the category tiles
 - Modify `src/app/page.tsx` — replace `LandingView` with category grid + loading/error states
 
-This adds 4 new files and modifies 1 existing file. All new files will be well under the 300-line constitution limit.
+This adds 4 new files and modifies 1 existing file. Each new file has one clear responsibility.
 
 ## Summary
 

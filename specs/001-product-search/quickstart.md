@@ -40,7 +40,7 @@
 
 4. **Open the application**:
 
-   Navigate to `http://localhost:3000` in your browser.
+   Navigate to `http://127.0.0.1:8787` in your browser.
 
 ## Verify Feature
 
