@@ -6,19 +6,16 @@ import {
   startCheckoutPaymentService,
 } from "@/lib/api-services/payments";
 
+import { authenticatedJson } from "../lib/authenticated-handler";
 import { authRequiredResponse, jsonStatus } from "../lib/http";
 import { readSession } from "../lib/session";
 
 export function registerCheckoutRoutes(app: Hono): void {
   app.post("/api/checkout/start-payment", async (c) => {
-    const { token, countryCode } = readSession(c);
-    if (!token) {
-      return authRequiredResponse(c);
-    }
-
     const appReturnUrl = new URL("/cart/payment-return", c.req.url).toString();
-    const result = await startCheckoutPaymentService(token, countryCode, appReturnUrl);
-    return c.json(result.body, jsonStatus(result.status));
+    return authenticatedJson(c, ({ token, countryCode }) =>
+      startCheckoutPaymentService(token, countryCode, appReturnUrl)
+    );
   });
 
   app.post("/api/checkout/cancel", async (c) => {
@@ -37,12 +34,8 @@ export function registerCheckoutRoutes(app: Hono): void {
   });
 
   app.get("/api/checkout/status/:transactionId", async (c) => {
-    const { token, countryCode } = readSession(c);
-    if (!token) {
-      return authRequiredResponse(c);
-    }
-
-    const result = await getCheckoutStatusService(token, countryCode, c.req.param("transactionId"));
-    return c.json(result.body, jsonStatus(result.status));
+    return authenticatedJson(c, ({ token, countryCode }) =>
+      getCheckoutStatusService(token, countryCode, c.req.param("transactionId"))
+    );
   });
 }

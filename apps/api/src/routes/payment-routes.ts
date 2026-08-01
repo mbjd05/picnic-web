@@ -6,18 +6,15 @@ import {
   removePaymentOptionService,
 } from "@/lib/api-services/payments";
 
+import { authenticatedJson } from "../lib/authenticated-handler";
 import { authRequiredResponse, jsonStatus } from "../lib/http";
 import { readSession } from "../lib/session";
 
 export function registerPaymentRoutes(app: Hono): void {
   app.get("/api/account/payment-profile", async (c) => {
-    const { token, countryCode } = readSession(c);
-    if (!token) {
-      return authRequiredResponse(c);
-    }
-
-    const result = await getPaymentProfileService(token, countryCode);
-    return c.json(result.body, jsonStatus(result.status));
+    return authenticatedJson(c, ({ token, countryCode }) =>
+      getPaymentProfileService(token, countryCode)
+    );
   });
 
   app.post("/api/account/payment-profile", async (c) => {
@@ -51,16 +48,8 @@ export function registerPaymentRoutes(app: Hono): void {
   });
 
   app.delete("/api/account/payment-profile/payment-options/:paymentOptionId", async (c) => {
-    const { token, countryCode } = readSession(c);
-    if (!token) {
-      return authRequiredResponse(c);
-    }
-
-    const result = await removePaymentOptionService(
-      token,
-      countryCode,
-      c.req.param("paymentOptionId")
+    return authenticatedJson(c, ({ token, countryCode }) =>
+      removePaymentOptionService(token, countryCode, c.req.param("paymentOptionId"))
     );
-    return c.json(result.body, jsonStatus(result.status));
   });
 }

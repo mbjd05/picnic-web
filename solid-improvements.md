@@ -43,15 +43,17 @@ interfaces, and route/UI code that still repeats low-level fetch/session wiring.
 - [x] Extract shell feature files.
   - [x] Move mobile header hook/component from `app-shell.tsx` into `features/shell/`.
   - [x] Move header icons into `features/shell/`.
-  - [ ] Introduce a typed menu-action/menu-panel config if it reduces header conditionals.
-- [ ] Add domain query hooks.
-  - [ ] `useCartQuery`
-  - [ ] `usePaymentProfile`
-  - [ ] `useProductSearch`
-  - [ ] `useCookbookView`
-- [ ] Split large domain type file gradually.
-- [ ] Split cart context interfaces after cart extraction.
-- [ ] Add Worker authenticated route helper where it reduces repeated route boilerplate.
+  - [x] Leave typed menu-action/menu-panel config out for now; current branching is clearer.
+- [x] Add domain query hooks.
+  - [x] `useCartQuery`
+  - [x] `usePaymentProfile`
+  - [x] `useProductSearch`
+  - [x] `useCookbookView`
+- [x] Split large domain type file gradually.
+  - [x] Move country/language constants and helpers into `src/lib/types/locale-types.ts`.
+  - [x] Move payment/checkout types into `src/lib/types/payment-types.ts`.
+- [x] Split cart context interfaces after cart extraction.
+- [x] Add Worker authenticated route helper where it reduces repeated route boilerplate.
 
 ## Completed Chunks
 
@@ -134,6 +136,47 @@ Recipe presentation and subflows now live in:
 The header still owns search state, cart link composition, locale/theme/menu state, and menu content
 rendering. A typed menu config remains optional; only add it if it reduces branching without making
 desktop/mobile behavior harder to follow.
+
+### Domain Query Hooks
+
+Repeated query setup now has domain hooks for the most common app surfaces:
+
+- `apps/web/src/features/cart/use-cart-query.ts`
+- `apps/web/src/features/payment/use-payment-profile.ts`
+- `apps/web/src/features/products/use-product-search.ts`
+- `apps/web/src/features/recipes/use-cookbook-query.ts`
+
+These hooks preserve existing query keys, stale times, and endpoint behavior.
+
+### Worker Authenticated Handler
+
+Simple authenticated JSON routes can now use:
+
+- `apps/api/src/lib/authenticated-handler.ts`
+
+The helper is applied only where it clarifies repeated session/auth/service boilerplate. Routes with
+custom auth behavior, body parsing, validation, or image proxy behavior stay explicit.
+
+### Type File Split
+
+The large `src/lib/types.ts` file now re-exports smaller domain files while preserving the existing
+`@/lib/types` import surface:
+
+- `src/lib/types/locale-types.ts`
+- `src/lib/types/payment-types.ts`
+
+Continue this pattern opportunistically when product, recipe, cart, or delivery domains are touched.
+
+### Cart Context Interface Split
+
+`cart-context.tsx` still owns the cart state provider, but consumers now use narrower hooks:
+
+- `useCartQuantities`
+- `useCartTotals`
+- `useCartActions`
+- `useCartBundles`
+
+The broad `useCart` hook remains as an internal compatibility layer.
 
 ## Folder Structure Direction
 
@@ -327,21 +370,21 @@ Status: Decent at service/parser layer, weaker in UI and Worker route wiring.
 
 4. Extract shell feature files. Done for the mobile panel and icons.
    - Move mobile menu panel logic under `features/shell/`.
-   - Introduce menu config only if it makes desktop/mobile behavior clearer.
+   - Typed menu config intentionally skipped for now.
 
-5. Add domain query hooks.
+5. Add domain query hooks. Done.
    - Do this after page extraction so hooks match real feature boundaries.
    - Start with hooks that wrap existing query keys and fetchers without changing cache semantics.
 
-6. Add Worker authenticated handler helper.
+6. Add Worker authenticated handler helper. Done.
    - Apply first to simple GET routes.
    - Avoid forcing custom auth/login/image routes through the helper.
 
-7. Split large domain type file.
+7. Split large domain type file. Started with locale and payment domain files.
    - Move types only when touching related features.
    - Avoid churn-heavy all-at-once type moves.
 
-8. Split cart context interfaces.
+8. Split cart context interfaces. Done.
    - Do this after cart page extraction clarifies consumers.
    - Preserve current update robustness before moving mutation orchestration out of `cart-page.tsx`.
 
@@ -368,7 +411,7 @@ For each refactor chunk:
 - Run `pnpm build:api` or `pnpm validate` for Worker route changes.
 - Use Playwright for affected user flows when UI behavior changes.
 
-Current validated state for the completed route/cart chunks:
+Current validated state for the completed SOLID chunks:
 
 - `pnpm format:check`
 - `pnpm lint`

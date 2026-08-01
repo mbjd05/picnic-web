@@ -9,7 +9,7 @@ import { DEBOUNCE_DELAY_MS } from "@/lib/types";
 import type { CookbookApiResponse, RecipeCategory, RecipeDetail, RecipeItem } from "@/lib/types";
 
 import { ErrorView, LoadingView, useDocumentTitle } from "./browsing-components";
-import { useCart } from "./cart-context";
+import { useCartActions } from "./cart-context";
 import { useCountryCode, useTranslations } from "./country-context";
 import { CategoryDropdown, type RecipeCategoryOption } from "./features/recipes/category-dropdown";
 import { RecipeAddToCartPanel } from "./features/recipes/recipe-add-to-cart-panel";
@@ -24,6 +24,11 @@ import { BookmarkIcon } from "./features/recipes/recipe-icons";
 import { RecipeSaveButton } from "./features/recipes/recipe-save-button";
 import { RecipeSearchInput } from "./features/recipes/recipe-search-input";
 import { RecipeStepsSection } from "./features/recipes/recipe-steps-section";
+import {
+  useCookbookSearch,
+  useCookbookView,
+  useSavedRecipes,
+} from "./features/recipes/use-cookbook-query";
 import { fetchJson } from "./lib/api-client";
 import { queryKeys, queryStaleTime } from "./lib/query-config";
 
@@ -62,23 +67,10 @@ export function CookbookPage() {
 
   const hasActiveQuery = debouncedQuery.length > 0;
   const useGlobalSearch = hasActiveQuery && searchScope === "all";
-  const recipesUrl = useGlobalSearch
-    ? `/api/cookbook/search?q=${encodeURIComponent(debouncedQuery)}`
-    : selectedCategory
-      ? `/api/cookbook?category=${encodeURIComponent(selectedCategory)}`
-      : "/api/cookbook";
-  const savedRecipesQuery = useQuery({
-    queryKey: queryKeys.savedRecipes(countryCode),
-    queryFn: () => fetchJson<CookbookApiResponse>("/api/cookbook?category=__saved__"),
-    staleTime: queryStaleTime.savedRecipes,
-  });
-  const recipesQuery = useQuery({
-    queryKey: useGlobalSearch
-      ? queryKeys.cookbookSearch(debouncedQuery, countryCode)
-      : queryKeys.cookbookView(selectedCategory, countryCode),
-    queryFn: () => fetchJson<CookbookApiResponse>(recipesUrl),
-    staleTime: useGlobalSearch ? queryStaleTime.search : queryStaleTime.cookbookView,
-  });
+  const savedRecipesQuery = useSavedRecipes(countryCode);
+  const cookbookViewQuery = useCookbookView(selectedCategory, countryCode, !useGlobalSearch);
+  const cookbookSearchQuery = useCookbookSearch(debouncedQuery, countryCode, useGlobalSearch);
+  const recipesQuery = useGlobalSearch ? cookbookSearchQuery : cookbookViewQuery;
 
   useEffect(() => {
     const saved = savedRecipesQuery.data?.recipes;
@@ -356,7 +348,7 @@ export function RecipeDetailPage() {
   const countryCode = useCountryCode();
   const t = useTranslations();
   const queryClient = useQueryClient();
-  const { refresh } = useCart();
+  const { refresh } = useCartActions();
   const [pageState, setPageState] = useState<RecipePageState>({ status: "loading" });
   const [portions, setPortions] = useState(2);
   const [confirmedPortions, setConfirmedPortions] = useState<number | null>(null);
@@ -369,11 +361,7 @@ export function RecipeDetailPage() {
     queryFn: () => fetchJson<RecipeDetail>(`/api/recipe/${encodeURIComponent(id)}`),
     staleTime: queryStaleTime.cookbookView,
   });
-  const detailSavedQuery = useQuery({
-    queryKey: queryKeys.savedRecipes(countryCode),
-    queryFn: () => fetchJson<CookbookApiResponse>("/api/cookbook?category=__saved__"),
-    staleTime: queryStaleTime.savedRecipes,
-  });
+  const detailSavedQuery = useSavedRecipes(countryCode);
   useDocumentTitle(pageState.status === "success" ? pageState.recipe.name : t.cookbookTitle);
 
   useEffect(() => {

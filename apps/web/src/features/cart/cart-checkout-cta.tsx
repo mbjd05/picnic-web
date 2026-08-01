@@ -1,15 +1,14 @@
 import { useState } from "react";
 
-import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 
 import { formatEuroPrice } from "@/lib/format-price";
 import { getPreferredPaymentOption } from "@/lib/payment";
-import type { CheckoutPaymentResponse, PaymentProfile } from "@/lib/types";
+import type { CheckoutPaymentResponse } from "@/lib/types";
 
 import { useTranslations } from "../../country-context";
+import { usePaymentProfile } from "../payment/use-payment-profile";
 import { ApiClientError, fetchJson } from "../../lib/api-client";
-import { queryKeys, queryStaleTime } from "../../lib/query-config";
 
 const PAYMENT_BANK_STORAGE_KEY = "picnic_payment_option_banks";
 
@@ -25,11 +24,7 @@ export function CartCheckoutCta({
     { status: "idle" } | { status: "loading" } | { status: "error"; message: string }
   >({ status: "idle" });
   const [storedBankMetadata] = useState(readStoredBankMetadata);
-  const paymentProfileQuery = useQuery({
-    queryKey: queryKeys.paymentProfile(),
-    queryFn: () => fetchJson<PaymentProfile>("/api/account/payment-profile"),
-    staleTime: queryStaleTime.paymentProfile,
-  });
+  const paymentProfileQuery = usePaymentProfile();
   const paymentProfile = paymentProfileQuery.data ?? null;
 
   const preferredOption = paymentProfile ? getPreferredPaymentOption(paymentProfile) : null;

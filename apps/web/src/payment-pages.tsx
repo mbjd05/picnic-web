@@ -1,7 +1,7 @@
 import { Link, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "@tanstack/react-form";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { getPaymentDisplayName, getPreferredPaymentOption } from "@/lib/payment";
 import type {
@@ -13,8 +13,9 @@ import type {
 
 import { ErrorView, LoadingView, useDocumentTitle } from "./browsing-components";
 import { useTranslations } from "./country-context";
+import { usePaymentProfile } from "./features/payment/use-payment-profile";
 import { ApiClientError, fetchJson } from "./lib/api-client";
-import { queryKeys, queryStaleTime } from "./lib/query-config";
+import { queryKeys } from "./lib/query-config";
 
 const PAYMENT_BANK_STORAGE_KEY = "picnic_payment_option_banks";
 
@@ -62,11 +63,7 @@ export function PaymentAccountPage() {
   const [storedBankMetadata, setStoredBankMetadata] = useState<StoredBankMetadata>({});
   const [actionError, setActionError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const profileQuery = useQuery({
-    queryKey: queryKeys.paymentProfile(),
-    queryFn: () => fetchJson<PaymentProfile>("/api/account/payment-profile"),
-    staleTime: queryStaleTime.paymentProfile,
-  });
+  const profileQuery = usePaymentProfile();
   const profileErrorMessage =
     profileQuery.error instanceof ApiClientError
       ? profileQuery.error.message

@@ -8,59 +8,40 @@ import {
   updateSavedRecipeService,
 } from "@/lib/api-services/recipes";
 
+import { authenticatedJson } from "../lib/authenticated-handler";
 import { authRequiredResponse, jsonStatus } from "../lib/http";
 import { readSession } from "../lib/session";
 
 export function registerRecipeRoutes(app: Hono): void {
   app.get("/api/cookbook/counts", async (c) => {
-    const { token, countryCode } = readSession(c);
-    if (!token) {
-      return authRequiredResponse(c);
-    }
-
-    const result = await getCookbookCountsService(token, countryCode);
-    return c.json(result.body, jsonStatus(result.status));
+    return authenticatedJson(c, ({ token, countryCode }) =>
+      getCookbookCountsService(token, countryCode)
+    );
   });
 
   app.get("/api/cookbook", async (c) => {
-    const { token, countryCode } = readSession(c);
-    if (!token) {
-      return authRequiredResponse(c);
-    }
-
-    const result = await getCookbookService(token, countryCode, c.req.query("category") ?? null);
-    return c.json(result.body, jsonStatus(result.status));
+    return authenticatedJson(c, ({ token, countryCode }) =>
+      getCookbookService(token, countryCode, c.req.query("category") ?? null)
+    );
   });
 
   app.get("/api/cookbook/search", async (c) => {
-    const { token, countryCode } = readSession(c);
-    if (!token) {
-      return authRequiredResponse(c);
-    }
-
     const query = c.req.query("q")?.trim() ?? "";
-    const result = await searchCookbookService(token, countryCode, query);
-    return c.json(result.body, jsonStatus(result.status));
+    return authenticatedJson(c, ({ token, countryCode }) =>
+      searchCookbookService(token, countryCode, query)
+    );
   });
 
   app.post("/api/recipe/:id/saved", async (c) => {
-    const { token, countryCode } = readSession(c);
-    if (!token) {
-      return authRequiredResponse(c);
-    }
-
-    const result = await updateSavedRecipeService(token, countryCode, c.req.param("id"), true);
-    return c.json(result.body, jsonStatus(result.status));
+    return authenticatedJson(c, ({ token, countryCode }) =>
+      updateSavedRecipeService(token, countryCode, c.req.param("id"), true)
+    );
   });
 
   app.delete("/api/recipe/:id/saved", async (c) => {
-    const { token, countryCode } = readSession(c);
-    if (!token) {
-      return authRequiredResponse(c);
-    }
-
-    const result = await updateSavedRecipeService(token, countryCode, c.req.param("id"), false);
-    return c.json(result.body, jsonStatus(result.status));
+    return authenticatedJson(c, ({ token, countryCode }) =>
+      updateSavedRecipeService(token, countryCode, c.req.param("id"), false)
+    );
   });
 
   app.post("/api/recipe/:id/add-to-cart", async (c) => {
@@ -79,17 +60,8 @@ export function registerRecipeRoutes(app: Hono): void {
   });
 
   app.get("/api/recipe/:id", async (c) => {
-    const { token, countryCode } = readSession(c);
-    if (!token) {
-      return authRequiredResponse(c);
-    }
-
-    const result = await getRecipeDetailService(
-      token,
-      countryCode,
-      c.req.param("id"),
-      c.req.query("portions") ?? null
+    return authenticatedJson(c, ({ token, countryCode }) =>
+      getRecipeDetailService(token, countryCode, c.req.param("id"), c.req.query("portions") ?? null)
     );
-    return c.json(result.body, jsonStatus(result.status));
   });
 }

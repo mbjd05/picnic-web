@@ -17,7 +17,7 @@ import type {
 } from "@/lib/types";
 import { buildSectionId } from "@/lib/types";
 
-import { useCart } from "./cart-context";
+import { useCartActions, useCartBundles, useCartQuantities } from "./cart-context";
 import { useCountryCode, useTranslations } from "./country-context";
 import { useWheelQuantityAdjust } from "./lib/use-wheel-quantity-adjust";
 
@@ -129,24 +129,24 @@ function QuantityControl({
   quantity: number;
   progress: BundleProgress | null;
 }) {
-  const cart = useCart();
+  const { addProduct, removeProduct } = useCartActions();
   const t = useTranslations();
   const increment = useCallback(
     () =>
-      cart.addProduct(
+      addProduct(
         product.id,
         product.maxCount,
         estimatedProgressPriceDelta(progress, quantity, quantity + 1, product.displayPrice)
       ),
-    [cart, product.displayPrice, product.id, product.maxCount, progress, quantity]
+    [addProduct, product.displayPrice, product.id, product.maxCount, progress, quantity]
   );
   const decrement = useCallback(
     () =>
-      cart.removeProduct(
+      removeProduct(
         product.id,
         estimatedProgressPriceDelta(progress, quantity, quantity - 1, product.displayPrice)
       ),
-    [cart, product.displayPrice, product.id, progress, quantity]
+    [product.displayPrice, product.id, progress, quantity, removeProduct]
   );
   const wheelAdjustRef = useWheelQuantityAdjust({
     canIncrement: quantity < product.maxCount,
@@ -213,9 +213,10 @@ export function ProductCard({
   priorityImage?: boolean;
 }) {
   const countryCode = useCountryCode();
-  const cart = useCart();
-  const quantity = cart.getQuantity(product.id);
-  const registeredProgress = cart.getBundleProgress(product.id);
+  const { getQuantity } = useCartQuantities();
+  const { getBundleProgress } = useCartBundles();
+  const quantity = getQuantity(product.id);
+  const registeredProgress = getBundleProgress(product.id);
   const progress =
     registeredProgress ??
     (product.priceRanges?.length
@@ -325,7 +326,7 @@ export function ProductGrid({
   products?: Product[];
   sections?: SearchSection[];
 }) {
-  const { registerBundleDataBatch } = useCart();
+  const { registerBundleDataBatch } = useCartBundles();
   const countryCode = useCountryCode();
   const t = useTranslations();
   const gridProducts = useMemo(

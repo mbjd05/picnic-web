@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link, useSearch } from "@tanstack/react-router";
 
 import { estimatedBundleLineTotal } from "@/lib/cart-price-estimates";
 import type { BundleProgress, CartData, CartItem } from "@/lib/types";
 
 import { ErrorView, LoadingView, useDocumentTitle } from "./browsing-components";
-import { useCart } from "./cart-context";
+import { useCartActions, useCartBundles } from "./cart-context";
 import { useTranslations } from "./country-context";
 import { CartCheckoutCta } from "./features/cart/cart-checkout-cta";
 import { CartItemCard } from "./features/cart/cart-item-card";
@@ -15,8 +15,9 @@ import { CartOrderSummary } from "./features/cart/cart-order-summary";
 import { CartProductSlider } from "./features/cart/cart-product-slider";
 import { DeliverySlotBanner } from "./features/cart/delivery-slot-banner";
 import { DeliverySlotPicker } from "./features/cart/delivery-slot-picker";
+import { useCartQuery } from "./features/cart/use-cart-query";
 import { fetchJson } from "./lib/api-client";
-import { queryKeys, queryStaleTime } from "./lib/query-config";
+import { queryKeys } from "./lib/query-config";
 
 const CART_MUTATION_DEBOUNCE_MS = 220;
 
@@ -102,7 +103,8 @@ function estimateCartLinePrices(
 export function CartPage() {
   const t = useTranslations();
   const queryClient = useQueryClient();
-  const { applyVisibleCart, getBundleProgress } = useCart();
+  const { applyVisibleCart } = useCartActions();
+  const { getBundleProgress } = useCartBundles();
   const search = useSearch({ from: "/authenticated/cart" });
   useDocumentTitle(t.cartTitle);
 
@@ -145,11 +147,7 @@ export function CartPage() {
     );
   }, []);
 
-  const cartQuery = useQuery({
-    queryKey: queryKeys.cart(),
-    queryFn: () => fetchJson<CartData>("/api/cart"),
-    staleTime: queryStaleTime.cart,
-  });
+  const cartQuery = useCartQuery();
 
   useEffect(() => {
     if (cartQuery.data) {

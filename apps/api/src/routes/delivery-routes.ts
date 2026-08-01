@@ -11,62 +11,43 @@ import {
 } from "@/lib/api-services/deliveries";
 import { deliveryRatingSchema, validateInput } from "@/lib/api-validation";
 
+import { authenticatedJson } from "../lib/authenticated-handler";
 import { authRequiredResponse, jsonStatus } from "../lib/http";
 import { readSession } from "../lib/session";
 
 export function registerDeliveryRoutes(app: Hono): void {
   app.get("/api/deliveries", async (c) => {
-    const { token, countryCode } = readSession(c);
-    if (!token) {
-      return authRequiredResponse(c);
-    }
-
     const statuses = (c.req.queries("status") ?? [])
       .flatMap((status) => status.split(","))
       .map((status) => status.trim().toUpperCase())
       .filter(Boolean);
-    const result = await getDeliverySummariesService(token, countryCode, statuses);
-    return c.json(result.body, jsonStatus(result.status));
+    return authenticatedJson(c, ({ token, countryCode }) =>
+      getDeliverySummariesService(token, countryCode, statuses)
+    );
   });
 
   app.get("/api/deliveries/:deliveryId", async (c) => {
-    const { token, countryCode } = readSession(c);
-    if (!token) {
-      return authRequiredResponse(c);
-    }
-
-    const result = await getDeliveryDetailService(token, countryCode, c.req.param("deliveryId"));
-    return c.json(result.body, jsonStatus(result.status));
+    return authenticatedJson(c, ({ token, countryCode }) =>
+      getDeliveryDetailService(token, countryCode, c.req.param("deliveryId"))
+    );
   });
 
   app.get("/api/deliveries/:deliveryId/tracking", async (c) => {
-    const { token, countryCode } = readSession(c);
-    if (!token) {
-      return authRequiredResponse(c);
-    }
-
-    const result = await getDeliveryTrackingService(token, countryCode, c.req.param("deliveryId"));
-    return c.json(result.body, jsonStatus(result.status));
+    return authenticatedJson(c, ({ token, countryCode }) =>
+      getDeliveryTrackingService(token, countryCode, c.req.param("deliveryId"))
+    );
   });
 
   app.get("/api/orders/:orderId/status", async (c) => {
-    const { token, countryCode } = readSession(c);
-    if (!token) {
-      return authRequiredResponse(c);
-    }
-
-    const result = await getDeliveryOrderStatusService(token, countryCode, c.req.param("orderId"));
-    return c.json(result.body, jsonStatus(result.status));
+    return authenticatedJson(c, ({ token, countryCode }) =>
+      getDeliveryOrderStatusService(token, countryCode, c.req.param("orderId"))
+    );
   });
 
   app.post("/api/deliveries/:deliveryId/cancel", async (c) => {
-    const { token, countryCode } = readSession(c);
-    if (!token) {
-      return authRequiredResponse(c);
-    }
-
-    const result = await cancelDeliveryService(token, countryCode, c.req.param("deliveryId"));
-    return c.json(result.body, jsonStatus(result.status));
+    return authenticatedJson(c, ({ token, countryCode }) =>
+      cancelDeliveryService(token, countryCode, c.req.param("deliveryId"))
+    );
   });
 
   app.post("/api/deliveries/:deliveryId/rating", async (c) => {
@@ -91,16 +72,8 @@ export function registerDeliveryRoutes(app: Hono): void {
   });
 
   app.post("/api/deliveries/:deliveryId/invoice-email", async (c) => {
-    const { token, countryCode } = readSession(c);
-    if (!token) {
-      return authRequiredResponse(c);
-    }
-
-    const result = await sendDeliveryInvoiceEmailService(
-      token,
-      countryCode,
-      c.req.param("deliveryId")
+    return authenticatedJson(c, ({ token, countryCode }) =>
+      sendDeliveryInvoiceEmailService(token, countryCode, c.req.param("deliveryId"))
     );
-    return c.json(result.body, jsonStatus(result.status));
   });
 }

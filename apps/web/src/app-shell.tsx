@@ -23,7 +23,7 @@ import {
   type LanguageCode,
 } from "@/lib/types";
 
-import { CartProvider, useCart } from "./cart-context";
+import { CartProvider, useCartTotals } from "./cart-context";
 import {
   CountryProvider,
   useCountryCode,
@@ -116,7 +116,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
   const localeMenuRef = useRef<HTMLDivElement>(null);
   const themeMenuRef = useRef<HTMLDivElement>(null);
   const lastNonEmptySuggestionsRef = useRef<SuggestionsApiResponse["suggestions"]>([]);
-  const cart = useCart();
+  const cart = useCartTotals();
 
   useEffect(() => {
     setQuery(new URLSearchParams(location.searchStr).get("q") ?? "");

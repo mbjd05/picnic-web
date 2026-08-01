@@ -1,40 +1,36 @@
 // Application-level type definitions for the Picnic web client.
 // These are our own domain types, decoupled from the upstream picnic-api types.
 import type { SelectedSlotData } from "@/lib/delivery-slot-types";
+import type { CountryCode } from "@/lib/types/locale-types";
 
 export type { SelectedSlotData } from "@/lib/delivery-slot-types";
+export {
+  COUNTRY_COOKIE_NAME,
+  DEFAULT_COUNTRY_CODE,
+  DEFAULT_LANGUAGE_CODE,
+  LANGUAGE_COOKIE_NAME,
+  SUPPORTED_COUNTRY_CODES,
+  SUPPORTED_LANGUAGE_CODES,
+  getImageCdnBase,
+  parseCountryCode,
+} from "@/lib/types/locale-types";
+export type { CountryCode, LanguageCode } from "@/lib/types/locale-types";
+export type {
+  AvailablePaymentMethod,
+  CheckoutCancelResponse,
+  CheckoutPaymentResponse,
+  CheckoutStatusResponse,
+  PaymentBank,
+  PaymentBrand,
+  PaymentMethod,
+  PaymentOptionRequest,
+  PaymentProfile,
+  StoredPaymentOption,
+} from "@/lib/types/payment-types";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 export const CENTS_DIVISOR = 100;
-
-export const SUPPORTED_COUNTRY_CODES = ["NL", "DE", "FR"] as const;
-export type CountryCode = (typeof SUPPORTED_COUNTRY_CODES)[number];
-export const DEFAULT_COUNTRY_CODE: CountryCode = "NL";
-
-export const SUPPORTED_LANGUAGE_CODES = ["EN", "NL", "DE", "FR"] as const;
-export type LanguageCode = (typeof SUPPORTED_LANGUAGE_CODES)[number];
-export const DEFAULT_LANGUAGE_CODE: LanguageCode = "NL";
-
-/** Cookie name for the selected Picnic country. */
-export const COUNTRY_COOKIE_NAME = "picnic_country";
-
-/** Cookie name for the selected display language. */
-export const LANGUAGE_COOKIE_NAME = "picnic_language";
-
-/** Build the Picnic image CDN base URL for a given country. */
-export function getImageCdnBase(countryCode: CountryCode): string {
-  return `https://storefront-prod.${countryCode.toLowerCase()}.picnicinternational.com/static/images`;
-}
-
-/** Validate a raw string value as a CountryCode, falling back to the default. */
-export function parseCountryCode(value: string | undefined): CountryCode {
-  const upper = value?.toUpperCase();
-  if (upper && (SUPPORTED_COUNTRY_CODES as readonly string[]).includes(upper)) {
-    return upper as CountryCode;
-  }
-  return DEFAULT_COUNTRY_CODE;
-}
 export const DEFAULT_IMAGE_SIZE = "medium";
 export const DEBOUNCE_DELAY_MS = 300;
 export const MIN_SUGGESTION_LENGTH = 2;
@@ -419,74 +415,6 @@ export type CartData = {
 
 /** Alias: the /api/cart route returns CartData directly. */
 export type CartApiResponse = CartData;
-
-// ─── Payment / Checkout ─────────────────────────────────────────────────────
-
-export type PaymentBank = {
-  bank_id: string;
-  name: string;
-};
-
-export type AvailablePaymentMethod = {
-  payment_method: string;
-  available_banks?: PaymentBank[];
-};
-
-export type PaymentBrand = {
-  brand: string;
-  display_name?: string;
-  icon_url?: string;
-};
-
-export type PaymentMethod = {
-  payment_method: string;
-  display_name?: string;
-  icon_url?: string;
-  brands?: PaymentBrand[];
-  visibility?: string;
-  visibility_reason?: string | null;
-};
-
-export type StoredPaymentOption = {
-  id: string;
-  payment_method: string;
-  brand?: string | null;
-  account?: string | null;
-  display_name?: string;
-  icon_url?: string;
-};
-
-export type PaymentProfile = {
-  stored_payment_options?: StoredPaymentOption[];
-  available_payment_methods?: AvailablePaymentMethod[];
-  payment_methods?: PaymentMethod[];
-  preferred_payment_option_id?: string | null;
-  available_payment_method_item?: unknown | null;
-  checkout_banner?: unknown | null;
-};
-
-export type PaymentOptionRequest = {
-  paymentMethod: string;
-  bankId?: string | null;
-};
-
-export type CheckoutPaymentResponse = {
-  orderId: string;
-  paymentId: string | null;
-  transactionId: string;
-  redirectUrl: string;
-  transactionExpiry: string | null;
-};
-
-export type CheckoutCancelResponse = {
-  ok: true;
-};
-
-export type CheckoutStatusResponse = {
-  inactive?: true;
-  status?: string;
-  raw?: unknown;
-};
 
 // ─── Cart Mutations (PLP Cart Actions) ──────────────────────────────────────
 

@@ -21,7 +21,7 @@ import type {
 } from "@/lib/types";
 
 import { BackButton, ErrorView, LoadingView, useDocumentTitle } from "./browsing-components";
-import { useCart } from "./cart-context";
+import { useCartActions, useCartQuantities } from "./cart-context";
 import { useCountryCode, useTranslations } from "./country-context";
 import { ApiClientError, fetchJson } from "./lib/api-client";
 import { queryKeys, queryStaleTime } from "./lib/query-config";
@@ -86,20 +86,21 @@ function NotFoundView() {
 function ProductDetailContent({ product }: { product: ProductDetail }) {
   const countryCode = useCountryCode();
   const t = useTranslations();
-  const cart = useCart();
-  const cartQuantity = cart.getQuantity(product.id);
+  const { addProduct, removeProduct } = useCartActions();
+  const { getQuantity } = useCartQuantities();
+  const cartQuantity = getQuantity(product.id);
   const hasAllergens =
     product.allergens.confirmed.length > 0 || product.allergens.mayContain.length > 0;
   const hasNutritionRows = product.nutritionRows.length > 0;
 
   const setQuantity = useCallback(
     (target: number) => {
-      const current = cart.getQuantity(product.id);
+      const current = getQuantity(product.id);
       const next = Math.max(0, Math.min(target, product.maxCount));
       const diff = next - current;
       if (diff > 0) {
         for (let index = 0; index < diff; index += 1)
-          cart.addProduct(
+          addProduct(
             product.id,
             product.maxCount,
             estimatedBundlePriceDelta(
@@ -111,7 +112,7 @@ function ProductDetailContent({ product }: { product: ProductDetail }) {
           );
       } else if (diff < 0) {
         for (let index = 0; index < Math.abs(diff); index += 1)
-          cart.removeProduct(
+          removeProduct(
             product.id,
             estimatedBundlePriceDelta(
               product.bundles,
@@ -122,7 +123,15 @@ function ProductDetailContent({ product }: { product: ProductDetail }) {
           );
       }
     },
-    [cart, product.bundles, product.displayPrice, product.id, product.maxCount]
+    [
+      addProduct,
+      getQuantity,
+      product.bundles,
+      product.displayPrice,
+      product.id,
+      product.maxCount,
+      removeProduct,
+    ]
   );
 
   return (
@@ -149,7 +158,7 @@ function ProductDetailContent({ product }: { product: ProductDetail }) {
             cartQuantity={cartQuantity}
             maxCount={product.maxCount}
             onIncrement={() =>
-              cart.addProduct(
+              addProduct(
                 product.id,
                 product.maxCount,
                 estimatedBundlePriceDelta(
@@ -161,7 +170,7 @@ function ProductDetailContent({ product }: { product: ProductDetail }) {
               )
             }
             onDecrement={() =>
-              cart.removeProduct(
+              removeProduct(
                 product.id,
                 estimatedBundlePriceDelta(
                   product.bundles,

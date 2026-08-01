@@ -8,14 +8,15 @@ import {
   useRef,
 } from "react";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 
 import type { BundleProgress, BundleThreshold, CartData } from "@/lib/types";
 
 import { fetchJson } from "./lib/api-client";
-import { queryKeys, queryStaleTime } from "./lib/query-config";
+import { queryKeys } from "./lib/query-config";
 import { quantitiesFromCart, useCartUiStore } from "./cart-ui-store";
 import { useTranslations } from "./country-context";
+import { useCartQuery } from "./features/cart/use-cart-query";
 
 const CART_MUTATION_DEBOUNCE_MS = 220;
 
@@ -35,6 +36,20 @@ type CartContextValue = {
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
+
+type CartQuantitiesContextValue = Pick<CartContextValue, "quantities" | "getQuantity">;
+type CartTotalsContextValue = Pick<
+  CartContextValue,
+  "totalPrice" | "totalCount" | "hasStoredSummary" | "isLoading"
+>;
+type CartActionsContextValue = Pick<
+  CartContextValue,
+  "addProduct" | "removeProduct" | "applyVisibleCart" | "refresh"
+>;
+type CartBundlesContextValue = Pick<
+  CartContextValue,
+  "getBundleProgress" | "registerBundleDataBatch"
+>;
 
 function ToastDismissIcon() {
   return (
@@ -76,11 +91,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const pendingTimersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const mutationChainRef = useRef(Promise.resolve());
   const requestCountRef = useRef(0);
-  const cartQuery = useQuery({
-    queryKey: queryKeys.cart(),
-    queryFn: () => fetchJson<CartData>("/api/cart"),
-    staleTime: queryStaleTime.cart,
-  });
+  const cartQuery = useCartQuery();
 
   const hasPendingCartWork = useCallback(
     () => pendingDeltasRef.current.size > 0 || requestCountRef.current > 0,
@@ -323,6 +334,26 @@ export function useCart(): CartContextValue {
   const value = useContext(CartContext);
   if (!value) throw new Error("useCart must be used within CartProvider");
   return value;
+}
+
+export function useCartQuantities(): CartQuantitiesContextValue {
+  const { quantities, getQuantity } = useCart();
+  return { quantities, getQuantity };
+}
+
+export function useCartTotals(): CartTotalsContextValue {
+  const { totalPrice, totalCount, hasStoredSummary, isLoading } = useCart();
+  return { totalPrice, totalCount, hasStoredSummary, isLoading };
+}
+
+export function useCartActions(): CartActionsContextValue {
+  const { addProduct, removeProduct, applyVisibleCart, refresh } = useCart();
+  return { addProduct, removeProduct, applyVisibleCart, refresh };
+}
+
+export function useCartBundles(): CartBundlesContextValue {
+  const { getBundleProgress, registerBundleDataBatch } = useCart();
+  return { getBundleProgress, registerBundleDataBatch };
 }
 
 export function useCartToast(): (message: string) => void {

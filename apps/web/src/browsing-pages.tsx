@@ -10,7 +10,7 @@ import type {
   SubcategoriesApiResponse,
 } from "@/lib/category-types";
 import { parsePageIdFromDeepLink } from "@/lib/parse-deep-link";
-import type { CategoryProductsApiResponse, SearchApiResponse, SearchSection } from "@/lib/types";
+import type { CategoryProductsApiResponse, SearchSection } from "@/lib/types";
 
 import { HeaderBottomBar } from "./app-shell";
 import {
@@ -24,6 +24,7 @@ import {
   useDocumentTitle,
 } from "./browsing-components";
 import { useCountryCode, useTranslations } from "./country-context";
+import { useProductSearch } from "./features/products/use-product-search";
 import { fetchJson } from "./lib/api-client";
 import { queryGcTime, queryKeys, queryStaleTime } from "./lib/query-config";
 
@@ -46,13 +47,7 @@ export function HomePage() {
     enabled: !query,
     staleTime: queryStaleTime.categories,
   });
-  const search = useQuery({
-    queryKey: queryKeys.productSearch(query, countryCode),
-    queryFn: () => fetchJson<SearchApiResponse>(`/api/search?q=${encodeURIComponent(query)}`),
-    enabled: Boolean(query),
-    staleTime: queryStaleTime.search,
-    gcTime: queryGcTime.search,
-  });
+  const search = useProductSearch(query, countryCode);
 
   useDocumentTitle(query ? `"${query}"` : undefined);
 

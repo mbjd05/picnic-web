@@ -8,40 +8,29 @@ import {
 } from "@/lib/api-services/products";
 import { searchProductsService } from "@/lib/api-services/search";
 
-import { authRequiredResponse, jsonStatus } from "../lib/http";
+import { authenticatedJson } from "../lib/authenticated-handler";
+import { jsonStatus } from "../lib/http";
 import { readSession } from "../lib/session";
 
 export function registerProductRoutes(app: Hono): void {
   app.get("/api/search", async (c) => {
-    const { token, countryCode } = readSession(c);
-    if (!token) {
-      return authRequiredResponse(c);
-    }
-
     const query = c.req.query("q")?.trim() ?? "";
-    const result = await searchProductsService(token, countryCode, query);
-    return c.json(result.body, jsonStatus(result.status));
+    return authenticatedJson(c, ({ token, countryCode }) =>
+      searchProductsService(token, countryCode, query)
+    );
   });
 
   app.get("/api/suggestions", async (c) => {
-    const { token, countryCode } = readSession(c);
-    if (!token) {
-      return authRequiredResponse(c);
-    }
-
     const query = c.req.query("q")?.trim() ?? "";
-    const result = await getSuggestionsService(token, countryCode, query);
-    return c.json(result.body, jsonStatus(result.status));
+    return authenticatedJson(c, ({ token, countryCode }) =>
+      getSuggestionsService(token, countryCode, query)
+    );
   });
 
   app.get("/api/product/:id", async (c) => {
-    const { token, countryCode } = readSession(c);
-    if (!token) {
-      return authRequiredResponse(c);
-    }
-
-    const result = await getProductDetailService(token, countryCode, c.req.param("id"));
-    return c.json(result.body, jsonStatus(result.status));
+    return authenticatedJson(c, ({ token, countryCode }) =>
+      getProductDetailService(token, countryCode, c.req.param("id"))
+    );
   });
 
   app.get("/api/image", async (c) => {
@@ -67,12 +56,8 @@ export function registerProductRoutes(app: Hono): void {
       return c.json({ error: "Missing pageId parameter" }, 400);
     }
 
-    const { token, countryCode } = readSession(c);
-    if (!token) {
-      return authRequiredResponse(c);
-    }
-
-    const result = await getArbitraryProductsPageService(token, countryCode, pageId);
-    return c.json(result.body, jsonStatus(result.status));
+    return authenticatedJson(c, ({ token, countryCode }) =>
+      getArbitraryProductsPageService(token, countryCode, pageId)
+    );
   });
 }

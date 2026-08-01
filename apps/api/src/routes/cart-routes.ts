@@ -7,18 +7,13 @@ import {
   setDeliverySlotService,
 } from "@/lib/api-services/cart";
 
+import { authenticatedJson } from "../lib/authenticated-handler";
 import { authRequiredResponse, jsonStatus } from "../lib/http";
 import { readSession } from "../lib/session";
 
 export function registerCartRoutes(app: Hono): void {
   app.get("/api/cart", async (c) => {
-    const { token, countryCode } = readSession(c);
-    if (!token) {
-      return authRequiredResponse(c);
-    }
-
-    const result = await getCartService(token, countryCode);
-    return c.json(result.body, jsonStatus(result.status));
+    return authenticatedJson(c, ({ token, countryCode }) => getCartService(token, countryCode));
   });
 
   app.post("/api/cart", async (c) => {
@@ -37,13 +32,9 @@ export function registerCartRoutes(app: Hono): void {
   });
 
   app.get("/api/cart/delivery-slots", async (c) => {
-    const { token, countryCode } = readSession(c);
-    if (!token) {
-      return authRequiredResponse(c);
-    }
-
-    const result = await getDeliverySlotsService(token, countryCode);
-    return c.json(result.body, jsonStatus(result.status));
+    return authenticatedJson(c, ({ token, countryCode }) =>
+      getDeliverySlotsService(token, countryCode)
+    );
   });
 
   app.post("/api/cart/delivery-slots", async (c) => {
