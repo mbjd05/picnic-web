@@ -5,6 +5,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -44,6 +45,105 @@ type SearchPopupItem = {
   id: string;
   label: string;
 };
+type HeaderMenu = "locale" | "theme" | "primary";
+
+function useMobileHeaderMenuPanel(activeMenu: HeaderMenu | null) {
+  const [height, setHeight] = useState(0);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const animationFrameRef = useRef<number | null>(null);
+
+  function measureContentHeight() {
+    const contentHeight = contentRef.current?.getBoundingClientRect().height ?? 0;
+    setHeight(Math.ceil(contentHeight) + 2);
+  }
+
+  function snapshotHeight() {
+    const panel = panelRef.current;
+    if (!panel || window.matchMedia("(min-width: 768px)").matches) return;
+    setHeight(Math.ceil(panel.getBoundingClientRect().height));
+  }
+
+  useEffect(
+    () => () => {
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    },
+    []
+  );
+
+  useLayoutEffect(() => {
+    if (animationFrameRef.current !== null) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    if (!activeMenu) {
+      animationFrameRef.current = requestAnimationFrame(() => {
+        setHeight(0);
+        animationFrameRef.current = null;
+      });
+      return;
+    }
+    const nextHeight = Math.ceil(contentRef.current?.getBoundingClientRect().height ?? 0) + 2;
+    if (nextHeight > height) {
+      setHeight(nextHeight);
+      return;
+    }
+    animationFrameRef.current = requestAnimationFrame(() => {
+      setHeight(nextHeight);
+      animationFrameRef.current = null;
+    });
+  }, [activeMenu, height]);
+
+  useEffect(() => {
+    if (!activeMenu) return;
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+
+    function syncHeight() {
+      if (!mediaQuery.matches) return;
+      requestAnimationFrame(measureContentHeight);
+    }
+
+    syncHeight();
+    mediaQuery.addEventListener("change", syncHeight);
+    window.addEventListener("resize", syncHeight);
+    return () => {
+      mediaQuery.removeEventListener("change", syncHeight);
+      window.removeEventListener("resize", syncHeight);
+    };
+  }, [activeMenu]);
+
+  return { height, panelRef, contentRef, snapshotHeight };
+}
+
+function MobileHeaderMenuPanel({
+  children,
+  contentRef,
+  height,
+  panelRef,
+}: {
+  children: ReactNode;
+  contentRef: React.RefObject<HTMLDivElement | null>;
+  height: number;
+  panelRef: React.RefObject<HTMLDivElement | null>;
+}) {
+  const isOpen = Boolean(children);
+  return (
+    <div
+      ref={panelRef}
+      aria-hidden={!isOpen}
+      className={`outline-card-border bg-card-bg order-4 basis-full overflow-hidden rounded-lg text-left shadow-sm outline -outline-offset-1 duration-150 ease-out motion-reduce:transition-none md:hidden ${
+        isOpen
+          ? "max-h-[28rem] translate-y-0 opacity-100"
+          : "pointer-events-none max-h-0 translate-y-0 opacity-0"
+      } transition-[height,opacity]`}
+      style={{ height: isOpen ? `${height}px` : "0px" }}
+    >
+      <div ref={contentRef}>{children}</div>
+    </div>
+  );
+}
 
 function readSearchHistory(): string[] {
   try {
@@ -274,15 +374,13 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
 
   useEffect(() => {
     function closeMenu(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsMenuOpen(false);
+      const target = event.target as Node;
+      if (menuRef.current?.contains(target)) {
+        return;
       }
-      if (localeMenuRef.current && !localeMenuRef.current.contains(event.target as Node)) {
-        setIsLocaleMenuOpen(false);
-      }
-      if (themeMenuRef.current && !themeMenuRef.current.contains(event.target as Node)) {
-        setIsThemeMenuOpen(false);
-      }
+      setIsMenuOpen(false);
+      setIsLocaleMenuOpen(false);
+      setIsThemeMenuOpen(false);
     }
     document.addEventListener("mousedown", closeMenu);
     return () => document.removeEventListener("mousedown", closeMenu);
@@ -478,6 +576,91 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
     );
   }
 
+  function renderLocaleMenuContent() {
+    return (
+      <>
+        <div className="p-1.5">
+          <p className="px-3 py-1 text-xs font-semibold text-gray-400">{t.picnicRegion}</p>
+          {SUPPORTED_COUNTRY_CODES.map((code) =>
+            renderLocaleOption({
+              code,
+              selected: code === countryCode,
+              label: t[`regionName${code}`],
+              onSelect: switchCountry,
+            })
+          )}
+        </div>
+        <div className="border-card-border border-t p-1.5">
+          <p className="px-3 py-1 text-xs font-semibold text-gray-400">{t.displayLanguage}</p>
+          {displayLanguageOptions.map((code) =>
+            renderLocaleOption({
+              code,
+              selected: code === languageCode,
+              label: t[`languageName${code}`],
+              onSelect: switchLanguage,
+            })
+          )}
+        </div>
+      </>
+    );
+  }
+
+  function renderThemeMenuContent() {
+    return (
+      <div className="p-1.5">
+        <p className="px-3 py-1 text-xs font-semibold text-gray-400">{t.themeMenu}</p>
+        {(["system", "light", "dark"] as const).map(renderThemeOption)}
+      </div>
+    );
+  }
+
+  function renderPrimaryMenuContent() {
+    return (
+      <>
+        <div className="p-1.5">
+          <Link
+            to="/cookbook"
+            onClick={() => setIsMenuOpen(false)}
+            tabIndex={isMenuOpen ? undefined : -1}
+            className="hover:text-foreground block rounded-md px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
+          >
+            {t.cookbookNavLink}
+          </Link>
+          <Link
+            to="/deliveries"
+            onClick={() => setIsMenuOpen(false)}
+            tabIndex={isMenuOpen ? undefined : -1}
+            className="hover:text-foreground block rounded-md px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
+          >
+            {t.deliveriesNavLink}
+          </Link>
+          <Link
+            to="/account/payment"
+            search={{ from: undefined }}
+            onClick={() => setIsMenuOpen(false)}
+            tabIndex={isMenuOpen ? undefined : -1}
+            className="hover:text-foreground block rounded-md px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
+          >
+            {t.accountPaymentLink}
+          </Link>
+        </div>
+        <div className="border-card-border border-t px-1.5 py-1">
+          <button
+            type="button"
+            onClick={() => {
+              setIsMenuOpen(false);
+              void handleSignOut();
+            }}
+            tabIndex={isMenuOpen ? undefined : -1}
+            className="hover:text-foreground block w-full rounded-md px-3 py-1.5 text-left text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
+          >
+            {t.signOut}
+          </button>
+        </div>
+      </>
+    );
+  }
+
   const cartLink = (
     <Link
       to="/cart"
@@ -506,6 +689,22 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
   const displayLanguageOptions = [countryCode, "EN", ...SUPPORTED_LANGUAGE_CODES].filter(
     (code, index, options) => options.indexOf(code) === index
   ) as LanguageCode[];
+  const activeMobileMenu: HeaderMenu | null = isLocaleMenuOpen
+    ? "locale"
+    : isThemeMenuOpen
+      ? "theme"
+      : isMenuOpen
+        ? "primary"
+        : null;
+  const activeMobileMenuContent =
+    activeMobileMenu === "locale"
+      ? renderLocaleMenuContent()
+      : activeMobileMenu === "theme"
+        ? renderThemeMenuContent()
+        : activeMobileMenu === "primary"
+          ? renderPrimaryMenuContent()
+          : null;
+  const mobileMenuPanel = useMobileHeaderMenuPanel(activeMobileMenu);
 
   return (
     <header className="border-card-border sticky top-0 z-50 border-b bg-white/95 backdrop-blur-sm">
@@ -599,17 +798,20 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
           </div>
         </form>
 
-        <nav className="order-1 ml-auto flex shrink-0 items-center gap-2 md:order-2">
-          <div className="flex min-w-[9.25rem] items-center xl:min-w-[13.25rem]">{cartLink}</div>
-          <div ref={localeMenuRef} className="relative">
+        <nav className="contents md:order-2 md:ml-auto md:flex md:shrink-0 md:items-center md:gap-2">
+          <div className="order-1 ml-auto flex min-w-[9.25rem] items-center md:order-none md:ml-0 xl:min-w-[13.25rem]">
+            {cartLink}
+          </div>
+          <div ref={localeMenuRef} className="contents md:relative md:block">
             <button
               type="button"
               onClick={() => {
+                mobileMenuPanel.snapshotHeight();
                 setIsLocaleMenuOpen((isOpen) => !isOpen);
                 setIsMenuOpen(false);
                 setIsThemeMenuOpen(false);
               }}
-              className={`flex h-9 items-center justify-center gap-1.5 rounded-full border px-2.5 text-sm font-medium transition-colors sm:px-3 ${
+              className={`order-1 flex h-9 items-center justify-center gap-1.5 rounded-full border px-2.5 text-sm font-medium transition-colors sm:px-3 md:order-none ${
                 isLocaleMenuOpen
                   ? "border-picnic-red bg-picnic-red text-white"
                   : "border-card-border hover:text-foreground text-gray-600"
@@ -624,45 +826,25 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
             <div
               id="locale-navigation"
               aria-hidden={!isLocaleMenuOpen}
-              className={`border-card-border bg-card-bg fixed top-14 right-3 left-3 z-50 mt-2 origin-top-right overflow-hidden rounded-lg border text-left shadow-lg transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none sm:absolute sm:top-full sm:right-0 sm:left-auto sm:w-72 sm:max-w-[calc(100vw-1.5rem)] ${
+              className={`border-card-border bg-card-bg order-last hidden basis-full overflow-hidden rounded-lg text-left shadow-sm transition-[max-height,opacity,transform] duration-150 ease-out motion-reduce:transition-none md:absolute md:top-full md:right-0 md:left-auto md:z-50 md:mt-2 md:block md:w-72 md:max-w-[calc(100vw-1.5rem)] md:basis-auto md:shadow-lg ${
                 isLocaleMenuOpen
-                  ? "translate-y-0 opacity-100"
-                  : "pointer-events-none -translate-y-1 opacity-0"
+                  ? "order-4 max-h-[28rem] translate-y-0 border opacity-100"
+                  : "pointer-events-none max-h-0 -translate-y-1 border-0 opacity-0 md:max-h-[28rem]"
               }`}
             >
-              <div className="p-1.5">
-                <p className="px-3 py-1 text-xs font-semibold text-gray-400">{t.picnicRegion}</p>
-                {SUPPORTED_COUNTRY_CODES.map((code) =>
-                  renderLocaleOption({
-                    code,
-                    selected: code === countryCode,
-                    label: t[`regionName${code}`],
-                    onSelect: switchCountry,
-                  })
-                )}
-              </div>
-              <div className="border-card-border border-t p-1.5">
-                <p className="px-3 py-1 text-xs font-semibold text-gray-400">{t.displayLanguage}</p>
-                {displayLanguageOptions.map((code) =>
-                  renderLocaleOption({
-                    code,
-                    selected: code === languageCode,
-                    label: t[`languageName${code}`],
-                    onSelect: switchLanguage,
-                  })
-                )}
-              </div>
+              {renderLocaleMenuContent()}
             </div>
           </div>
-          <div ref={themeMenuRef} className="relative">
+          <div ref={themeMenuRef} className="contents md:relative md:block">
             <button
               type="button"
               onClick={() => {
+                mobileMenuPanel.snapshotHeight();
                 setIsThemeMenuOpen((isOpen) => !isOpen);
                 setIsLocaleMenuOpen(false);
                 setIsMenuOpen(false);
               }}
-              className={`flex h-9 items-center justify-center gap-1.5 rounded-full border px-2.5 text-sm font-medium transition-colors sm:px-3 ${
+              className={`order-1 flex h-9 items-center justify-center gap-1.5 rounded-full border px-2.5 text-sm font-medium transition-colors sm:px-3 md:order-none ${
                 isThemeMenuOpen
                   ? "border-picnic-red bg-picnic-red text-white"
                   : "border-card-border hover:text-foreground text-gray-600"
@@ -683,27 +865,25 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
             <div
               id="theme-navigation"
               aria-hidden={!isThemeMenuOpen}
-              className={`border-card-border bg-card-bg fixed top-14 right-3 left-3 z-50 mt-2 origin-top-right overflow-hidden rounded-lg border text-left shadow-lg transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none sm:absolute sm:top-full sm:right-0 sm:left-auto sm:w-56 sm:max-w-[calc(100vw-1.5rem)] ${
+              className={`border-card-border bg-card-bg order-last hidden basis-full overflow-hidden rounded-lg text-left shadow-sm transition-[max-height,opacity,transform] duration-150 ease-out motion-reduce:transition-none md:absolute md:top-full md:right-0 md:left-auto md:z-50 md:mt-2 md:block md:w-56 md:max-w-[calc(100vw-1.5rem)] md:basis-auto md:shadow-lg ${
                 isThemeMenuOpen
-                  ? "translate-y-0 opacity-100"
-                  : "pointer-events-none -translate-y-1 opacity-0"
+                  ? "order-4 max-h-72 translate-y-0 border opacity-100"
+                  : "pointer-events-none max-h-0 -translate-y-1 border-0 opacity-0 md:max-h-72"
               }`}
             >
-              <div className="p-1.5">
-                <p className="px-3 py-1 text-xs font-semibold text-gray-400">{t.themeMenu}</p>
-                {(["system", "light", "dark"] as const).map(renderThemeOption)}
-              </div>
+              {renderThemeMenuContent()}
             </div>
           </div>
-          <div className="relative">
+          <div className="contents md:relative md:block">
             <button
               type="button"
               onClick={() => {
+                mobileMenuPanel.snapshotHeight();
                 setIsMenuOpen((isOpen) => !isOpen);
                 setIsLocaleMenuOpen(false);
                 setIsThemeMenuOpen(false);
               }}
-              className={`flex h-9 items-center justify-center gap-2 rounded-full border px-2.5 text-sm font-medium transition-colors sm:px-3 ${
+              className={`order-1 flex h-9 items-center justify-center gap-2 rounded-full border px-2.5 text-sm font-medium transition-colors sm:px-3 md:order-none ${
                 isMenuOpen
                   ? "border-picnic-red bg-picnic-red text-white"
                   : "border-card-border hover:text-foreground text-gray-600"
@@ -718,54 +898,22 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
             <div
               id="primary-navigation"
               aria-hidden={!isMenuOpen}
-              className={`border-card-border bg-card-bg fixed top-14 right-3 left-3 z-50 mt-2 origin-top-right overflow-hidden rounded-lg border text-left shadow-lg transition-[max-height,opacity,transform] duration-150 ease-out motion-reduce:transition-none sm:absolute sm:top-full sm:right-0 sm:left-auto sm:w-72 sm:max-w-[calc(100vw-1.5rem)] ${
+              className={`border-card-border bg-card-bg order-last hidden basis-full overflow-hidden rounded-lg text-left shadow-sm transition-[max-height,opacity,transform] duration-150 ease-out motion-reduce:transition-none md:absolute md:top-full md:right-0 md:left-auto md:z-50 md:mt-2 md:block md:w-72 md:max-w-[calc(100vw-1.5rem)] md:basis-auto md:shadow-lg ${
                 isMenuOpen
-                  ? "max-h-72 translate-y-0 opacity-100"
-                  : "pointer-events-none max-h-0 -translate-y-1 opacity-0 sm:max-h-72"
+                  ? "order-4 max-h-72 translate-y-0 border opacity-100"
+                  : "pointer-events-none max-h-0 -translate-y-1 border-0 opacity-0 md:max-h-72"
               }`}
             >
-              <div className="p-1.5">
-                <Link
-                  to="/cookbook"
-                  onClick={() => setIsMenuOpen(false)}
-                  tabIndex={isMenuOpen ? undefined : -1}
-                  className="hover:text-foreground block rounded-md px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
-                >
-                  {t.cookbookNavLink}
-                </Link>
-                <Link
-                  to="/deliveries"
-                  onClick={() => setIsMenuOpen(false)}
-                  tabIndex={isMenuOpen ? undefined : -1}
-                  className="hover:text-foreground block rounded-md px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
-                >
-                  {t.deliveriesNavLink}
-                </Link>
-                <Link
-                  to="/account/payment"
-                  search={{ from: undefined }}
-                  onClick={() => setIsMenuOpen(false)}
-                  tabIndex={isMenuOpen ? undefined : -1}
-                  className="hover:text-foreground block rounded-md px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
-                >
-                  {t.accountPaymentLink}
-                </Link>
-              </div>
-              <div className="border-card-border border-t p-1.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    void handleSignOut();
-                  }}
-                  tabIndex={isMenuOpen ? undefined : -1}
-                  className="hover:text-foreground block w-full rounded-md px-3 py-2 text-left text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
-                >
-                  {t.signOut}
-                </button>
-              </div>
+              {renderPrimaryMenuContent()}
             </div>
           </div>
+          <MobileHeaderMenuPanel
+            contentRef={mobileMenuPanel.contentRef}
+            height={mobileMenuPanel.height}
+            panelRef={mobileMenuPanel.panelRef}
+          >
+            {activeMobileMenuContent}
+          </MobileHeaderMenuPanel>
         </nav>
       </div>
       <div ref={setBottomBarHost} />
