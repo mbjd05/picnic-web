@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Link, useSearch } from "@tanstack/react-router";
 
 import { estimatedBundleLineTotal } from "@/lib/cart-price-estimates";
-import type { BundleProgress, CartData, CartItem } from "@/lib/cart-types";
+import type { BundleProgress, CartData, CartItem } from "@/lib/types/cart";
 
 import { ErrorView, LoadingView, useDocumentTitle } from "./browsing-components";
 import { useCartActions, useCartBundles } from "./cart-context";

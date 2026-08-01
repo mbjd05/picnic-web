@@ -1,4 +1,4 @@
-import type { CountryCode } from "@/lib/locale-types";
+import type { CountryCode } from "@/lib/types/locale";
 
 /** Error codes returned by API routes for auth-related failures. */
 export type AuthErrorCode = "TOKEN_EXPIRED" | "TOKEN_INVALID" | "API_UNREACHABLE";

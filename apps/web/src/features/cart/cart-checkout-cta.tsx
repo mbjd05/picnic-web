@@ -4,7 +4,7 @@ import { Link } from "@tanstack/react-router";
 
 import { formatEuroPrice } from "@/lib/format-price";
 import { getPreferredPaymentOption } from "@/lib/payment";
-import type { CheckoutPaymentResponse } from "@/lib/payment-types";
+import type { CheckoutPaymentResponse } from "@/lib/types/payment";
 
 import { useTranslations } from "../../country-context";
 import { usePaymentProfile } from "../payment/use-payment-profile";

@@ -7,9 +7,9 @@ import {
   LANGUAGE_COOKIE_NAME,
   SUPPORTED_LANGUAGE_CODES,
   SUPPORTED_COUNTRY_CODES,
-} from "@/lib/locale-types";
-import type { CountryCode, LanguageCode } from "@/lib/locale-types";
-import type { SwitchCountryResponse } from "@/lib/auth-types";
+} from "@/lib/types/locale";
+import type { CountryCode, LanguageCode } from "@/lib/types/locale";
+import type { SwitchCountryResponse } from "@/lib/types/auth";
 import { getTranslations } from "@/lib/i18n";
 
 import { fetchJson } from "./lib/api-client";

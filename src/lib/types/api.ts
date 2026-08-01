@@ -1,4 +1,4 @@
-import type { AuthErrorCode } from "@/lib/auth-types";
+import type { AuthErrorCode } from "@/lib/types/auth";
 
 export type ApiErrorCode =
   | AuthErrorCode

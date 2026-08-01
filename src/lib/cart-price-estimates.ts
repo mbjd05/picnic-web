@@ -1,5 +1,5 @@
-import type { BundleOption } from "@/lib/product-types";
-import type { BundleProgress, BundleThreshold } from "@/lib/cart-types";
+import type { BundleOption } from "@/lib/types/product";
+import type { BundleProgress, BundleThreshold } from "@/lib/types/cart";
 
 type BundleTier = Pick<BundleOption, "quantity" | "pricePerUnit"> | BundleThreshold;
 

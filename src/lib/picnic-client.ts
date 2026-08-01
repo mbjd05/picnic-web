@@ -1,5 +1,5 @@
-import type { CountryCode } from "./locale-types";
-import { DEFAULT_COUNTRY_CODE } from "./locale-types";
+import type { CountryCode } from "./types/locale";
+import { DEFAULT_COUNTRY_CODE } from "./types/locale";
 
 const PICNIC_API_VERSION = "17";
 

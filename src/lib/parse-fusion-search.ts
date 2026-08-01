@@ -14,9 +14,9 @@ import {
   findSellingUnitContainers,
   stripColorTags,
 } from "./pml-helpers";
-import type { Badge, Product } from "./product-types";
-import type { BundleThreshold } from "./cart-types";
-import type { SearchSection } from "./search-types";
+import type { Badge, Product } from "./types/product";
+import type { BundleThreshold } from "./types/cart";
+import type { SearchSection } from "./types/search";
 
 /** Parse raw price_ranges into BundleThreshold[], or null if empty/absent. */
 function parsePriceRangesFromRaw(raw: unknown[] | null): BundleThreshold[] | null {

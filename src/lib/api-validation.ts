@@ -1,9 +1,9 @@
 import * as v from "valibot";
 
-import type { CartMutationRequest } from "@/lib/cart-types";
-import type { CountryCode } from "@/lib/locale-types";
-import type { PaymentOptionRequest } from "@/lib/payment-types";
-import type { TwoFactorChannel } from "@/lib/auth-types";
+import type { CartMutationRequest } from "@/lib/types/cart";
+import type { CountryCode } from "@/lib/types/locale";
+import type { PaymentOptionRequest } from "@/lib/types/payment";
+import type { TwoFactorChannel } from "@/lib/types/auth";
 
 export type ValidationResult<T> = { ok: true; data: T } | { ok: false; error: string };
 

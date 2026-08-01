@@ -5,13 +5,13 @@ import { Link } from "@tanstack/react-router";
 import { Badge } from "@/components/badge";
 import { PriceDisplay } from "@/components/price-display";
 import { estimatedProgressPriceDelta } from "@/lib/cart-price-estimates";
-import type { CategoryItem, ShortcutItem } from "@/lib/category-types";
+import type { CategoryItem, ShortcutItem } from "@/lib/types/category";
 import { buildImageUrl } from "@/lib/image-url";
 import { localizeApiSectionTitle } from "@/lib/localize-api-label";
-import type { BundleProgress, BundleThreshold } from "@/lib/cart-types";
-import type { CountryCode } from "@/lib/locale-types";
-import type { Product } from "@/lib/product-types";
-import type { SearchSection } from "@/lib/search-types";
+import type { BundleProgress, BundleThreshold } from "@/lib/types/cart";
+import type { CountryCode } from "@/lib/types/locale";
+import type { Product } from "@/lib/types/product";
+import type { SearchSection } from "@/lib/types/search";
 import { buildSectionId } from "@/lib/app-constants";
 
 import { useCartActions, useCartBundles, useCartQuantities } from "./cart-context";

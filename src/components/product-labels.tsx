@@ -1,4 +1,4 @@
-import type { ProductLabel } from "@/lib/product-types";
+import type { ProductLabel } from "@/lib/types/product";
 
 type ProductLabelsProps = {
   labels: ProductLabel[];

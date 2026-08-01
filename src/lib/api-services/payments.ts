@@ -9,14 +9,14 @@ import {
   sendPicnicRequest,
   startCheckoutPayment,
 } from "@/lib/picnic-payment";
-import type { ApiErrorResponse } from "@/lib/api-types";
+import type { ApiErrorResponse } from "@/lib/types/api";
 import type {
   CheckoutCancelResponse,
   CheckoutPaymentResponse,
   CheckoutStatusResponse,
   PaymentProfile,
-} from "@/lib/payment-types";
-import type { CountryCode } from "@/lib/locale-types";
+} from "@/lib/types/payment";
+import type { CountryCode } from "@/lib/types/locale";
 
 import type { ApiServiceResult } from "./types";
 

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import type { PaymentProfile } from "@/lib/payment-types";
+import type { PaymentProfile } from "@/lib/types/payment";
 
 import { fetchJson } from "../../lib/api-client";
 import { queryKeys, queryStaleTime } from "../../lib/query-config";

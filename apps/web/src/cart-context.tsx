@@ -10,7 +10,7 @@ import {
 
 import { useQueryClient } from "@tanstack/react-query";
 
-import type { BundleProgress, BundleThreshold, CartData } from "@/lib/cart-types";
+import type { BundleProgress, BundleThreshold, CartData } from "@/lib/types/cart";
 
 import { fetchJson } from "./lib/api-client";
 import { queryKeys } from "./lib/query-config";

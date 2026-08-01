@@ -1,6 +1,6 @@
 import { createStore, useSelector } from "@tanstack/react-store";
 
-import type { BundleThreshold, CartData } from "@/lib/cart-types";
+import type { BundleThreshold, CartData } from "@/lib/types/cart";
 
 type CartTotals = Pick<CartData, "totalPrice" | "totalCount">;
 type StoredCartSummary = CartTotals & { hasStoredSummary: boolean };

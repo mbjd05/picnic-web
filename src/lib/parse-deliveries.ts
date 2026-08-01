@@ -5,7 +5,7 @@ import type {
   DeliveryOrderSummary,
   DeliverySummary,
   DeliveryWindow,
-} from "@/lib/delivery-types";
+} from "@/lib/types/delivery";
 import { asArray, isObject } from "@/lib/type-guards";
 
 function stringOrNull(value: unknown): string | null {

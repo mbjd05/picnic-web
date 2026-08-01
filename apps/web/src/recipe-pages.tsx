@@ -11,7 +11,7 @@ import type {
   RecipeCategory,
   RecipeDetail,
   RecipeItem,
-} from "@/lib/recipe-types";
+} from "@/lib/types/recipe";
 
 import { ErrorView, LoadingView, useDocumentTitle } from "./browsing-components";
 import { useCartActions } from "./cart-context";

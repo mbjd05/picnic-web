@@ -1,4 +1,4 @@
-import type { Badge as BadgeType, BadgeVariant } from "@/lib/product-types";
+import type { Badge as BadgeType, BadgeVariant } from "@/lib/types/product";
 
 const VARIANT_CLASSES: Record<BadgeVariant, string> = {
   promo: "bg-[#fbd92b] text-[#333333]",

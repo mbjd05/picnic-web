@@ -50,8 +50,8 @@ interfaces, and route/UI code that still repeats low-level fetch/session wiring.
   - [x] `useProductSearch`
   - [x] `useCookbookView`
 - [x] Split large domain type file gradually.
-  - [x] Move country/language constants and helpers into `src/lib/locale-types.ts`.
-  - [x] Move payment/checkout types into `src/lib/payment-types.ts`.
+  - [x] Move domain contracts into explicit files under `src/lib/types/`.
+  - [x] Keep imports direct, e.g. `@/lib/types/cart`, without `index.ts` barrels.
 - [x] Split cart context interfaces after cart extraction.
 - [x] Add Worker authenticated route helper where it reduces repeated route boilerplate.
 
@@ -159,20 +159,24 @@ custom auth behavior, body parsing, validation, or image proxy behavior stay exp
 
 ### Type File Split
 
-Shared app types now live in flat domain files under `src/lib` instead of a broad compatibility
-barrel:
+Shared app types now live in explicit domain files under `src/lib/types/` instead of a broad
+compatibility barrel or a long flat list in `src/lib`:
 
-- `src/lib/api-types.ts`
-- `src/lib/auth-types.ts`
-- `src/lib/cart-types.ts`
-- `src/lib/locale-types.ts`
-- `src/lib/payment-types.ts`
-- `src/lib/product-types.ts`
-- `src/lib/recipe-types.ts`
-- `src/lib/search-types.ts`
+- `src/lib/types/api.ts`
+- `src/lib/types/auth.ts`
+- `src/lib/types/cart.ts`
+- `src/lib/types/category.ts`
+- `src/lib/types/delivery.ts`
+- `src/lib/types/delivery-slot.ts`
+- `src/lib/types/locale.ts`
+- `src/lib/types/payment.ts`
+- `src/lib/types/product.ts`
+- `src/lib/types/recipe.ts`
+- `src/lib/types/search.ts`
 
-Import types from the owning domain file directly. Avoid reintroducing a general `types.ts` barrel,
-because it makes new code choose between two standards.
+Import types from the owning domain file directly, for example `@/lib/types/product`. Avoid
+reintroducing a general `types.ts` or `types/index.ts` barrel, because it makes new code choose
+between two standards.
 
 ### Cart Context Interface Split
 
@@ -233,20 +237,22 @@ apps/api/src
     security.ts
     session.ts
 
-src/lib
-  auth-types.ts
-  cart-types.ts
-  category-types.ts
-  delivery-types.ts
-  delivery-slot-types.ts
-  locale-types.ts
-  payment-types.ts
-  product-types.ts
-  recipe-types.ts
-  types.ts
+src/lib/types
+  api.ts
+  auth.ts
+  cart.ts
+  category.ts
+  delivery.ts
+  delivery-slot.ts
+  locale.ts
+  payment.ts
+  product.ts
+  recipe.ts
+  search.ts
 ```
 
-Do this gradually. Avoid one giant move-only commit unless there is a clear payoff.
+Keep pure contracts here. Runtime helpers, parsers, formatters, and service functions stay in
+`src/lib` or a more specific feature/service folder.
 
 ## 1. Single Responsibility Principle
 

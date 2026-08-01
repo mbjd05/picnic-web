@@ -5,9 +5,9 @@ import { NutritionTable } from "@/components/nutrition-table";
 import { formatEuroPrice } from "@/lib/format-price";
 import { buildImageUrl, buildRecipeImageUrl } from "@/lib/image-url";
 import { getRecipeIngredientCount } from "@/lib/recipe-quantity";
-import type { AllergenInfo } from "@/lib/product-types";
-import type { CountryCode } from "@/lib/locale-types";
-import type { RecipeDetail, RecipeIngredient } from "@/lib/recipe-types";
+import type { AllergenInfo } from "@/lib/types/product";
+import type { CountryCode } from "@/lib/types/locale";
+import type { RecipeDetail, RecipeIngredient } from "@/lib/types/recipe";
 
 import { useCountryCode, useTranslations } from "../../country-context";
 

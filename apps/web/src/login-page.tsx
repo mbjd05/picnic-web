@@ -4,9 +4,9 @@ import { useForm } from "@tanstack/react-form";
 import { useSearch } from "@tanstack/react-router";
 
 import { type Translations, getTranslations } from "@/lib/i18n";
-import type { AuthApiResponse, SwitchCountryResponse } from "@/lib/auth-types";
-import type { CountryCode } from "@/lib/locale-types";
-import { SUPPORTED_COUNTRY_CODES } from "@/lib/locale-types";
+import type { AuthApiResponse, SwitchCountryResponse } from "@/lib/types/auth";
+import type { CountryCode } from "@/lib/types/locale";
+import { SUPPORTED_COUNTRY_CODES } from "@/lib/types/locale";
 
 import { useCountryCode } from "./country-context";
 import { ApiClientError, fetchJson } from "./lib/api-client";

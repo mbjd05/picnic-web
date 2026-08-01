@@ -10,7 +10,7 @@ import type {
   DeliverySummariesApiResponse,
   DeliverySummary,
   DeliveryTrackingApiResponse,
-} from "@/lib/delivery-types";
+} from "@/lib/types/delivery";
 import { formatPrice } from "@/lib/format-price";
 import { buildImageUrl } from "@/lib/image-url";
 

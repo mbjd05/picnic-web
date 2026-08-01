@@ -1,6 +1,6 @@
 import { cleanMarkdown, collectMarkdowns } from "./pml-helpers";
-import type { CountryCode } from "./locale-types";
-import type { RecipeCategory } from "./recipe-types";
+import type { CountryCode } from "./types/locale";
+import type { RecipeCategory } from "./types/recipe";
 
 const MEALS_CATEGORY_PAGE_RE =
   /app\.picnic:\/\/store\/page;id=meals-category-page,category_id=([0-9a-f-]+)/i;

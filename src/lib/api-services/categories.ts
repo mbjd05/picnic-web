@@ -1,10 +1,10 @@
 import { isApiTokenExpiredError } from "@/lib/api-error";
-import type { CategoriesApiResponse } from "@/lib/category-types";
+import type { CategoriesApiResponse } from "@/lib/types/category";
 import { parseCategoryPage } from "@/lib/parse-categories";
 import { parseShortcutsPage } from "@/lib/parse-shortcuts";
 import { buildPicnicClient } from "@/lib/picnic-client";
-import type { ApiErrorResponse } from "@/lib/api-types";
-import type { CountryCode } from "@/lib/locale-types";
+import type { ApiErrorResponse } from "@/lib/types/api";
+import type { CountryCode } from "@/lib/types/locale";
 
 import type { ApiServiceResult } from "./types";
 

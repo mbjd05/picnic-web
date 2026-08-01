@@ -9,7 +9,7 @@ import type {
   CheckoutStatusResponse,
   PaymentBank,
   PaymentProfile,
-} from "@/lib/payment-types";
+} from "@/lib/types/payment";
 
 import { ErrorView, LoadingView, useDocumentTitle } from "./browsing-components";
 import { useTranslations } from "./country-context";

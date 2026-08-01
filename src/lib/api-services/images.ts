@@ -1,4 +1,4 @@
-import type { CountryCode } from "@/lib/locale-types";
+import type { CountryCode } from "@/lib/types/locale";
 
 export type ImageServiceResult =
   | {

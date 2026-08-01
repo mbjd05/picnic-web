@@ -6,9 +6,9 @@ import type {
   DeliverySlotData,
   DeliverySlotPickerData,
   SlotDayGroup,
-} from "@/lib/delivery-slot-types";
+} from "@/lib/types/delivery-slot";
 import { formatTime } from "@/lib/format-delivery-window";
-import type { CartData } from "@/lib/cart-types";
+import type { CartData } from "@/lib/types/cart";
 
 import { useTranslations } from "../../country-context";
 import { fetchJson } from "../../lib/api-client";

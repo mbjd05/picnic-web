@@ -1,5 +1,5 @@
 import { formatPrice } from "@/lib/format-price";
-import type { DepositEntry, FeeEntry } from "@/lib/cart-types";
+import type { DepositEntry, FeeEntry } from "@/lib/types/cart";
 
 import { useTranslations } from "../../country-context";
 

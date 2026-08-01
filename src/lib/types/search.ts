@@ -1,4 +1,4 @@
-import type { Product } from "@/lib/product-types";
+import type { Product } from "@/lib/types/product";
 
 export type SearchSection = {
   /** Display text for the section header (e.g., "Cherrytomaten"). */

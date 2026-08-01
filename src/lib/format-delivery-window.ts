@@ -4,7 +4,7 @@
  * Uses explicit per-country day-name and month-abbreviation maps (not Intl) to
  * avoid locale-dependent behaviour differences across environments.
  */
-import type { CountryCode } from "./locale-types";
+import type { CountryCode } from "./types/locale";
 
 const DAY_NAMES: Record<CountryCode, readonly string[]> = {
   NL: ["Zondag", "Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag"],

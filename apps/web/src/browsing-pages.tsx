@@ -8,9 +8,9 @@ import type {
   CategoryItem,
   ShortcutItem,
   SubcategoriesApiResponse,
-} from "@/lib/category-types";
+} from "@/lib/types/category";
 import { parsePageIdFromDeepLink } from "@/lib/parse-deep-link";
-import type { CategoryProductsApiResponse, SearchSection } from "@/lib/search-types";
+import type { CategoryProductsApiResponse, SearchSection } from "@/lib/types/search";
 
 import { HeaderBottomBar } from "./app-shell";
 import {

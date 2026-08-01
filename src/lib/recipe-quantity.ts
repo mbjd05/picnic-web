@@ -1,4 +1,4 @@
-import type { RecipeIngredient } from "./recipe-types";
+import type { RecipeIngredient } from "./types/recipe";
 
 type ParsedAmount = {
   value: number;

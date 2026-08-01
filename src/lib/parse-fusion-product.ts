@@ -31,8 +31,8 @@ import type {
   ProductHighlightItem,
   ProductInfoSection,
   ProductLabel,
-} from "./product-types";
-import type { BundleThreshold } from "./cart-types";
+} from "./types/product";
+import type { BundleThreshold } from "./types/cart";
 import {
   PRODUCT_ACCORDION_ID,
   PRODUCT_ALLERGIES_ID,
@@ -42,7 +42,7 @@ import {
   PRODUCT_HIGHLIGHTS_ID,
   PRODUCT_LABELS_PREFIX,
   PRODUCT_MAIN_CONTAINER_ID,
-} from "./product-types";
+} from "./types/product";
 
 // ─── Internal extraction helpers ─────────────────────────────────────────────
 
