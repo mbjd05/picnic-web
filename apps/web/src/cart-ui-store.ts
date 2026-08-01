@@ -1,4 +1,4 @@
-import { create } from "zustand";
+import { createStore, useSelector } from "@tanstack/react-store";
 
 import type { BundleThreshold, CartData } from "@/lib/types";
 
@@ -83,7 +83,7 @@ export function quantitiesFromCart(cart: Pick<CartData, "items">): Map<string, n
 const initialCartSummary = readCartSummary();
 const initialQuantities = readCartQuantities();
 
-export const useCartUiStore = create<CartUiStore>((set) => ({
+export const cartUiStore = createStore<CartUiStore>({
   quantities: initialQuantities,
   totalPrice: initialCartSummary.totalPrice,
   totalCount: initialCartSummary.totalCount,
@@ -94,26 +94,32 @@ export const useCartUiStore = create<CartUiStore>((set) => ({
   applyQuantities: (next) => {
     const quantities = new Map(next);
     writeCartQuantities(quantities);
-    set({ quantities });
+    cartUiStore.setState((state) => ({ ...state, quantities }));
   },
   applyTotals: (next) => {
     writeCartSummary(next);
-    set({ totalPrice: next.totalPrice, totalCount: next.totalCount, hasStoredSummary: true });
+    cartUiStore.setState((state) => ({
+      ...state,
+      totalPrice: next.totalPrice,
+      totalCount: next.totalCount,
+      hasStoredSummary: true,
+    }));
   },
   applyVisibleCart: (cart) => {
     const quantities = quantitiesFromCart(cart);
     writeCartSummary(cart);
     writeCartQuantities(quantities);
-    set({
+    cartUiStore.setState((state) => ({
+      ...state,
       quantities,
       totalPrice: cart.totalPrice,
       totalCount: cart.totalCount,
       hasStoredSummary: true,
-    });
+    }));
   },
   registerBundleDataBatch: (entries) => {
     if (entries.length === 0) return;
-    set((state) => {
+    cartUiStore.setState((state) => {
       let next: Map<string, BundleThreshold[]> | null = null;
       for (const [productId, thresholds] of entries) {
         if (thresholds.length === 0 || state.bundleData.has(productId) || next?.has(productId)) {
@@ -122,9 +128,13 @@ export const useCartUiStore = create<CartUiStore>((set) => ({
         next ??= new Map(state.bundleData);
         next.set(productId, thresholds);
       }
-      return next ? { bundleData: next } : {};
+      return next ? { ...state, bundleData: next } : state;
     });
   },
-  setIsLoading: (isLoading) => set({ isLoading }),
-  setToast: (toast) => set({ toast }),
-}));
+  setIsLoading: (isLoading) => cartUiStore.setState((state) => ({ ...state, isLoading })),
+  setToast: (toast) => cartUiStore.setState((state) => ({ ...state, toast })),
+});
+
+export function useCartUiStore<TSelected>(selector: (state: CartUiStore) => TSelected): TSelected {
+  return useSelector(cartUiStore, selector);
+}
