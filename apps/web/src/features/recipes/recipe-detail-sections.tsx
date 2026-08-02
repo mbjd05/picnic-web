@@ -210,12 +210,12 @@ function RecipeIngredientRow({
         onError={() => setImgSrc(PLACEHOLDER)}
       />
       <div className={`min-w-0 flex-1 ${checked ? "" : "opacity-40"}`}>
-        <p className="text-text-dark line-clamp-3 text-sm font-medium break-words sm:line-clamp-2">
+        <p className="text-text-dark line-clamp-3 text-sm font-medium wrap-break-word sm:line-clamp-2">
           {title}
         </p>
         <p className="text-text-muted text-xs">{packageLabel}</p>
       </div>
-      <div className={`min-w-[3.5rem] shrink-0 text-right ${checked ? "" : "opacity-40"}`}>
+      <div className={`min-w-14 shrink-0 text-right ${checked ? "" : "opacity-40"}`}>
         <p className={`text-sm font-medium ${strike ? "text-price-discount" : "text-text-dark"}`}>
           {formatEuroPrice(totalPrice)}
         </p>

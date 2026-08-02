@@ -286,7 +286,7 @@ export function ProductCard({
             {product.subtitleTrailingIcon ? " »" : ""}
           </p>
         ) : null}
-        <h3 className="text-text-dark mb-0.5 line-clamp-2 text-sm leading-snug font-medium break-words">
+        <h3 className="text-text-dark mb-0.5 line-clamp-2 text-sm leading-snug font-medium wrap-break-word">
           {product.namePrefix ? (
             <span className="text-text-bio-green font-bold">{product.namePrefix} </span>
           ) : null}
