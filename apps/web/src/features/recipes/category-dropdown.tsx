@@ -38,7 +38,18 @@ export function CategoryDropdown({
         className={`flex w-full items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium shadow-sm transition-colors ${disabled ? "cursor-not-allowed opacity-40" : "hover:border-gray-400"}`}
       >
         <span className="text-foreground truncate">{selected.name}</span>
-        <span aria-hidden="true">⌄</span>
+        <svg
+          className={`text-text-muted h-4 w-4 shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          aria-hidden="true"
+        >
+          <path
+            fillRule="evenodd"
+            d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+            clipRule="evenodd"
+          />
+        </svg>
       </button>
       {open ? (
         <div className="absolute left-0 z-50 mt-1.5 w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
