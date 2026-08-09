@@ -342,7 +342,10 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
         preference={themePreference}
         systemTheme={systemTheme}
         t={t}
-        onSelect={setThemePreference}
+        onSelect={(preference) => {
+          setThemePreference(preference);
+          setIsThemeMenuOpen(false);
+        }}
       />
     );
   }
