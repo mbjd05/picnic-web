@@ -175,6 +175,8 @@ Research status:
 - `scripts/picnic-checkout-probe.mjs wallet-shape 1` confirmed the list endpoint is accepted for the current test account.
 - The current test account returned an empty first page, so live item/detail shape remains unconfirmed in populated data.
 - Package types indicate list fields including `id`, `timestamp`, `amount_in_cents`, `display_name`, `brand`, `status`, `transaction_method`, and `transaction_type`; details include delivery/order item, deposit, fee, refund, and payment-option fields.
+- Picnic's own payments engineering blog describes the wallet as a customer-facing abstraction for reducing and combining many delivery-related payment movements into understandable transactions.
+- Treat wallet as a payment ledger/spending-history feature, not as the direct iDEAL/Wero checkout initiation flow. Direct checkout remains based on `payment-profile` plus `/cart/checkout/initiate_payment`.
 
 Recommended implementation:
 
