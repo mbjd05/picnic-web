@@ -58,7 +58,7 @@ const translations = {
       "Deze app bewaart uiteindelijk alleen een Picnic auth token in een HTTP-only cookie. Bij inloggen met e-mailadres en wachtwoord worden je gegevens niet opgeslagen; ze worden alleen gebruikt om dat token bij Picnic op te halen.",
     isOfficialSite: "Is dit de officiële Picnic website?",
     isOfficialSiteBody:
-      "Nee, dit is niet de officiële Picnic website. Dit is een onafhankelijk open-source project en is op geen enkele manier verbonden aan Picnic. Bekijk de broncode op",
+      "Nee, dit is niet de officiële Picnic website. Picnic Web is een onafhankelijk open-source project en is niet verbonden aan, goedgekeurd door of gesponsord door Picnic. Bekijk de broncode op",
     tokenInvalid: "Token is ongeldig. Probeer opnieuw.",
     credentialsInvalid: "E-mailadres of wachtwoord is onjuist. Probeer opnieuw.",
     twoFAInvalid: "Verificatiecode is onjuist. Probeer opnieuw.",
@@ -360,7 +360,7 @@ const translations = {
       "Diese App speichert am Ende nur ein Picnic Auth-Token in einem HTTP-only Cookie. Beim Anmelden mit E-Mail-Adresse und Passwort werden deine Daten nicht gespeichert; sie werden nur verwendet, um dieses Token bei Picnic abzurufen.",
     isOfficialSite: "Ist dies die offizielle Picnic-Website?",
     isOfficialSiteBody:
-      "Nein, dies ist nicht die offizielle Picnic-Website. Dies ist ein unabhängiges Open-Source-Projekt und steht in keiner Verbindung zu Picnic. Sieh dir den Quellcode auf",
+      "Nein, dies ist nicht die offizielle Picnic-Website. Picnic Web ist ein unabhängiges Open-Source-Projekt und ist nicht mit Picnic verbunden, wird nicht von Picnic unterstützt und nicht von Picnic gesponsert. Sieh dir den Quellcode auf",
     tokenInvalid: "Token ist ungültig. Bitte versuche es erneut.",
     credentialsInvalid: "E-Mail-Adresse oder Passwort ist falsch. Bitte versuche es erneut.",
     twoFAInvalid: "Bestätigungscode ist falsch. Bitte versuche es erneut.",
@@ -655,7 +655,7 @@ const translations = {
       "Cette app ne conserve finalement qu'un auth token Picnic dans un cookie HTTP-only. Lors d'une connexion par e-mail et mot de passe, vos identifiants ne sont pas stockés ; ils servent uniquement à obtenir ce token auprès de Picnic.",
     isOfficialSite: "Est-ce le site officiel de Picnic ?",
     isOfficialSiteBody:
-      "Non, ce n'est pas le site officiel de Picnic. C'est un projet open source indépendant qui n'est pas affilié à Picnic. Consultez le code source sur",
+      "Non, ce n'est pas le site officiel de Picnic. Picnic Web est un projet open source indépendant qui n'est ni affilié à Picnic, ni approuvé par Picnic, ni sponsorisé par Picnic. Consultez le code source sur",
     tokenInvalid: "Le token est invalide. Veuillez réessayer.",
     credentialsInvalid: "Adresse e-mail ou mot de passe incorrect. Veuillez réessayer.",
     twoFAInvalid: "Le code de vérification est incorrect. Veuillez réessayer.",
@@ -911,7 +911,7 @@ const englishTranslations: Translations = {
     "This app ultimately stores only a Picnic auth token in an HTTP-only cookie. When signing in with email and password, your credentials are not stored; they are only used to obtain that token from Picnic.",
   isOfficialSite: "Is this the official Picnic website?",
   isOfficialSiteBody:
-    "No, this is not the official Picnic website. This is an independent open-source project and is not affiliated with Picnic. View the source code on",
+    "No, this is not the official Picnic website. Picnic Web is an independent open-source project and is not affiliated with, endorsed by, or sponsored by Picnic. View the source code on",
   tokenInvalid: "Token is invalid. Try again.",
   credentialsInvalid: "Email address or password is incorrect. Try again.",
   twoFAInvalid: "Verification code is incorrect. Try again.",

@@ -4,7 +4,7 @@
 
 Unofficial web interface for the online supermarket Picnic. It uses the npm library [picnic-api](https://github.com/MRVDH/picnic-api) and runs as a Vite/React app served by a Hono API on Cloudflare Workers.
 
-This project is independent and is not affiliated with Picnic.
+Picnic Web is an independent open-source project and is not affiliated with, endorsed by, or sponsored by Picnic.
 
 ## Project Direction
 
