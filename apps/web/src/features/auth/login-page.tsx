@@ -159,7 +159,15 @@ function LoginForm({
   return (
     <main className="bg-background flex min-h-screen items-center justify-center px-4 py-8">
       <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
+        <div className="mb-8 flex flex-col items-center text-center">
+          <img
+            src="/icons/picnic-web.svg"
+            alt=""
+            width={88}
+            height={88}
+            aria-hidden="true"
+            className="mb-4 h-22 w-22"
+          />
           <span
             className="text-picnic-red text-5xl font-bold tracking-normal select-none"
             aria-label="Picnic Web"
