@@ -7,7 +7,7 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const iconsDir = resolve(repoRoot, "apps/web/public/icons");
 const appSvgPath = resolve(iconsDir, "picnic-web.svg");
 
-const RED = "#E2010F";
+const RED = "#e1171e";
 const SOURCE_TILE_VIEWBOX = "64 64 1126 1126";
 
 const outputs = [
