@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export type RecipeCategoryOption = {
   id: string | null;
@@ -22,6 +22,7 @@ export function CategoryDropdown({
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
   const selected = options.find((option) => option.id === value) ?? options[0];
   const normalized = query.trim().toLowerCase();
   const filtered = normalized
@@ -29,13 +30,28 @@ export function CategoryDropdown({
         [option.name, option.section ?? ""].some((text) => text.toLowerCase().includes(normalized))
       )
     : options;
+
+  useEffect(() => {
+    if (!open) return;
+
+    function handlePointerDown(event: PointerEvent) {
+      if (!containerRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+        setQuery("");
+      }
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [open]);
+
   return (
-    <div className="relative inline-block min-w-48">
+    <div ref={containerRef} className="relative inline-block min-w-48">
       <button
         type="button"
         onClick={() => !disabled && setOpen((current) => !current)}
         disabled={disabled}
-        className={`flex w-full items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium shadow-sm transition-colors ${disabled ? "cursor-not-allowed opacity-40" : "hover:border-gray-400"}`}
+        className={`dark:border-card-border dark:bg-card-bg flex w-full items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium shadow-sm transition-colors ${disabled ? "cursor-not-allowed opacity-40" : "hover:border-gray-400"}`}
       >
         <span className="text-foreground truncate">{selected.name}</span>
         <svg
@@ -52,13 +68,13 @@ export function CategoryDropdown({
         </svg>
       </button>
       {open ? (
-        <div className="absolute left-0 z-50 mt-1.5 w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
-          <div className="border-b border-gray-100 p-2">
+        <div className="dark:border-card-border dark:bg-card-bg absolute left-0 z-50 mt-1.5 w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
+          <div className="dark:border-card-border border-b border-gray-100 p-2">
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder={searchPlaceholder}
-              className="focus:ring-picnic-red w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2"
+              className="focus:ring-picnic-red text-foreground dark:border-input-border dark:bg-background w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2"
             />
           </div>
           <ul className="max-h-72 overflow-y-auto py-1">
@@ -82,13 +98,17 @@ export function CategoryDropdown({
                     }}
                     className={`flex w-full items-center justify-between px-4 py-2 text-left text-sm transition-colors ${
                       isSelected
-                        ? "text-picnic-red bg-red-50 font-semibold dark:bg-red-950/35"
-                        : "text-foreground hover:bg-gray-50"
+                        ? "recipe-selection-highlight font-semibold"
+                        : "text-foreground hover:bg-gray-50 dark:hover:bg-white/5"
                     }`}
                   >
                     <span>{option.name}</span>
                     {option.count !== undefined ? (
-                      <span className="ml-2 text-xs text-gray-400">{option.count}</span>
+                      <span
+                        className={`ml-2 text-xs ${isSelected ? "recipe-selection-highlight-muted" : "text-gray-400"}`}
+                      >
+                        {option.count}
+                      </span>
                     ) : null}
                   </button>
                 </li>

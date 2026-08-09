@@ -205,6 +205,32 @@ button:disabled {
   box-shadow: 0 8px 24px rgb(0 0 0 / 45%);
 }
 
+.recipe-selection-highlight {
+  background: #fef2f2;
+  color: #e1171e;
+}
+
+.recipe-selection-highlight:hover {
+  background: #fef2f2;
+}
+
+.recipe-selection-highlight-muted {
+  color: rgb(225 23 30 / 70%);
+}
+
+:root[data-theme="dark"] .recipe-selection-highlight {
+  background: rgb(127 29 29 / 35%);
+  color: var(--picnic-red);
+}
+
+:root[data-theme="dark"] .recipe-selection-highlight:hover {
+  background: rgb(127 29 29 / 35%);
+}
+
+:root[data-theme="dark"] .recipe-selection-highlight-muted {
+  color: color-mix(in srgb, var(--picnic-red) 70%, transparent);
+}
+
 .section-nav-scrollbar {
   scrollbar-color: transparent transparent;
 }

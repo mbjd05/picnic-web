@@ -8,11 +8,11 @@ import { buildRecipeImageUrl } from "@/lib/media/image-url";
 import { getRecipeIngredientCount } from "@/lib/recipes/quantity";
 import { DEBOUNCE_DELAY_MS } from "@/lib/config/app-constants";
 import type { CountryCode } from "@/types/locale";
-import type { RecipeCategory, RecipeDetail, RecipeItem } from "@/types/recipe";
+import type { CookbookApiResponse, RecipeCategory, RecipeDetail, RecipeItem } from "@/types/recipe";
 
 import { ErrorView, LoadingView } from "../../components/page-state";
 import { useDocumentTitle } from "../../hooks/use-document-title";
-import { useCartActions } from "../../providers/cart-context";
+import { useCartActions, useCartToast } from "../../providers/cart-context";
 import { useCountryCode, useTranslations } from "../../providers/country-context";
 import { useInAppBack } from "../../providers/navigation-history-context";
 import { CategoryDropdown } from "./category-dropdown";
@@ -46,13 +46,35 @@ type RecipesState =
   | { status: "error"; message: string };
 type SearchScope = "current" | "all";
 
+function updateSavedRecipesInCache(
+  queryClient: ReturnType<typeof useQueryClient>,
+  countryCode: CountryCode,
+  recipe: RecipeItem,
+  saved: boolean
+) {
+  const update = (current: CookbookApiResponse | undefined): CookbookApiResponse | undefined => {
+    if (!current) return current;
+    const hasRecipe = current.recipes.some((item) => item.id === recipe.id);
+    if (saved && !hasRecipe) return { ...current, recipes: [recipe, ...current.recipes] };
+    if (!saved && hasRecipe)
+      return { ...current, recipes: current.recipes.filter((item) => item.id !== recipe.id) };
+    return current;
+  };
+
+  queryClient.setQueryData<CookbookApiResponse>(queryKeys.savedRecipes(countryCode), update);
+  queryClient.setQueryData<CookbookApiResponse>(
+    queryKeys.cookbookView("__saved__", countryCode),
+    update
+  );
+}
+
 export function CookbookPage() {
   const countryCode = useCountryCode();
   const t = useTranslations();
   const queryClient = useQueryClient();
+  const showToast = useCartToast();
   const navigate = useNavigate();
-  const handleBack = useInAppBack(() => void navigate({ to: "/", search: {} }));
-  useDocumentTitle(t.cookbookTitle);
+  const handleAppBack = useInAppBack(() => void navigate({ to: "/", search: {} }));
 
   const [categories, setCategories] = useState<RecipeCategory[]>([]);
   const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
@@ -66,6 +88,8 @@ export function CookbookPage() {
   const [savingRecipeIds, setSavingRecipeIds] = useState<Set<string>>(() => new Set());
   const [lastBrowseCategory, setLastBrowseCategory] = useState<string | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const pageTitle = selectedCategory === "__saved__" ? t.cookbookSaved : t.cookbookTitle;
+  useDocumentTitle(pageTitle);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(searchInput.trim()), DEBOUNCE_DELAY_MS);
@@ -153,6 +177,20 @@ export function CookbookPage() {
     setVisibleCount(PAGE_SIZE);
   }, [debouncedQuery, lastBrowseCategory, searchInput, selectedCategory]);
 
+  const handleBack = useCallback(() => {
+    if (selectedCategory === "__saved__") {
+      setSearchInput("");
+      setDebouncedQuery("");
+      setSearchScope("all");
+      setSelectedCategory(lastBrowseCategory);
+      setRecipesState({ status: "loading" });
+      setVisibleCount(PAGE_SIZE);
+      return;
+    }
+
+    handleAppBack();
+  }, [handleAppBack, lastBrowseCategory, selectedCategory]);
+
   const handleToggleSaved = useCallback(
     async (recipe: RecipeItem) => {
       const wasSaved = savedRecipeIds.has(recipe.id);
@@ -168,6 +206,7 @@ export function CookbookPage() {
         ...current,
         __saved__: Math.max(0, (current.__saved__ ?? 0) + (nextSaved ? 1 : -1)),
       }));
+      updateSavedRecipesInCache(queryClient, countryCode, recipe, nextSaved);
       if (wasSaved && selectedCategory === "__saved__") {
         setRecipesState((current) =>
           current.status === "success"
@@ -182,7 +221,6 @@ export function CookbookPage() {
         await fetchJson<unknown>(`/api/recipe/${encodeURIComponent(recipe.id)}/saved`, {
           method: nextSaved ? "POST" : "DELETE",
         });
-        void queryClient.invalidateQueries({ queryKey: ["cookbook"] });
       } catch {
         setSavedRecipeIds((current) => {
           const next = new Set(current);
@@ -190,7 +228,19 @@ export function CookbookPage() {
           else next.delete(recipe.id);
           return next;
         });
-        setRecipesState({ status: "error", message: t.recipeSaveError });
+        setCategoryCounts((current) => ({
+          ...current,
+          __saved__: Math.max(0, (current.__saved__ ?? 0) + (wasSaved ? 1 : -1)),
+        }));
+        updateSavedRecipesInCache(queryClient, countryCode, recipe, wasSaved);
+        if (wasSaved && selectedCategory === "__saved__") {
+          setRecipesState((current) =>
+            current.status === "success" && !current.recipes.some((item) => item.id === recipe.id)
+              ? { status: "success", recipes: [recipe, ...current.recipes] }
+              : current
+          );
+        }
+        showToast(t.recipeSaveError);
       } finally {
         setSavingRecipeIds((current) => {
           const next = new Set(current);
@@ -199,7 +249,7 @@ export function CookbookPage() {
         });
       }
     },
-    [queryClient, savedRecipeIds, selectedCategory, t.recipeSaveError]
+    [countryCode, queryClient, savedRecipeIds, selectedCategory, showToast, t.recipeSaveError]
   );
 
   const visibleRecipes = recipesForDisplay.slice(0, visibleCount);
@@ -240,18 +290,18 @@ export function CookbookPage() {
         <button
           type="button"
           onClick={handleBack}
-          className="text-text-muted hover:text-foreground shrink-0 text-sm transition-colors"
+          className="text-picnic-red inline-flex shrink-0 items-center gap-1 self-center text-sm font-medium transition-colors hover:underline"
         >
-          ← {t.backButton}
+          <span aria-hidden="true">←</span> {t.backButton}
         </button>
-        <h1 className="text-foreground text-xl font-bold">{t.cookbookTitle}</h1>
+        <h1 className="text-foreground text-xl font-bold">{pageTitle}</h1>
         <button
           type="button"
           onClick={handleSelectSaved}
           className={`ml-auto flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium shadow-sm transition-colors ${
             selectedCategory === "__saved__" && !debouncedQuery
-              ? "border-picnic-red text-picnic-red bg-red-50 dark:bg-red-950/35"
-              : "text-foreground border-gray-200 bg-white hover:border-gray-400"
+              ? "border-picnic-red recipe-selection-highlight"
+              : "text-foreground dark:border-card-border dark:bg-card-bg border-gray-200 bg-white hover:border-gray-400"
           }`}
         >
           <BookmarkIcon filled={selectedCategory === "__saved__" && !debouncedQuery} />
@@ -288,7 +338,7 @@ export function CookbookPage() {
         />
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <span className="text-text-muted text-sm font-medium">{t.cookbookSearchWithin}</span>
-          <div className="flex rounded-xl border border-gray-200 bg-white p-1 shadow-sm">
+          <div className="dark:border-card-border dark:bg-card-bg flex rounded-xl border border-gray-200 bg-white p-1 shadow-sm">
             {[
               { value: "all" as const, label: t.cookbookSearchScopeAll },
               { value: "current" as const, label: currentScopeLabel },
@@ -303,8 +353,8 @@ export function CookbookPage() {
                 }}
                 className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                   searchScope === option.value
-                    ? "text-picnic-red bg-red-50 dark:bg-red-950/35"
-                    : "text-text-muted hover:text-foreground"
+                    ? "recipe-selection-highlight"
+                    : "text-text-muted hover:text-foreground hover:bg-gray-50 dark:hover:bg-white/5"
                 }`}
               >
                 {option.label}
@@ -608,19 +658,29 @@ export function RecipeDetailPage() {
   const handleToggleSaved = useCallback(async () => {
     if (isSavingRecipe) return;
     const nextSaved = !isSaved;
+    const recipeItem =
+      pageState.status === "success"
+        ? {
+            id: pageState.recipe.id,
+            name: pageState.recipe.name,
+            imageId: pageState.recipe.imageId,
+            cookingTimeMinutes: pageState.recipe.cookingTimeMinutes,
+          }
+        : null;
     setIsSavingRecipe(true);
     setIsSaved(nextSaved);
+    if (recipeItem) updateSavedRecipesInCache(queryClient, countryCode, recipeItem, nextSaved);
     try {
       await fetchJson<unknown>(`/api/recipe/${encodeURIComponent(id)}/saved`, {
         method: nextSaved ? "POST" : "DELETE",
       });
-      void queryClient.invalidateQueries({ queryKey: ["cookbook"] });
     } catch {
       setIsSaved(!nextSaved);
+      if (recipeItem) updateSavedRecipesInCache(queryClient, countryCode, recipeItem, !nextSaved);
     } finally {
       setIsSavingRecipe(false);
     }
-  }, [id, isSaved, isSavingRecipe, queryClient]);
+  }, [countryCode, id, isSaved, isSavingRecipe, pageState, queryClient]);
 
   if (pageState.status === "loading")
     return (
