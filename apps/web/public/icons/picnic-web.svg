@@ -1,23 +1,4 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="64 64 1126 1126" role="img" aria-label="Picnic Web">
-<style>
-    .icon-fill {
-      fill: #fff;
-    }
-
-    .icon-stroke {
-      stroke: #fff;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      .icon-fill {
-        fill: #f3eee8;
-      }
-
-      .icon-stroke {
-        stroke: #f3eee8;
-      }
-    }
-  </style>
 <!-- True centered square app tile -->
   <rect x="64" y="64" width="1126" height="1126" rx="214" ry="214" fill="#e1171e"/>
 
@@ -31,7 +12,7 @@
     C 979 1067, 1023 1028, 1015 965
     L 941 418
     C 938 399, 928 388, 912 388
-    Z" class="icon-fill"/>
+    Z" fill="#fff"/>
 
   <!-- Handle-entry cutouts reconstructed from the preferred original:
        45 px slots behind a 39 px handle leave ~3 px red clearance per side. -->
@@ -49,7 +30,7 @@
     C 475 271, 543 205, 627 205
     C 711 205, 779 271, 779 360
     L 779 453"
-    class="icon-stroke" fill="none" stroke-width="39"
+    fill="none" stroke="#fff" stroke-width="39"
     stroke-linecap="round" stroke-linejoin="round"/>
 
   <!-- Original monogram, cleaned and vector-traced at 4x -->
