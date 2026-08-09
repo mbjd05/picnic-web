@@ -5,7 +5,6 @@ import { fileURLToPath } from "node:url";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const iconsDir = resolve(repoRoot, "apps/web/public/icons");
-const sourcePath = resolve(iconsDir, "picnic-web-source.svg");
 const appSvgPath = resolve(iconsDir, "picnic-web.svg");
 
 const RED = "#E2010F";
@@ -22,7 +21,7 @@ function normalizeSvg(source) {
   const bodyMatch = source.match(/<svg\b[^>]*>([\s\S]*)<\/svg>\s*$/i);
 
   if (!bodyMatch) {
-    throw new Error(`Could not parse SVG body from ${sourcePath}`);
+    throw new Error(`Could not parse SVG body from ${appSvgPath}`);
   }
 
   const body = bodyMatch[1].replace(
@@ -63,7 +62,7 @@ async function renderPng(browser, svg, output) {
   await page.close();
 }
 
-const source = await readFile(sourcePath, "utf8");
+const source = await readFile(appSvgPath, "utf8");
 const normalizedSvg = normalizeSvg(source);
 
 await mkdir(iconsDir, { recursive: true });
