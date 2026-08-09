@@ -54,6 +54,16 @@ payment.getWalletTransactions(pageNumber)
 payment.getWalletTransactionDetails(transactionId)
 ```
 
+Research status:
+
+- `picnic-api@4.6.0` exposes both methods.
+- The JS package maps them to:
+  - `POST /wallet/transactions` with `{ page_number }`
+  - `GET /wallet/transactions/{walletTransactionId}`
+- `scripts/picnic-checkout-probe.mjs wallet-shape 1` confirmed the list endpoint is accepted for the current test account.
+- The current test account returned an empty first page, so live item/detail shape remains unconfirmed in populated data.
+- Package types indicate list fields including `id`, `timestamp`, `amount_in_cents`, `display_name`, `brand`, `status`, `transaction_method`, and `transaction_type`; details include delivery/order item, deposit, fee, refund, and payment-option fields.
+
 Why it makes the cut:
 
 - Direct Picnic account/payment functionality.

@@ -141,6 +141,73 @@ async function getPaymentProfile() {
   return send("GET", "/payment-profile", null, true);
 }
 
+async function getWalletTransactions(pageNumber) {
+  if (client.payment?.getWalletTransactions) {
+    return client.payment.getWalletTransactions(pageNumber);
+  }
+
+  return send("POST", "/wallet/transactions", { page_number: pageNumber }, false);
+}
+
+async function getWalletTransactionDetails(transactionId) {
+  if (client.payment?.getWalletTransactionDetails) {
+    return client.payment.getWalletTransactionDetails(transactionId);
+  }
+
+  return send("GET", `/wallet/transactions/${encodeURIComponent(transactionId)}`, null, false);
+}
+
+function valueShape(value, depth = 0) {
+  if (value === null) return "null";
+  if (Array.isArray(value)) {
+    if (depth > 1) return `array(${value.length})`;
+    return {
+      type: "array",
+      length: value.length,
+      itemShape: value.length ? valueShape(value[0], depth + 1) : null,
+    };
+  }
+  if (typeof value !== "object") return typeof value;
+  if (depth > 1) return "object";
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, nestedValue]) => [key, valueShape(nestedValue, depth + 1)])
+  );
+}
+
+function uniqueValues(items, key) {
+  return [...new Set(items.map((item) => item?.[key]).filter(Boolean))].sort();
+}
+
+async function getWalletShape(pageNumber) {
+  const transactions = await getWalletTransactions(pageNumber);
+  const list = Array.isArray(transactions) ? transactions : [];
+  const firstTransactionId = typeof list[0]?.id === "string" ? list[0].id : null;
+  const firstDetails = firstTransactionId
+    ? await getWalletTransactionDetails(firstTransactionId)
+    : null;
+
+  return {
+    endpointSummary: {
+      list: "POST /wallet/transactions { page_number }",
+      details: "GET /wallet/transactions/{walletTransactionId}",
+      pageNumber,
+    },
+    transactionCount: list.length,
+    transactionShape: list.length ? valueShape(list[0]) : null,
+    transactionEnumValues: {
+      statuses: uniqueValues(list, "status"),
+      methods: uniqueValues(list, "transaction_method"),
+      types: uniqueValues(list, "transaction_type"),
+      brands: uniqueValues(list, "brand"),
+    },
+    detailFetched: Boolean(firstDetails),
+    detailShape: firstDetails ? valueShape(firstDetails) : null,
+  };
+}
+
 function getPreferredPaymentOption(profile) {
   const preferredId = profile?.preferred_payment_option_id;
 
@@ -406,6 +473,44 @@ async function main() {
     return;
   }
 
+  if (mode === "wallet-shape") {
+    const pageNumber = Number(process.argv[3] ?? "1");
+    if (!Number.isInteger(pageNumber) || pageNumber < 1) {
+      console.error("Usage: node scripts/picnic-checkout-probe.mjs wallet-shape [pageNumber]");
+      process.exit(1);
+    }
+
+    print(await getWalletShape(pageNumber));
+    return;
+  }
+
+  if (mode === "wallet-transactions") {
+    const pageNumber = Number(process.argv[3] ?? "1");
+    if (!Number.isInteger(pageNumber) || pageNumber < 1) {
+      console.error(
+        "Usage: node scripts/picnic-checkout-probe.mjs wallet-transactions [pageNumber]"
+      );
+      process.exit(1);
+    }
+
+    print(await getWalletTransactions(pageNumber));
+    return;
+  }
+
+  if (mode === "wallet-transaction-details") {
+    const id = process.argv[3];
+
+    if (!id) {
+      console.error(
+        "Usage: node scripts/picnic-checkout-probe.mjs wallet-transaction-details <transactionId>"
+      );
+      process.exit(1);
+    }
+
+    print(await getWalletTransactionDetails(id));
+    return;
+  }
+
   if (mode === "available-payment-methods") {
     const profile = await getPaymentProfile();
 
@@ -643,6 +748,9 @@ async function main() {
   console.error("  slots");
   console.error("  minimum");
   console.error("  payment-profile");
+  console.error("  wallet-shape [pageNumber]");
+  console.error("  wallet-transactions [pageNumber]");
+  console.error("  wallet-transaction-details <transactionId>");
   console.error("  available-payment-methods");
   console.error("  ensure-payment-option <paymentMethod> [bankId|alias]");
   console.error("  ensure-ideal [bankId|alias]");
