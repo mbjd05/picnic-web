@@ -14,7 +14,13 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       injectRegister: "auto",
-      includeAssets: ["icons/picnic-web.svg"],
+      includeAssets: [
+        "icons/apple-touch-icon.png",
+        "icons/picnic-web.svg",
+        "icons/picnic-web-192.png",
+        "icons/picnic-web-512.png",
+        "icons/picnic-web-maskable-512.png",
+      ],
       manifest: {
         name: "Picnic Web",
         short_name: "Picnic Web",
@@ -31,7 +37,25 @@ export default defineConfig({
             src: "/icons/picnic-web.svg",
             sizes: "any",
             type: "image/svg+xml",
-            purpose: "any maskable",
+            purpose: "any",
+          },
+          {
+            src: "/icons/picnic-web-192.png",
+            sizes: "192x192",
+            type: "image/png",
+            purpose: "any",
+          },
+          {
+            src: "/icons/picnic-web-512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "any",
+          },
+          {
+            src: "/icons/picnic-web-maskable-512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "maskable",
           },
         ],
       },
