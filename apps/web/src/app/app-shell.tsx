@@ -6,8 +6,13 @@ import { flushSync } from "react-dom";
 
 import { getTranslations } from "@/lib/i18n/translations";
 import type { AuthApiResponse } from "@/types/auth";
+import type { PicnicLinkResolveResponse } from "@/types/share";
 import type { SuggestionsApiResponse } from "@/types/search";
 import { MIN_SUGGESTION_LENGTH } from "@/lib/config/app-constants";
+import {
+  extractPicnicReferenceFromInput,
+  isPotentialPicnicReference,
+} from "@/lib/picnic/share-links";
 import { SUPPORTED_COUNTRY_CODES, SUPPORTED_LANGUAGE_CODES } from "@/types/locale";
 import type { CountryCode, LanguageCode } from "@/types/locale";
 
@@ -109,7 +114,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
 
   useEffect(() => {
     setQuery(new URLSearchParams(location.searchStr).get("q") ?? "");
-  }, [location.searchStr]);
+  }, [location.pathname, location.searchStr]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query.trim()), SUGGESTION_DEBOUNCE_MS);
@@ -213,7 +218,7 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
     });
   }
 
-  function handleSearch(event: FormEvent<HTMLFormElement>) {
+  async function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!trimmedQuery) {
       setSubmittedProductSearch(null);
@@ -222,6 +227,27 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
       void navigate({ to: "/", search: {}, hash: "" });
       return;
     }
+
+    const directReference = extractPicnicReferenceFromInput(trimmedQuery);
+    if (directReference) {
+      clearSearchInput();
+      void navigateToPicnicReference(directReference);
+      return;
+    }
+
+    if (isPotentialPicnicReference(trimmedQuery)) {
+      try {
+        const resolved = await fetchJson<PicnicLinkResolveResponse>(
+          `/api/link/resolve?ref=${encodeURIComponent(trimmedQuery)}`
+        );
+        clearSearchInput();
+        void navigateToPicnicReference({ kind: resolved.kind, id: resolved.id });
+        return;
+      } catch {
+        // Fall through to regular product search when the pasted text is not a resolvable Picnic link.
+      }
+    }
+
     saveSearchTerm(trimmedQuery);
     flushSync(() => {
       setSubmittedProductSearch(trimmedQuery);
@@ -229,6 +255,22 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
       setActiveSuggestionIndex(-1);
     });
     void navigate({ to: "/", search: { q: trimmedQuery }, hash: "" });
+  }
+
+  function clearSearchInput() {
+    flushSync(() => {
+      setQuery("");
+      setSubmittedProductSearch(null);
+      setShowSuggestions(false);
+      setActiveSuggestionIndex(-1);
+    });
+  }
+
+  function navigateToPicnicReference(reference: { kind: "product" | "recipe"; id: string }) {
+    if (reference.kind === "product") {
+      return navigate({ to: "/product/$id", params: { id: reference.id } });
+    }
+    return navigate({ to: "/recipe/$id", params: { id: reference.id } });
   }
 
   function selectSearchTerm(term: string) {

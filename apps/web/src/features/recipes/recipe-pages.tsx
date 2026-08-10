@@ -3,22 +3,18 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 
+import { ShareButton } from "@/components/share-button";
 import { formatEuroPrice } from "@/lib/format/price";
 import { buildRecipeImageUrl } from "@/lib/media/image-url";
 import { getRecipeIngredientCount } from "@/lib/recipes/quantity";
 import {
-  extractRecipeIdFromReference,
-  isPotentialRecipeReference,
-} from "@/lib/recipes/recipe-reference";
+  extractPicnicReferenceFromInput,
+  isPotentialPicnicReference,
+} from "@/lib/picnic/share-links";
 import { DEBOUNCE_DELAY_MS } from "@/lib/config/app-constants";
 import type { CountryCode } from "@/types/locale";
-import type {
-  CookbookApiResponse,
-  RecipeCategory,
-  RecipeDetail,
-  RecipeItem,
-  RecipeReferenceResolveResponse,
-} from "@/types/recipe";
+import type { CookbookApiResponse, RecipeCategory, RecipeDetail, RecipeItem } from "@/types/recipe";
+import type { PicnicLinkResolveResponse } from "@/types/share";
 
 import { ErrorView, LoadingView } from "../../components/page-state";
 import { useDocumentTitle } from "../../hooks/use-document-title";
@@ -108,7 +104,7 @@ export function CookbookPage() {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  const hasRecipeReferenceQuery = isPotentialRecipeReference(debouncedQuery);
+  const hasRecipeReferenceQuery = isPotentialPicnicReference(debouncedQuery);
   const hasActiveQuery = debouncedQuery.length > 0 && !hasRecipeReferenceQuery;
   const useGlobalSearch = hasActiveQuery && searchScope === "all";
   const savedRecipesQuery = useSavedRecipes(countryCode);
@@ -192,21 +188,29 @@ export function CookbookPage() {
 
   const handleOpenRecipeReference = useCallback(async () => {
     const reference = searchInput.trim();
-    if (!isPotentialRecipeReference(reference) || isResolvingRecipeReference) return;
+    if (!isPotentialPicnicReference(reference) || isResolvingRecipeReference) return;
 
     setRecipeReferenceError(null);
-    const directRecipeId = extractRecipeIdFromReference(reference);
-    if (directRecipeId) {
-      void navigate({ to: "/recipe/$id", params: { id: directRecipeId } });
+    const directReference = extractPicnicReferenceFromInput(reference);
+    if (directReference) {
+      if (directReference.kind === "product") {
+        void navigate({ to: "/product/$id", params: { id: directReference.id } });
+      } else {
+        void navigate({ to: "/recipe/$id", params: { id: directReference.id } });
+      }
       return;
     }
 
     setIsResolvingRecipeReference(true);
     try {
-      const resolved = await fetchJson<RecipeReferenceResolveResponse>(
-        `/api/recipe/resolve?ref=${encodeURIComponent(reference)}`
+      const resolved = await fetchJson<PicnicLinkResolveResponse>(
+        `/api/link/resolve?ref=${encodeURIComponent(reference)}`
       );
-      void navigate({ to: "/recipe/$id", params: { id: resolved.recipeId } });
+      if (resolved.kind === "product") {
+        void navigate({ to: "/product/$id", params: { id: resolved.id } });
+      } else {
+        void navigate({ to: "/recipe/$id", params: { id: resolved.id } });
+      }
     } catch {
       setRecipeReferenceError(t.recipeReferenceResolveError);
     } finally {
@@ -802,6 +806,16 @@ export function RecipeDetailPage() {
           isSaved={isSaved}
           isSaving={isSavingRecipe}
           onToggle={() => void handleToggleSaved()}
+        />
+        <ShareButton
+          info={recipe.share}
+          title={recipe.name}
+          label={t.shareRecipe}
+          copiedLabel={t.shareLinkCopied}
+          sharedLabel={t.shareCompleted}
+          sharingLabel={t.shareInProgress}
+          variant="icon"
+          className="text-text-muted absolute top-3 right-16"
         />
       </div>
       <h1 className="text-foreground mb-3 text-2xl leading-tight font-bold">{recipe.name}</h1>

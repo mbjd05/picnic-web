@@ -3,7 +3,7 @@ import type { LanguageCode } from "@/types/locale";
 const translations = {
   NL: {
     // Search bar
-    searchPlaceholder: "Zoek producten...",
+    searchPlaceholder: "Zoek producten of plak een Picnic-link...",
     searchAriaLabel: "Zoek producten",
     searchButtonAriaLabel: "Zoeken",
     searchHistoryLabel: "Recent",
@@ -221,6 +221,11 @@ const translations = {
     saveRecipe: "Recept opslaan",
     unsaveRecipe: "Recept verwijderen uit opgeslagen recepten",
     recipeSaveError: "Kan recept niet opslaan.",
+    shareRecipe: "Recept delen",
+    shareProduct: "Product delen",
+    shareInProgress: "Delen...",
+    shareCompleted: "Gedeeld",
+    shareLinkCopied: "Link gekopieerd",
 
     // Auth
     signOut: "Uitloggen",
@@ -307,7 +312,7 @@ const translations = {
   },
   DE: {
     // Search bar
-    searchPlaceholder: "Produkte suchen...",
+    searchPlaceholder: "Produkte suchen oder Picnic-Link einfügen...",
     searchAriaLabel: "Produkte suchen",
     searchButtonAriaLabel: "Suchen",
     searchHistoryLabel: "Zuletzt gesucht",
@@ -525,6 +530,11 @@ const translations = {
     saveRecipe: "Rezept speichern",
     unsaveRecipe: "Rezept aus gespeicherten Rezepten entfernen",
     recipeSaveError: "Rezept konnte nicht gespeichert werden.",
+    shareRecipe: "Rezept teilen",
+    shareProduct: "Produkt teilen",
+    shareInProgress: "Teilen...",
+    shareCompleted: "Geteilt",
+    shareLinkCopied: "Link kopiert",
 
     // Auth
     signOut: "Abmelden",
@@ -610,7 +620,7 @@ const translations = {
     allergenTitle: "Allergene",
   },
   FR: {
-    searchPlaceholder: "Rechercher des produits...",
+    searchPlaceholder: "Rechercher des produits ou coller un lien Picnic...",
     searchAriaLabel: "Rechercher des produits",
     searchButtonAriaLabel: "Rechercher",
     searchHistoryLabel: "Récent",
@@ -796,6 +806,11 @@ const translations = {
     saveRecipe: "Enregistrer la recette",
     unsaveRecipe: "Retirer des recettes enregistrées",
     recipeSaveError: "Impossible d'enregistrer la recette.",
+    shareRecipe: "Partager la recette",
+    shareProduct: "Partager le produit",
+    shareInProgress: "Partage...",
+    shareCompleted: "Partagé",
+    shareLinkCopied: "Lien copié",
     signOut: "Se déconnecter",
     recipeIngredients: "Ingrédients",
     recipeSteps: "Préparation",
@@ -868,7 +883,7 @@ export type Translations = { readonly [K in keyof typeof translations.NL]: strin
 
 const englishTranslations: Translations = {
   ...translations.NL,
-  searchPlaceholder: "Search products...",
+  searchPlaceholder: "Search products or paste a Picnic link...",
   searchAriaLabel: "Search products",
   searchButtonAriaLabel: "Search",
   searchHistoryLabel: "Recent",
@@ -1049,6 +1064,11 @@ const englishTranslations: Translations = {
   saveRecipe: "Save recipe",
   unsaveRecipe: "Remove from saved recipes",
   recipeSaveError: "Could not save recipe.",
+  shareRecipe: "Share recipe",
+  shareProduct: "Share product",
+  shareInProgress: "Sharing...",
+  shareCompleted: "Shared",
+  shareLinkCopied: "Link copied",
   signOut: "Sign out",
   recipeIngredients: "Ingredients",
   recipeSteps: "Preparation",

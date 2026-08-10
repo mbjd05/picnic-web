@@ -43,6 +43,7 @@ import {
   PRODUCT_LABELS_PREFIX,
   PRODUCT_MAIN_CONTAINER_ID,
 } from "@/types/product";
+import { extractSocialShareInfo } from "@/lib/picnic/share-links";
 
 // ─── Internal extraction helpers ─────────────────────────────────────────────
 
@@ -474,5 +475,6 @@ export function parseProductDetailPage(rawPage: unknown, productId: string): Pro
     bundles: extractBundles(page),
     similarProducts: extractSimilarProducts(page),
     nutritionRows: extractNutritionRows(page),
+    share: extractSocialShareInfo(rawPage),
   };
 }

@@ -5,7 +5,11 @@ import { extractProductNutritionRows, extractProductTileData } from "@/lib/parse
 import { parseRecipeDetail } from "@/lib/parse/recipe-detail";
 import { buildPicnicClient } from "@/lib/picnic/client";
 import type { PicnicClientInstance } from "@/lib/picnic/client";
-import { buildRecipeSourceUrl, resolveRecipeReference } from "@/lib/recipes/recipe-reference";
+import {
+  buildRecipeSourceUrl,
+  resolvePicnicReference,
+  resolveRecipeReference,
+} from "@/lib/picnic/share-links";
 import type { ApiErrorResponse } from "@/types/api";
 import type { CountryCode } from "@/types/locale";
 import type {
@@ -13,6 +17,7 @@ import type {
   RecipeIngredient,
   RecipeReferenceResolveResponse,
 } from "@/types/recipe";
+import type { PicnicLinkResolveResponse } from "@/types/share";
 
 import type { ApiServiceResult } from "./types";
 
@@ -44,14 +49,41 @@ export async function getRecipeDetailService(
       client as unknown as SendRequestClient,
       detail.ingredients
     );
+    const sourceUrl = buildRecipeSourceUrl(countryCode, recipeId);
 
-    return { body: { ...detail, ingredients } };
+    return {
+      body: {
+        ...detail,
+        ingredients,
+        share: detail.share ?? { text: detail.name || recipeId, url: sourceUrl },
+      },
+    };
   } catch (error) {
     if (isApiTokenExpiredError(error)) {
       return { body: { error: "Your token has expired" }, status: 401 };
     }
 
     return { body: { error: "Failed to load recipe" }, status: 502 };
+  }
+}
+
+export async function resolvePicnicLinkService(
+  countryCode: CountryCode,
+  reference: string
+): Promise<ApiServiceResult<PicnicLinkResolveResponse | ApiErrorResponse>> {
+  if (!reference.trim()) {
+    return { body: { error: "Missing Picnic link" }, status: 400 };
+  }
+
+  try {
+    return { body: await resolvePicnicReference(reference, countryCode) };
+  } catch (error) {
+    return {
+      body: {
+        error: error instanceof Error ? error.message : "Could not resolve Picnic link",
+      },
+      status: 400,
+    };
   }
 }
 
@@ -64,7 +96,7 @@ export async function resolveRecipeReferenceService(
   }
 
   try {
-    const recipeId = await resolveRecipeReference(reference);
+    const recipeId = await resolveRecipeReference(reference, countryCode);
     return {
       body: {
         recipeId,

@@ -1,4 +1,5 @@
 import { cleanMarkdown, collectMarkdowns, stripColorTags } from "@/lib/pml/helpers";
+import { extractSocialShareInfo } from "@/lib/picnic/share-links";
 import type { AllergenInfo, NutritionRow } from "@/types/product";
 import type { RecipeDetail, RecipeIngredient } from "@/types/recipe";
 
@@ -508,5 +509,6 @@ export function parseRecipeDetail(rawPage: unknown, recipeId: string): RecipeDet
     stepsPortionWarning,
     recipeNutritionRows,
     allergens,
+    share: extractSocialShareInfo(rawPage),
   };
 }

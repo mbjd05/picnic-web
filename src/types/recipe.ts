@@ -1,5 +1,6 @@
 import type { BundleThreshold } from "@/types/cart";
 import type { AllergenInfo, NutritionRow } from "@/types/product";
+import type { ShareInfo } from "@/types/share";
 
 export type RecipeItem = {
   id: string;
@@ -62,6 +63,8 @@ export type RecipeDetail = {
   recipeNutritionRows: NutritionRow[];
   /** Allergen names aggregated across all ingredients, extracted from the recipe page */
   allergens: AllergenInfo;
+  /** Picnic-provided social share data, or a canonical Picnic app link fallback. */
+  share: ShareInfo | null;
 };
 
 export type RecipeDetailApiResponse = RecipeDetail;
