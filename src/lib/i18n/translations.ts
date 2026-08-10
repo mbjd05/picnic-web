@@ -119,7 +119,7 @@ const translations = {
     accountPreferencesTitle: "Voorkeuren",
     accountLinksTitle: "Instellingen",
     accountReadOnlyNote:
-      "Deze gegevens zijn voorlopig alleen-lezen. We voegen bewerken pas toe waar Picnic-routes veilig zijn bevestigd.",
+      "Je kunt bevestigde instellingen hier aanpassen. Gevoelige accountgegevens blijven alleen-lezen totdat de Picnic-routes veilig zijn bevestigd.",
     accountNameLabel: "Naam",
     accountEmailLabel: "E-mail",
     accountPhoneLabel: "Telefoon",
@@ -464,7 +464,7 @@ const translations = {
     accountPreferencesTitle: "Einstellungen",
     accountLinksTitle: "Einstellungen",
     accountReadOnlyNote:
-      "Diese Daten sind vorerst schreibgeschützt. Bearbeiten fügen wir erst hinzu, wenn Picnic-Routen sicher bestätigt sind.",
+      "Bestätigte Einstellungen kannst du hier ändern. Sensible Kontodaten bleiben schreibgeschützt, bis die Picnic-Routen sicher bestätigt sind.",
     accountNameLabel: "Name",
     accountEmailLabel: "E-Mail",
     accountPhoneLabel: "Telefon",
@@ -799,7 +799,7 @@ const translations = {
     accountPreferencesTitle: "Préférences",
     accountLinksTitle: "Paramètres",
     accountReadOnlyNote:
-      "Ces données sont en lecture seule pour l'instant. La modification sera ajoutée uniquement lorsque les routes Picnic seront confirmées en toute sécurité.",
+      "Vous pouvez modifier ici les paramètres confirmés. Les données sensibles du compte restent en lecture seule tant que les routes Picnic ne sont pas confirmées en toute sécurité.",
     accountNameLabel: "Nom",
     accountEmailLabel: "E-mail",
     accountPhoneLabel: "Téléphone",
@@ -1098,7 +1098,7 @@ const englishTranslations: Translations = {
   accountPreferencesTitle: "Preferences",
   accountLinksTitle: "Settings",
   accountReadOnlyNote:
-    "These details are read-only for now. Editing will be added only where Picnic routes are safely confirmed.",
+    "Confirmed settings can be edited here. Sensitive account details stay read-only until the Picnic routes are safely confirmed.",
   accountNameLabel: "Name",
   accountEmailLabel: "Email",
   accountPhoneLabel: "Phone",
