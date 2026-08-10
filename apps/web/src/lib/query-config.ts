@@ -14,6 +14,7 @@ export const queryStaleTime = {
   cookbookCategories: 20 * 60 * 1000,
   cookbookView: 15 * 60 * 1000,
   savedRecipes: 2 * 60 * 1000,
+  accountProfile: 2 * 60 * 1000,
   paymentProfile: 2 * 60 * 1000,
 } as const;
 
@@ -49,6 +50,7 @@ export const queryKeys = {
     ["delivery-tracking", deliveryId, countryCode] as const,
   deliveryOrderStatus: (orderId: string, countryCode: CountryCode) =>
     ["delivery-order-status", orderId, countryCode] as const,
+  accountProfile: (countryCode: CountryCode) => ["account-profile", countryCode] as const,
   paymentProfile: () => ["payment-profile"] as const,
   cookbookView: (categoryId: string | null, countryCode: CountryCode) =>
     ["cookbook", "view", categoryId ?? "__featured__", countryCode] as const,

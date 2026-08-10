@@ -413,6 +413,14 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
             {t.deliveriesNavLink}
           </Link>
           <Link
+            to="/account"
+            onClick={() => setIsMenuOpen(false)}
+            tabIndex={isMenuOpen ? undefined : -1}
+            className="hover:text-foreground block rounded-md px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
+          >
+            {t.accountNavLink}
+          </Link>
+          <Link
             to="/account/payment"
             search={{ from: undefined }}
             onClick={() => setIsMenuOpen(false)}

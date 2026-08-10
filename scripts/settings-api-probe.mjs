@@ -24,6 +24,7 @@ const token = process.env.PICNIC_TOKEN;
 const countryCode = process.env.PICNIC_COUNTRY_CODE ?? "NL";
 const apiVersion = process.env.PICNIC_API_VERSION ?? "17";
 const confirmIdempotentWrites = process.argv.includes("--confirm-idempotent-writes");
+const includeAddressCandidateMatrix = process.argv.includes("--include-address-candidate-matrix");
 
 if (!token) {
   console.error("PICNIC_TOKEN is missing. Run: node .\\scripts\\picnic-auth-probe.mjs login");
@@ -157,24 +158,26 @@ async function routeMatrix() {
     ["POST", "/user/phone_verification/verify", {}],
   ];
 
-  const addressCandidates = [
-    "/address",
-    "/addresses",
-    "/user/address",
-    "/user/addresses",
-    "/user/address-change",
-    "/user/address_change",
-    "/user/move",
-    "/user/relocation",
-    "/user/delivery-address",
-    "/user/delivery_address",
-    "/user-onboarding/address",
-    "/user-onboarding/check-address",
-    "/user-onboarding/register-address",
-    "/user-onboarding/update-address",
-    "/address/check",
-    "/address/autocomplete",
-  ];
+  const addressCandidates = includeAddressCandidateMatrix
+    ? [
+        "/address",
+        "/addresses",
+        "/user/address",
+        "/user/addresses",
+        "/user/address-change",
+        "/user/address_change",
+        "/user/move",
+        "/user/relocation",
+        "/user/delivery-address",
+        "/user/delivery_address",
+        "/user-onboarding/address",
+        "/user-onboarding/check-address",
+        "/user-onboarding/register-address",
+        "/user-onboarding/update-address",
+        "/address/check",
+        "/address/autocomplete",
+      ]
+    : [];
 
   for (const path of addressCandidates) {
     probes.push(["GET", path]);
@@ -218,6 +221,19 @@ async function idempotentWrites(surfaces) {
       typeof setting.text_locale === "string" &&
       typeof setting.established_decision === "boolean"
   );
+  const generalConsentDeclarations = surfaces.generalConsentSettings
+    .filter(
+      (setting) =>
+        setting &&
+        typeof setting.text_id === "string" &&
+        typeof setting.text_locale === "string" &&
+        typeof setting.established_decision === "boolean"
+    )
+    .map((setting) => ({
+      consent_request_text_id: setting.text_id,
+      consent_request_locale: setting.text_locale,
+      agreement: setting.established_decision,
+    }));
 
   const results = [];
   if (householdBody) {
@@ -252,6 +268,28 @@ async function idempotentWrites(surfaces) {
       check: "consent reflected on GET /consents/settings-page",
       sameValue: afterMatch?.established_decision === firstConsent.established_decision,
       updatedTextId: firstConsent.text_id,
+    });
+  }
+
+  if (generalConsentDeclarations.length > 0) {
+    results.push(
+      await rawRequest("PUT", "/consents/general", {
+        general_consent: surfaces.user.check_general_consent === true,
+        consent_declarations: generalConsentDeclarations,
+      })
+    );
+    const afterGeneralSettings = await client.consent.getConsentSettings(true);
+    results.push({
+      check: "general consents reflected on GET /consents/general/settings-page",
+      sameValues: generalConsentDeclarations.every((declaration) => {
+        const afterMatch = afterGeneralSettings.find(
+          (setting) => setting.text_id === declaration.consent_request_text_id
+        );
+        return afterMatch?.established_decision === declaration.agreement;
+      }),
+      updatedTextIds: generalConsentDeclarations.map(
+        (declaration) => declaration.consent_request_text_id
+      ),
     });
   }
 

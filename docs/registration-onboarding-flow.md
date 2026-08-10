@@ -390,6 +390,28 @@ node .\scripts\settings-api-probe.mjs --confirm-idempotent-writes
 
 Do not use the idempotent-write mode casually: even sending the current values back may update server timestamps or consent audit records.
 
+The default mode also skips the old broad address-candidate matrix. Use the following only for an explicitly approved, focused rediscovery pass:
+
+```powershell
+node .\scripts\settings-api-probe.mjs --include-address-candidate-matrix
+```
+
+Read-only recheck on 2026-08-10 confirmed the same stable profile surfaces and current response shape:
+
+- `GET /user` includes profile, address, household, subscription, push subscription, consent decision, and delivery-count data.
+- `GET /user-info` includes redacted phone and feature toggles.
+- `GET /profile-menu?fetch_mgm=true` includes profile-menu user data plus at least one highlight for the current NL test account.
+- `GET /consents/settings-page` returned 7 normal settings for the current account.
+- `GET /consents/general/settings-page` returned 5 general settings.
+- `PUT /consents` with an empty declaration list still returns `200`.
+- `POST /user-onboarding/household-details` and `POST /user-onboarding/business-details` still exist and reject empty input with validation errors.
+
+Focused same-value mutation research on 2026-08-10 confirmed:
+
+- `POST /user-onboarding/household-details` accepts the current `adults`, `children`, `cats`, and `dogs` values and the same values are reflected by the next `GET /user`.
+- `PUT /consents` accepts a current normal-consent declaration and the same value is reflected by the next `GET /consents/settings-page`.
+- `PUT /consents/general` still returned `422` for a same-value payload built from current general settings plus `check_general_consent`; keep general consents read-only until its exact semantics are understood.
+
 ### Profile and address reads
 
 `picnic-api` exposes:
@@ -547,6 +569,38 @@ POST /user/2fa/verify
 
 This fork reinforces that `GET /user` is currently the stable address/settings read surface, but it does not reveal a delivery-address update target. Its README links Picnic's "Adding Write Functionality to Pages with Self-Service APIs" blog post, which explains that new mutations are increasingly implemented as Page Platform Tasks rather than feature-specific Java endpoints.
 
+Focused rediscovery on 2026-08-10:
+
+- `picnic-api` npm was still at `4.6.0`, with no newer user/address domain.
+- `simonmartyr/picnic-api` was inspected as a third-party Go reference. It models address data as a read-only field on `GET /user` and does not expose profile/settings/address writes.
+- Current public `picnic.app` scripts still expose only public onboarding address validation and lead-list registration:
+
+```text
+POST /rest/public-api/15/user-onboarding/check-address
+POST /rest/public-api/15/user-onboarding/register-leadlist
+```
+
+- Focused authenticated reads of `GET /profile-menu?fetch_mgm=true`, `GET /user-info`, and `GET /bootstrap` still did not reveal a profile/settings/address page reference.
+- Focused candidate Fusion pages such as `profile-page-root`, `settings-page-root`, `address-change-page-root`, `delivery-address-page-root`, `moving-page-root`, and `customer-details-page-root` were not available for the verified account.
+- Focused candidate task names were rejected as unknown task IDs with empty bodies:
+
+```text
+/pages/task/address-change
+/pages/task/change-address
+/pages/task/update-address
+/pages/task/save-address
+/pages/task/edit-address
+/pages/task/delivery-address-change
+/pages/task/change-delivery-address
+/pages/task/update-delivery-address
+/pages/task/moving-address
+/pages/task/relocation-address
+/pages/task/user-address-change
+/pages/task/user-onboarding-address
+```
+
+This keeps the current conclusion unchanged: address editing should remain hidden/read-only until a real authenticated address-change flow is observed. The strongest remaining discovery path is capturing the official app's own requests while opening or using its address-change flow.
+
 Picnic's blog post describes Tasks as a Page Platform response type that can return arbitrary JSON and execute backend operations through a generic command binding. It explicitly uses adding a recipe to favorites as the kind of operation moved from a conventional backend API call to a Page Platform Task. That matches routes we already use, such as:
 
 ```text
@@ -596,13 +650,11 @@ Likely write payload, based on the readable user shape:
 
 For writes, send only user-editable counts. Do not send server-managed `author` or `last_edit_ts` unless validation proves they are required.
 
-This route has not yet been mutation-tested in this repo. Treat it as a strong candidate, not a proven production-safe settings mutation, until an authenticated test confirms:
+This route has been same-value mutation-tested in this repo. Treat ordinary changes as supported, but still avoid sending server-managed fields.
 
-- accepted payload shape;
-- response body;
-- whether `GET /user.household_details` reflects the update immediately;
-- whether sending the current values is idempotent;
-- country parity for NL/DE/FR.
+- `GET /user.household_details` reflects the submitted values immediately.
+- Sending the current values is accepted and returns analytics metadata.
+- Country parity for DE/FR remains unverified.
 
 Validation-only probes confirmed:
 
@@ -750,12 +802,23 @@ Validation-only probes confirmed:
 
 - `PUT /consents` is the target for normal privacy/marketing consent settings.
 - `PUT /consents` with an empty declaration list returns `200` and an empty `consent_request_text_ids` list, so the route is live and can accept no-op input.
+- `PUT /consents` with a current-value declaration returns `200` and the same value is reflected by the next settings-page read.
 - `PUT /consents` with incomplete declaration objects returns missing-field validation for `consentRequestTextId`, `consentRequestLocale`, and `agreement`.
 - `PUT /consents/general` is live, but `general_consent: true` requires a matching general consent declaration. A false/no-declaration payload returned:
 
 ```text
 General consent declaration must be provided with generalConsent=true
 ```
+
+A same-value payload containing all current general settings plus the current `check_general_consent` value still returned `422`. This makes normal consents editable now, but general consents should remain read-only until a real mobile-app payload or clearer package behavior is captured.
+
+Focused recheck on 2026-08-10 clarified the distinction:
+
+- `GET /consents/general` returns the general consent request/intro text. Its `PUT /consents/general` update contract still returned `422` for same-value false payload variants and should not be used in this app yet.
+- `GET /consents/general/settings-page` returns individual consent settings. These overlap with `/consents/settings-page`, except some accounts may expose a general-only Push notification consent there.
+- A same-value declaration for that general-only Push consent was accepted by `PUT /consents` and reflected unchanged by the next general settings-page read.
+
+Implementation implication: merge `/consents/settings-page` and `/consents/general/settings-page` for display, dedupe by `text_id`, and update individual switches through `PUT /consents`. Do not expose the general consent request itself as editable until `PUT /consents/general` is understood.
 
 Practical CRUD interpretation:
 
@@ -805,10 +868,10 @@ Current implementation target table:
 | --------------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | Profile name/email/phone          | `GET /user`, `GET /user-info`, `GET /profile-menu?fetch_mgm=true` | no confirmed route                                                               | no confirmed route               | Read confirmed only                                                                                            |
 | Delivery address                  | `GET /user`, `GET /profile-menu?fetch_mgm=true`                   | no confirmed authenticated route                                                 | no confirmed route               | Read confirmed only; public website/bootstrap/deeplink/static package evidence did not reveal an update target |
-| Household composition             | `GET /user.household_details`                                     | `POST /user-onboarding/household-details`                                        | no confirmed route               | Route and payload validation confirmed; live same-value mutation still optional                                |
+| Household composition             | `GET /user.household_details`                                     | `POST /user-onboarding/household-details`                                        | no confirmed route               | Same-value mutation confirmed; ordinary edits are now reasonable                                               |
 | Business details                  | `GET /user.business_details`                                      | `POST /user-onboarding/business-details`                                         | no confirmed route               | Route and payload validation confirmed; live mutation not run                                                  |
-| Normal privacy/marketing consents | `GET /consents/settings-page`                                     | `PUT /consents`                                                                  | no delete; set `agreement` false | Read and update route confirmed                                                                                |
-| General consents                  | `GET /consents/general`, `GET /consents/general/settings-page`    | `PUT /consents/general`                                                          | no delete; update declarations   | Read and update route confirmed                                                                                |
+| Privacy/marketing consent settings | `GET /consents/settings-page`, `GET /consents/general/settings-page` | `PUT /consents`                                                               | no delete; set `agreement` false | Same-value mutation confirmed; settings-page items are editable after merging and deduping by `text_id`        |
+| General consent request           | `GET /consents/general`                                           | `PUT /consents/general`                                                          | no delete; update declarations   | Route exists, but same-value payload still returns `422`; do not expose this request as an editable setting    |
 | Email/list subscriptions          | `GET /user.subscriptions`                                         | no confirmed route                                                               | no confirmed route               | Read confirmed only                                                                                            |
 | Push subscriptions                | `GET /user.push_subscriptions`                                    | `POST /user-onboarding/subscribe-push`                                           | no confirmed route               | Route exists, but device-bound and not ordinary web settings-ready                                             |
 | Phone verification                | none needed beyond `GET /user`/`GET /user-info`                   | `POST /user/phone_verification/generate`, `POST /user/phone_verification/verify` | n/a                              | Verification route confirmed, profile update not confirmed                                                     |

@@ -2,6 +2,7 @@ import { Hono } from "hono";
 
 import { upstreamUnavailableResponse } from "./lib/http";
 import { apiSecurity } from "./lib/security";
+import { registerAccountRoutes } from "./routes/account-routes";
 import { registerAuthRoutes } from "./routes/auth-routes";
 import { registerCartRoutes } from "./routes/cart-routes";
 import { registerCategoryRoutes } from "./routes/category-routes";
@@ -32,6 +33,7 @@ app.get("/api/health", (c) =>
 );
 
 registerAuthRoutes(app);
+registerAccountRoutes(app);
 registerPaymentRoutes(app);
 registerCategoryRoutes(app);
 registerProductRoutes(app);

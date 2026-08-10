@@ -37,7 +37,9 @@ function recordSkip(message) {
 
 function splitSetCookie(value) {
   if (!value) return [];
-  return value.split(/,(?=\s*picnic_(?:auth_token|country)=)/i).map((item) => item.trim());
+  return value
+    .split(/,(?=\s*picnic_(?:auth_token(?:_[a-z]{2})?|country)=)/i)
+    .map((item) => item.trim());
 }
 
 function getSetCookies(headers) {
@@ -128,6 +130,10 @@ async function request(path, options = {}) {
 
 function findCookie(setCookies, name) {
   return setCookies.find((value) => value.toLowerCase().startsWith(`${name.toLowerCase()}=`));
+}
+
+function authCookieNameForCountry(code) {
+  return `picnic_auth_token_${code.toLowerCase()}`;
 }
 
 function cartQuantity(cart, productId) {
@@ -249,9 +255,9 @@ async function main() {
   assert(login.body.success === true, "Hono token login failed");
   assert(!("token" in login.body), "Login response exposed an auth token");
 
-  const authCookie = findCookie(login.setCookies, "picnic_auth_token");
+  const authCookie = findCookie(login.setCookies, authCookieNameForCountry(countryCode));
   const countryCookie = findCookie(login.setCookies, "picnic_country");
-  assert(authCookie, "Token login did not set picnic_auth_token");
+  assert(authCookie, `Token login did not set ${authCookieNameForCountry(countryCode)}`);
   assert(/;\s*httponly/i.test(authCookie), "Auth cookie is not HttpOnly");
   assert(/;\s*samesite=strict/i.test(authCookie), "Auth cookie is not SameSite=Strict");
   assert(/;\s*path=\//i.test(authCookie), "Auth cookie path is not /");
@@ -495,6 +501,14 @@ async function main() {
 
   const paymentProfile = (await request("/api/account/payment-profile")).body;
   assert(!paymentProfile.error, "Payment profile read failed");
+
+  const accountProfile = (await request("/api/account/profile")).body;
+  assert(!accountProfile.error, "Account profile read failed");
+  assert(accountProfile.user && typeof accountProfile.user === "object", "Account user missing");
+  assert(
+    accountProfile.profileMenu && typeof accountProfile.profileMenu === "object",
+    "Account profile menu missing"
+  );
 
   const finalCart = (await request("/api/cart")).body;
   assert(
