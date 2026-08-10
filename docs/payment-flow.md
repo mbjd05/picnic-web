@@ -16,6 +16,12 @@ The implementation must read payment profile data dynamically. iDEAL | Wero is t
 
 Other Picnic regions and payment methods may still be readable from `GET /payment-profile`, and checkout may work for accounts that already have a preferred payment option in their Picnic region. Creating or replacing non-iDEAL payment options remains unsupported until an authenticated account in that region confirms the request/response flow.
 
+Contributors with DE, FR, or other Picnic-region accounts can help close this
+gap. Follow the regional API testing guidance in
+[`CONTRIBUTING.md`](../CONTRIBUTING.md#regional-picnic-api-contributions), and
+submit either a behavior report with redacted findings or an implementation pull
+request with tests and documentation.
+
 Important naming note: the iDEAL option currently appears with display name:
 
 ```text

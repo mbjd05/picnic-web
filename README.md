@@ -67,6 +67,14 @@ Deploy the Worker and static web assets:
 pnpm deploy:worker
 ```
 
+## Contributing Regional API Behavior
+
+Picnic API behavior can differ per country and account. Payment setup is
+currently confirmed only for NL iDEAL | Wero; DE/FR payment methods need
+region-local account reports or implementation pull requests. See
+[CONTRIBUTING.md](./CONTRIBUTING.md#regional-picnic-api-contributions) for safe
+testing and redaction instructions.
+
 ## PWA Behavior
 
 The Vite build emits a web app manifest and service worker. Only static app assets are precached; authenticated `/api/*` responses and Picnic account data are not stored in a shared service-worker cache.
