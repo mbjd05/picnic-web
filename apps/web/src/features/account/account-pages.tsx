@@ -68,6 +68,10 @@ function AccountProfileContent({ profile }: { profile: AccountProfileResponse })
     profile.generalConsentSettings,
     profile.consentSettings
   );
+  const generalOnlyConsentCount = countGeneralOnlyConsentSettings(
+    profile.generalConsentSettings,
+    profile.consentSettings
+  );
   const householdMutation = useMutation({
     mutationFn: (
       household: Required<Pick<HouseholdDetails, "adults" | "children" | "cats" | "dogs">>
@@ -137,7 +141,10 @@ function AccountProfileContent({ profile }: { profile: AccountProfileResponse })
           <InfoSection title={t.accountDetailsTitle}>
             <DetailList>
               <DetailRow label={t.accountNameLabel} value={displayName} />
-              <DetailRow label={t.accountCustomerTypeLabel} value={user.customer_type} />
+              <DetailRow
+                label={t.accountCustomerTypeLabel}
+                value={formatCustomerType(user.customer_type, t)}
+              />
             </DetailList>
           </InfoSection>
 
@@ -181,7 +188,7 @@ function AccountProfileContent({ profile }: { profile: AccountProfileResponse })
       </div>
 
       <InfoSection title={t.accountPreferencesTitle}>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <PreferenceSummary
             label={t.accountSubscriptionsLabel}
             value={t.accountSubscribedCount.replace("{count}", String(activeSubscriptions))}
@@ -196,13 +203,14 @@ function AccountProfileContent({ profile }: { profile: AccountProfileResponse })
               "{count}",
               String(editableConsentSettings.length)
             )}
-          />
-          <PreferenceSummary
-            label={t.accountGeneralConsentSettingsLabel}
-            value={t.accountConfiguredCount.replace(
-              "{count}",
-              String(profile.generalConsentSettings.length)
-            )}
+            note={
+              generalOnlyConsentCount > 0
+                ? t.accountGeneralConsentsIncluded.replace(
+                    "{count}",
+                    String(generalOnlyConsentCount)
+                  )
+                : undefined
+            }
           />
         </div>
         <ConsentSettingsList
@@ -260,11 +268,20 @@ function DetailRow({ label, value }: DetailRowProps) {
   );
 }
 
-function PreferenceSummary({ label, value }: { label: string; value: string }) {
+function PreferenceSummary({
+  label,
+  value,
+  note,
+}: {
+  label: string;
+  value: string;
+  note?: string;
+}) {
   return (
     <div className="border-card-border bg-muted-bg rounded-lg border px-3 py-2">
       <div className="text-muted text-xs">{label}</div>
       <div className="text-foreground mt-1 text-sm font-semibold">{value}</div>
+      {note ? <div className="text-muted mt-1 text-xs">{note}</div> : null}
     </div>
   );
 }
@@ -501,6 +518,34 @@ function mergeConsentSettings(...settingGroups: ConsentSetting[][]): ConsentSett
   }
 
   return [...settings.values()];
+}
+
+function countGeneralOnlyConsentSettings(
+  generalConsentSettings: ConsentSetting[],
+  consentSettings: ConsentSetting[]
+): number {
+  const normalKeys = new Set(consentSettings.map((setting) => setting.text_id ?? setting.id));
+  return generalConsentSettings.filter((setting) => {
+    const key = setting.text_id ?? setting.id;
+    return Boolean(key && !normalKeys.has(key));
+  }).length;
+}
+
+function formatCustomerType(
+  customerType: string | null | undefined,
+  t: ReturnType<typeof useTranslations>
+) {
+  if (!customerType) return null;
+
+  if (customerType === "CONSUMER") return t.accountCustomerTypeConsumer;
+  if (customerType === "BUSINESS") return t.accountCustomerTypeBusiness;
+
+  return customerType
+    .toLowerCase()
+    .split("_")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }
 
 function formatAddress(address: AccountAddress | null, fallback: string | null): string | null {
