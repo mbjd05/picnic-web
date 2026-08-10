@@ -1,6 +1,15 @@
+import {
+  consentSettingsUpdateSchema,
+  householdDetailsSchema,
+  validateInput,
+} from "@/lib/api/validation";
 import { isApiTokenExpiredError } from "@/lib/api/error";
 import { buildPicnicClient } from "@/lib/picnic/client";
-import type { AccountProfileResponse } from "@/types/account";
+import type {
+  AccountConsentUpdateResponse,
+  AccountHouseholdUpdateResponse,
+  AccountProfileResponse,
+} from "@/types/account";
 import type { ApiErrorResponse } from "@/types/api";
 import type { CountryCode } from "@/types/locale";
 
@@ -14,6 +23,10 @@ type AccountClient = {
   };
   consent: {
     getConsentSettings: (general?: boolean) => Promise<unknown>;
+    setConsentSettings: (input: unknown) => Promise<unknown>;
+  };
+  userOnboarding: {
+    setHouseholdDetails: (details: Record<string, number>) => Promise<unknown>;
   };
 };
 
@@ -32,6 +45,51 @@ function accountError(error: unknown, context: string): ApiServiceResult<ApiErro
     body: { error: "Could not load account details. Please try again later." },
     status: 502,
   };
+}
+
+export async function updateHouseholdDetailsService(
+  authToken: string,
+  countryCode: CountryCode,
+  rawBody: unknown
+): Promise<ApiServiceResult<AccountHouseholdUpdateResponse | ApiErrorResponse>> {
+  const validation = validateInput(householdDetailsSchema, rawBody);
+  if (!validation.ok) {
+    return { body: { error: validation.error }, status: 400 };
+  }
+
+  try {
+    const client = buildPicnicClient(authToken, countryCode) as unknown as AccountClient;
+    await client.userOnboarding.setHouseholdDetails(validation.data);
+    const user = await client.user.getUserDetails();
+    return { body: { user: asRecord(user) } as AccountHouseholdUpdateResponse };
+  } catch (error) {
+    return accountError(error, "Failed to update household details");
+  }
+}
+
+export async function updateConsentSettingsService(
+  authToken: string,
+  countryCode: CountryCode,
+  rawBody: unknown
+): Promise<ApiServiceResult<AccountConsentUpdateResponse | ApiErrorResponse>> {
+  const validation = validateInput(consentSettingsUpdateSchema, rawBody);
+  if (!validation.ok) {
+    return { body: { error: validation.error }, status: 400 };
+  }
+
+  try {
+    const client = buildPicnicClient(authToken, countryCode) as unknown as AccountClient;
+    const result = await client.consent.setConsentSettings(validation.data);
+    const consentSettings = await client.consent.getConsentSettings();
+    return {
+      body: {
+        result: asRecord(result),
+        consentSettings: asArray(consentSettings),
+      } as AccountConsentUpdateResponse,
+    };
+  } catch (error) {
+    return accountError(error, "Failed to update consent settings");
+  }
 }
 
 function asRecord(value: unknown): Record<string, unknown> {

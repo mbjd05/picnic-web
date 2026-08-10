@@ -221,6 +221,19 @@ async function idempotentWrites(surfaces) {
       typeof setting.text_locale === "string" &&
       typeof setting.established_decision === "boolean"
   );
+  const generalConsentDeclarations = surfaces.generalConsentSettings
+    .filter(
+      (setting) =>
+        setting &&
+        typeof setting.text_id === "string" &&
+        typeof setting.text_locale === "string" &&
+        typeof setting.established_decision === "boolean"
+    )
+    .map((setting) => ({
+      consent_request_text_id: setting.text_id,
+      consent_request_locale: setting.text_locale,
+      agreement: setting.established_decision,
+    }));
 
   const results = [];
   if (householdBody) {
@@ -255,6 +268,28 @@ async function idempotentWrites(surfaces) {
       check: "consent reflected on GET /consents/settings-page",
       sameValue: afterMatch?.established_decision === firstConsent.established_decision,
       updatedTextId: firstConsent.text_id,
+    });
+  }
+
+  if (generalConsentDeclarations.length > 0) {
+    results.push(
+      await rawRequest("PUT", "/consents/general", {
+        general_consent: surfaces.user.check_general_consent === true,
+        consent_declarations: generalConsentDeclarations,
+      })
+    );
+    const afterGeneralSettings = await client.consent.getConsentSettings(true);
+    results.push({
+      check: "general consents reflected on GET /consents/general/settings-page",
+      sameValues: generalConsentDeclarations.every((declaration) => {
+        const afterMatch = afterGeneralSettings.find(
+          (setting) => setting.text_id === declaration.consent_request_text_id
+        );
+        return afterMatch?.established_decision === declaration.agreement;
+      }),
+      updatedTextIds: generalConsentDeclarations.map(
+        (declaration) => declaration.consent_request_text_id
+      ),
     });
   }
 

@@ -85,3 +85,14 @@ export type AccountProfileResponse = {
   consentSettings: ConsentSetting[];
   generalConsentSettings: ConsentSetting[];
 };
+
+export type AccountHouseholdUpdateResponse = {
+  user: AccountUser;
+};
+
+export type AccountConsentUpdateResponse = {
+  consentSettings: ConsentSetting[];
+  result: {
+    consent_request_text_ids?: string[];
+  } | null;
+};

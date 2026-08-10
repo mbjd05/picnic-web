@@ -1,13 +1,23 @@
 import { Link } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 
-import type { AccountAddress, AccountProfileResponse, HouseholdDetails } from "@/types/account";
+import type {
+  AccountAddress,
+  AccountConsentUpdateResponse,
+  AccountHouseholdUpdateResponse,
+  AccountProfileResponse,
+  ConsentSetting,
+  HouseholdDetails,
+} from "@/types/account";
 
 import { ErrorView, LoadingView } from "../../components/page-state";
 import { useAccountProfile } from "../../hooks/use-account-profile";
 import { useDocumentTitle } from "../../hooks/use-document-title";
-import { ApiClientError } from "../../lib/api-client";
-import { useTranslations } from "../../providers/country-context";
+import { ApiClientError, fetchJson } from "../../lib/api-client";
+import { queryKeys } from "../../lib/query-config";
+import { useCountryCode, useTranslations } from "../../providers/country-context";
 
 type DetailRowProps = {
   label: string;
@@ -43,6 +53,8 @@ export function AccountProfilePage() {
 
 function AccountProfileContent({ profile }: { profile: AccountProfileResponse }) {
   const t = useTranslations();
+  const countryCode = useCountryCode();
+  const queryClient = useQueryClient();
   const user = profile.user;
   const displayName =
     profile.profileMenu.user?.name ??
@@ -51,6 +63,42 @@ function AccountProfileContent({ profile }: { profile: AccountProfileResponse })
   const address = user.address ?? profile.profileMenu.user?.address ?? null;
   const activeSubscriptions = countSubscribed(user.subscriptions);
   const activePushSubscriptions = countSubscribed(user.push_subscriptions);
+  const householdMutation = useMutation({
+    mutationFn: (
+      household: Required<Pick<HouseholdDetails, "adults" | "children" | "cats" | "dogs">>
+    ) =>
+      fetchJson<AccountHouseholdUpdateResponse>("/api/account/household", {
+        method: "PUT",
+        body: JSON.stringify(household),
+      }),
+    onSuccess: (data) => {
+      queryClient.setQueryData<AccountProfileResponse>(
+        queryKeys.accountProfile(countryCode),
+        (current) => (current ? { ...current, user: data.user } : current)
+      );
+    },
+  });
+  const consentMutation = useMutation({
+    mutationFn: (setting: ConsentSetting) =>
+      fetchJson<AccountConsentUpdateResponse>("/api/account/consents", {
+        method: "PUT",
+        body: JSON.stringify({
+          consent_declarations: [
+            {
+              consent_request_text_id: setting.text_id,
+              consent_request_locale: setting.text_locale,
+              agreement: !(setting.established_decision === true),
+            },
+          ],
+        }),
+      }),
+    onSuccess: (data) => {
+      queryClient.setQueryData<AccountProfileResponse>(
+        queryKeys.accountProfile(countryCode),
+        (current) => (current ? { ...current, consentSettings: data.consentSettings } : current)
+      );
+    },
+  });
 
   return (
     <div className="space-y-5">
@@ -95,7 +143,12 @@ function AccountProfileContent({ profile }: { profile: AccountProfileResponse })
         </InfoSection>
 
         <InfoSection title={t.accountHouseholdTitle}>
-          <HouseholdRows household={user.household_details ?? null} />
+          <HouseholdEditor
+            household={user.household_details ?? null}
+            isSaving={householdMutation.isPending}
+            error={householdMutation.isError ? t.accountHouseholdSaveError : null}
+            onSave={(household) => householdMutation.mutate(household)}
+          />
         </InfoSection>
 
         <InfoSection title={t.accountPreferencesTitle}>
@@ -120,6 +173,13 @@ function AccountProfileContent({ profile }: { profile: AccountProfileResponse })
               "{count}",
               String(profile.generalConsentSettings.length)
             )}
+          />
+          <p className="text-xs text-gray-500">{t.accountGeneralConsentsReadOnly}</p>
+          <ConsentSettingsList
+            settings={profile.consentSettings}
+            pendingTextId={consentMutation.variables?.text_id ?? null}
+            error={consentMutation.isError ? t.accountConsentSaveError : null}
+            onToggle={(setting) => consentMutation.mutate(setting)}
           />
         </InfoSection>
 
@@ -161,16 +221,174 @@ function DetailRow({ label, value }: DetailRowProps) {
   );
 }
 
-function HouseholdRows({ household }: { household: HouseholdDetails | null }) {
+function HouseholdEditor({
+  household,
+  isSaving,
+  error,
+  onSave,
+}: {
+  household: HouseholdDetails | null;
+  isSaving: boolean;
+  error: string | null;
+  onSave: (
+    household: Required<Pick<HouseholdDetails, "adults" | "children" | "cats" | "dogs">>
+  ) => void;
+}) {
   const t = useTranslations();
+  const [values, setValues] = useState(() => householdValues(household));
+  const currentValues = useMemo(() => householdValues(household), [household]);
+  const isChanged =
+    values.adults !== currentValues.adults ||
+    values.children !== currentValues.children ||
+    values.cats !== currentValues.cats ||
+    values.dogs !== currentValues.dogs;
+
+  useEffect(() => {
+    setValues(currentValues);
+  }, [currentValues]);
+
+  function updateValue(key: keyof typeof values, value: string) {
+    const parsed = Number.parseInt(value, 10);
+    setValues((current) => ({
+      ...current,
+      [key]: Number.isFinite(parsed) ? Math.max(0, Math.min(parsed, 20)) : 0,
+    }));
+  }
 
   return (
-    <>
-      <DetailRow label={t.accountHouseholdAdults} value={household?.adults} />
-      <DetailRow label={t.accountHouseholdChildren} value={household?.children} />
-      <DetailRow label={t.accountHouseholdCats} value={household?.cats} />
-      <DetailRow label={t.accountHouseholdDogs} value={household?.dogs} />
-    </>
+    <form
+      className="space-y-3"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (isChanged && !isSaving) onSave(values);
+      }}
+    >
+      <p className="text-sm text-gray-500">{t.accountEditableHouseholdNote}</p>
+      <div className="grid grid-cols-2 gap-3">
+        <HouseholdInput
+          label={t.accountHouseholdAdults}
+          value={values.adults}
+          onChange={(value) => updateValue("adults", value)}
+        />
+        <HouseholdInput
+          label={t.accountHouseholdChildren}
+          value={values.children}
+          onChange={(value) => updateValue("children", value)}
+        />
+        <HouseholdInput
+          label={t.accountHouseholdCats}
+          value={values.cats}
+          onChange={(value) => updateValue("cats", value)}
+        />
+        <HouseholdInput
+          label={t.accountHouseholdDogs}
+          value={values.dogs}
+          onChange={(value) => updateValue("dogs", value)}
+        />
+      </div>
+      {error ? <p className="text-sm font-medium text-red-600">{error}</p> : null}
+      <button
+        type="submit"
+        disabled={!isChanged || isSaving}
+        className="bg-picnic-red rounded-lg px-3 py-2 text-sm font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500"
+      >
+        {isSaving ? t.accountSavingChanges : t.accountSaveChanges}
+      </button>
+    </form>
+  );
+}
+
+function HouseholdInput({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="block text-sm font-medium text-gray-600">
+      {label}
+      <input
+        type="number"
+        min={0}
+        max={20}
+        step={1}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="border-input-border bg-card-bg text-foreground mt-1 block w-full rounded-lg border px-3 py-2 text-sm"
+      />
+    </label>
+  );
+}
+
+function ConsentSettingsList({
+  settings,
+  pendingTextId,
+  error,
+  onToggle,
+}: {
+  settings: ConsentSetting[];
+  pendingTextId: string | null;
+  error: string | null;
+  onToggle: (setting: ConsentSetting) => void;
+}) {
+  const t = useTranslations();
+  const editableSettings = settings.filter(
+    (setting) =>
+      typeof setting.text_id === "string" &&
+      typeof setting.text_locale === "string" &&
+      typeof setting.established_decision === "boolean"
+  );
+
+  if (editableSettings.length === 0) return null;
+
+  return (
+    <div className="border-card-border mt-4 space-y-3 border-t pt-4">
+      <p className="text-sm text-gray-500">{t.accountEditableConsentsNote}</p>
+      {error ? <p className="text-sm font-medium text-red-600">{error}</p> : null}
+      <div className="space-y-2">
+        {editableSettings.map((setting) => {
+          const checked = setting.established_decision === true;
+          const isPending = pendingTextId === setting.text_id;
+          return (
+            <button
+              key={setting.text_id}
+              type="button"
+              role="switch"
+              aria-checked={checked}
+              disabled={isPending}
+              onClick={() => onToggle(setting)}
+              className="border-card-border bg-card-bg hover:border-picnic-red flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left transition-colors disabled:cursor-wait disabled:opacity-70"
+            >
+              <span>
+                <span className="text-foreground block text-sm font-medium">
+                  {setting.text?.title ?? setting.type ?? t.accountConsentSettingsLabel}
+                </span>
+                {setting.text?.text ? (
+                  <span className="mt-0.5 line-clamp-2 block text-xs text-gray-500">
+                    {setting.text.text}
+                  </span>
+                ) : null}
+              </span>
+              <span
+                className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+                  checked ? "bg-picnic-red" : "bg-gray-300"
+                }`}
+                aria-hidden="true"
+              >
+                <span
+                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
+                    checked ? "translate-x-5" : "translate-x-0.5"
+                  }`}
+                />
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -213,6 +431,15 @@ function Avatar({ name, imageUrl }: { name: string | null; imageUrl?: string | n
 
 function countSubscribed(subscriptions: AccountProfileResponse["user"]["subscriptions"]): number {
   return subscriptions?.filter((subscription) => subscription.subscribed).length ?? 0;
+}
+
+function householdValues(household: HouseholdDetails | null) {
+  return {
+    adults: household?.adults ?? 0,
+    children: household?.children ?? 0,
+    cats: household?.cats ?? 0,
+    dogs: household?.dogs ?? 0,
+  };
 }
 
 function formatAddress(address: AccountAddress | null, fallback: string | null): string | null {

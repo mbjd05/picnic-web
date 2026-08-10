@@ -406,6 +406,12 @@ Read-only recheck on 2026-08-10 confirmed the same stable profile surfaces and c
 - `PUT /consents` with an empty declaration list still returns `200`.
 - `POST /user-onboarding/household-details` and `POST /user-onboarding/business-details` still exist and reject empty input with validation errors.
 
+Focused same-value mutation research on 2026-08-10 confirmed:
+
+- `POST /user-onboarding/household-details` accepts the current `adults`, `children`, `cats`, and `dogs` values and the same values are reflected by the next `GET /user`.
+- `PUT /consents` accepts a current normal-consent declaration and the same value is reflected by the next `GET /consents/settings-page`.
+- `PUT /consents/general` still returned `422` for a same-value payload built from current general settings plus `check_general_consent`; keep general consents read-only until its exact semantics are understood.
+
 ### Profile and address reads
 
 `picnic-api` exposes:
@@ -612,13 +618,11 @@ Likely write payload, based on the readable user shape:
 
 For writes, send only user-editable counts. Do not send server-managed `author` or `last_edit_ts` unless validation proves they are required.
 
-This route has not yet been mutation-tested in this repo. Treat it as a strong candidate, not a proven production-safe settings mutation, until an authenticated test confirms:
+This route has been same-value mutation-tested in this repo. Treat ordinary changes as supported, but still avoid sending server-managed fields.
 
-- accepted payload shape;
-- response body;
-- whether `GET /user.household_details` reflects the update immediately;
-- whether sending the current values is idempotent;
-- country parity for NL/DE/FR.
+- `GET /user.household_details` reflects the submitted values immediately.
+- Sending the current values is accepted and returns analytics metadata.
+- Country parity for DE/FR remains unverified.
 
 Validation-only probes confirmed:
 
@@ -766,12 +770,15 @@ Validation-only probes confirmed:
 
 - `PUT /consents` is the target for normal privacy/marketing consent settings.
 - `PUT /consents` with an empty declaration list returns `200` and an empty `consent_request_text_ids` list, so the route is live and can accept no-op input.
+- `PUT /consents` with a current-value declaration returns `200` and the same value is reflected by the next settings-page read.
 - `PUT /consents` with incomplete declaration objects returns missing-field validation for `consentRequestTextId`, `consentRequestLocale`, and `agreement`.
 - `PUT /consents/general` is live, but `general_consent: true` requires a matching general consent declaration. A false/no-declaration payload returned:
 
 ```text
 General consent declaration must be provided with generalConsent=true
 ```
+
+A same-value payload containing all current general settings plus the current `check_general_consent` value still returned `422`. This makes normal consents editable now, but general consents should remain read-only until a real mobile-app payload or clearer package behavior is captured.
 
 Practical CRUD interpretation:
 
@@ -821,10 +828,10 @@ Current implementation target table:
 | --------------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | Profile name/email/phone          | `GET /user`, `GET /user-info`, `GET /profile-menu?fetch_mgm=true` | no confirmed route                                                               | no confirmed route               | Read confirmed only                                                                                            |
 | Delivery address                  | `GET /user`, `GET /profile-menu?fetch_mgm=true`                   | no confirmed authenticated route                                                 | no confirmed route               | Read confirmed only; public website/bootstrap/deeplink/static package evidence did not reveal an update target |
-| Household composition             | `GET /user.household_details`                                     | `POST /user-onboarding/household-details`                                        | no confirmed route               | Route and payload validation confirmed; live same-value mutation still optional                                |
+| Household composition             | `GET /user.household_details`                                     | `POST /user-onboarding/household-details`                                        | no confirmed route               | Same-value mutation confirmed; ordinary edits are now reasonable                                               |
 | Business details                  | `GET /user.business_details`                                      | `POST /user-onboarding/business-details`                                         | no confirmed route               | Route and payload validation confirmed; live mutation not run                                                  |
-| Normal privacy/marketing consents | `GET /consents/settings-page`                                     | `PUT /consents`                                                                  | no delete; set `agreement` false | Read and update route confirmed                                                                                |
-| General consents                  | `GET /consents/general`, `GET /consents/general/settings-page`    | `PUT /consents/general`                                                          | no delete; update declarations   | Read and update route confirmed                                                                                |
+| Normal privacy/marketing consents | `GET /consents/settings-page`                                     | `PUT /consents`                                                                  | no delete; set `agreement` false | Same-value mutation confirmed; ordinary toggles are now reasonable                                             |
+| General consents                  | `GET /consents/general`, `GET /consents/general/settings-page`    | `PUT /consents/general`                                                          | no delete; update declarations   | Route exists, but same-value payload still returns `422`; keep read-only                                       |
 | Email/list subscriptions          | `GET /user.subscriptions`                                         | no confirmed route                                                               | no confirmed route               | Read confirmed only                                                                                            |
 | Push subscriptions                | `GET /user.push_subscriptions`                                    | `POST /user-onboarding/subscribe-push`                                           | no confirmed route               | Route exists, but device-bound and not ordinary web settings-ready                                             |
 | Phone verification                | none needed beyond `GET /user`/`GET /user-info`                   | `POST /user/phone_verification/generate`, `POST /user/phone_verification/verify` | n/a                              | Verification route confirmed, profile update not confirmed                                                     |

@@ -59,6 +59,23 @@ export const deliveryRatingSchema = v.object({
   rating: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(10)),
 });
 
+export const householdDetailsSchema = v.object({
+  adults: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(20)),
+  children: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(20)),
+  cats: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(20)),
+  dogs: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(20)),
+});
+
+export const consentDeclarationSchema = v.object({
+  consent_request_text_id: nonEmptyStringSchema,
+  consent_request_locale: nonEmptyStringSchema,
+  agreement: v.boolean(),
+});
+
+export const consentSettingsUpdateSchema = v.object({
+  consent_declarations: v.pipe(v.array(consentDeclarationSchema), v.minLength(1)),
+});
+
 const selectedIngredientSchema = v.object({
   id: nonEmptyStringSchema,
   count: nonNegativeIntegerSchema,
@@ -77,6 +94,8 @@ export type AuthCredentialsLoginInput = v.InferOutput<typeof authCredentialsLogi
 export type TwoFactorVerifyInput = v.InferOutput<typeof twoFactorVerifySchema>;
 export type SwitchCountryInput = { countryCode: CountryCode };
 export type DeliveryRatingInput = v.InferOutput<typeof deliveryRatingSchema>;
+export type HouseholdDetailsInput = v.InferOutput<typeof householdDetailsSchema>;
+export type ConsentSettingsUpdateInput = v.InferOutput<typeof consentSettingsUpdateSchema>;
 export type AddRecipeToCartInput = v.InferOutput<typeof addRecipeToCartSchema>;
 
 export function validateInput<T>(
