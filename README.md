@@ -71,9 +71,10 @@ pnpm deploy:worker
 
 Picnic API behavior can differ per country and account. Payment setup is
 currently confirmed only for NL iDEAL | Wero; DE/FR payment methods need
-region-local account reports or implementation pull requests. See
+region-local account reports or implementation pull requests before this project
+can support them. See
 [CONTRIBUTING.md](./CONTRIBUTING.md#regional-picnic-api-contributions) for safe
-testing and redaction instructions.
+testing steps and guidance on redacting private account data.
 
 ## PWA Behavior
 
