@@ -67,7 +67,8 @@ function AccountProfileContent({ profile }: { profile: AccountProfileResponse })
   const editableConsentSettings = mergeConsentSettings(
     profile.generalConsentSettings,
     profile.consentSettings
-  );
+  ).filter(isEditableConsentSetting);
+  const enabledConsentSettings = countEnabledConsentSettings(editableConsentSettings);
   const generalOnlyConsentCount = countGeneralOnlyConsentSettings(
     profile.generalConsentSettings,
     profile.consentSettings
@@ -199,10 +200,9 @@ function AccountProfileContent({ profile }: { profile: AccountProfileResponse })
           />
           <PreferenceSummary
             label={t.accountConsentSettingsLabel}
-            value={t.accountConfiguredCount.replace(
-              "{count}",
-              String(editableConsentSettings.length)
-            )}
+            value={t.accountEnabledOutOfTotal
+              .replace("{enabled}", String(enabledConsentSettings))
+              .replace("{total}", String(editableConsentSettings.length))}
             note={
               generalOnlyConsentCount > 0
                 ? t.accountGeneralConsentsIncluded.replace(
@@ -401,12 +401,7 @@ function ConsentSettingsList({
 }) {
   const t = useTranslations();
   const languageCode = useLanguageCode();
-  const editableSettings = settings.filter(
-    (setting) =>
-      typeof setting.text_id === "string" &&
-      typeof setting.text_locale === "string" &&
-      typeof setting.established_decision === "boolean"
-  );
+  const editableSettings = settings.filter(isEditableConsentSetting);
 
   if (editableSettings.length === 0) return null;
 
@@ -529,6 +524,18 @@ function countGeneralOnlyConsentSettings(
     const key = setting.text_id ?? setting.id;
     return Boolean(key && !normalKeys.has(key));
   }).length;
+}
+
+function countEnabledConsentSettings(settings: ConsentSetting[]): number {
+  return settings.filter((setting) => setting.established_decision === true).length;
+}
+
+function isEditableConsentSetting(setting: ConsentSetting): boolean {
+  return (
+    typeof setting.text_id === "string" &&
+    typeof setting.text_locale === "string" &&
+    typeof setting.established_decision === "boolean"
+  );
 }
 
 function formatCustomerType(
