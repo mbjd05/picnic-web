@@ -17,7 +17,8 @@ import { useAccountProfile } from "../../hooks/use-account-profile";
 import { useDocumentTitle } from "../../hooks/use-document-title";
 import { ApiClientError, fetchJson } from "../../lib/api-client";
 import { queryKeys } from "../../lib/query-config";
-import { useCountryCode, useTranslations } from "../../providers/country-context";
+import { useCountryCode, useLanguageCode, useTranslations } from "../../providers/country-context";
+import { getConsentDisplayText } from "./consent-display";
 
 type DetailRowProps = {
   label: string;
@@ -120,26 +121,28 @@ function AccountProfileContent({ profile }: { profile: AccountProfileResponse })
         </div>
       </section>
 
-      <p className="border-card-border bg-muted-bg rounded-xl border px-4 py-3 text-sm text-gray-600">
-        {t.accountReadOnlyNote}
-      </p>
-
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid items-start gap-5 lg:grid-cols-2">
         <InfoSection title={t.accountDetailsTitle}>
-          <DetailRow label={t.accountNameLabel} value={displayName} />
-          <DetailRow label={t.accountCustomerTypeLabel} value={user.customer_type} />
+          <DetailList>
+            <DetailRow label={t.accountNameLabel} value={displayName} />
+            <DetailRow label={t.accountCustomerTypeLabel} value={user.customer_type} />
+          </DetailList>
         </InfoSection>
 
         <InfoSection title={t.accountContactTitle}>
-          <DetailRow label={t.accountEmailLabel} value={user.contact_email} />
-          <DetailRow
-            label={t.accountPhoneLabel}
-            value={profile.userInfo.redacted_phone_number ?? user.phone}
-          />
+          <DetailList>
+            <DetailRow label={t.accountEmailLabel} value={user.contact_email} />
+            <DetailRow
+              label={t.accountPhoneLabel}
+              value={profile.userInfo.redacted_phone_number ?? user.phone}
+            />
+          </DetailList>
         </InfoSection>
 
         <InfoSection title={t.accountAddressTitle}>
-          <DetailRow label={t.accountAddressTitle} value={formatAddress(address, null)} />
+          <DetailList>
+            <DetailRow label={t.accountAddressTitle} value={formatAddress(address, null)} />
+          </DetailList>
         </InfoSection>
 
         <InfoSection title={t.accountHouseholdTitle}>
@@ -151,30 +154,31 @@ function AccountProfileContent({ profile }: { profile: AccountProfileResponse })
           />
         </InfoSection>
 
-        <InfoSection title={t.accountPreferencesTitle}>
-          <DetailRow
-            label={t.accountSubscriptionsLabel}
-            value={t.accountSubscribedCount.replace("{count}", String(activeSubscriptions))}
-          />
-          <DetailRow
-            label={t.accountPushSubscriptionsLabel}
-            value={t.accountSubscribedCount.replace("{count}", String(activePushSubscriptions))}
-          />
-          <DetailRow
-            label={t.accountConsentSettingsLabel}
-            value={t.accountConfiguredCount.replace(
-              "{count}",
-              String(profile.consentSettings.length)
-            )}
-          />
-          <DetailRow
-            label={t.accountGeneralConsentSettingsLabel}
-            value={t.accountConfiguredCount.replace(
-              "{count}",
-              String(profile.generalConsentSettings.length)
-            )}
-          />
-          <p className="text-xs text-gray-500">{t.accountGeneralConsentsReadOnly}</p>
+        <InfoSection title={t.accountPreferencesTitle} className="lg:col-span-2">
+          <DetailList className="grid gap-3 sm:grid-cols-2">
+            <DetailRow
+              label={t.accountSubscriptionsLabel}
+              value={t.accountSubscribedCount.replace("{count}", String(activeSubscriptions))}
+            />
+            <DetailRow
+              label={t.accountPushSubscriptionsLabel}
+              value={t.accountSubscribedCount.replace("{count}", String(activePushSubscriptions))}
+            />
+            <DetailRow
+              label={t.accountConsentSettingsLabel}
+              value={t.accountConfiguredCount.replace(
+                "{count}",
+                String(profile.consentSettings.length)
+              )}
+            />
+            <DetailRow
+              label={t.accountGeneralConsentSettingsLabel}
+              value={t.accountConfiguredCount.replace(
+                "{count}",
+                String(profile.generalConsentSettings.length)
+              )}
+            />
+          </DetailList>
           <ConsentSettingsList
             settings={profile.consentSettings}
             pendingTextId={
@@ -183,6 +187,7 @@ function AccountProfileContent({ profile }: { profile: AccountProfileResponse })
             error={consentMutation.isError ? t.accountConsentSaveError : null}
             onToggle={(setting) => consentMutation.mutate(setting)}
           />
+          <p className="text-muted mt-3 text-xs">{t.accountGeneralConsentsReadOnly}</p>
         </InfoSection>
 
         <InfoSection title={t.accountLinksTitle}>
@@ -199,13 +204,31 @@ function AccountProfileContent({ profile }: { profile: AccountProfileResponse })
   );
 }
 
-function InfoSection({ title, children }: { title: string; children: ReactNode }) {
+function InfoSection({
+  title,
+  className = "",
+  children,
+}: {
+  title: string;
+  className?: string;
+  children: ReactNode;
+}) {
   return (
-    <section className="border-card-border bg-card-bg rounded-xl border p-4">
+    <section className={`border-card-border bg-card-bg rounded-xl border p-4 ${className}`}>
       <h2 className="text-foreground text-base font-semibold">{title}</h2>
-      <dl className="mt-3 space-y-3">{children}</dl>
+      <div className="mt-3">{children}</div>
     </section>
   );
+}
+
+function DetailList({
+  className = "space-y-3",
+  children,
+}: {
+  className?: string;
+  children: ReactNode;
+}) {
+  return <dl className={className}>{children}</dl>;
 }
 
 function DetailRow({ label, value }: DetailRowProps) {
@@ -215,7 +238,7 @@ function DetailRow({ label, value }: DetailRowProps) {
 
   return (
     <div className="flex flex-col gap-0.5 sm:flex-row sm:justify-between sm:gap-4">
-      <dt className="text-sm text-gray-500">{label}</dt>
+      <dt className="text-muted text-sm">{label}</dt>
       <dd className="text-foreground text-sm font-medium break-words sm:text-right">
         {displayValue}
       </dd>
@@ -265,7 +288,7 @@ function HouseholdEditor({
         if (isChanged && !isSaving) onSave(values);
       }}
     >
-      <p className="text-sm text-gray-500">{t.accountEditableHouseholdNote}</p>
+      <p className="text-muted text-sm">{t.accountEditableHouseholdNote}</p>
       <div className="grid grid-cols-2 gap-3">
         <HouseholdInput
           label={t.accountHouseholdAdults}
@@ -310,7 +333,7 @@ function HouseholdInput({
   onChange: (value: string) => void;
 }) {
   return (
-    <label className="block text-sm font-medium text-gray-600">
+    <label className="text-muted block text-sm font-medium">
       {label}
       <input
         type="number"
@@ -337,6 +360,7 @@ function ConsentSettingsList({
   onToggle: (setting: ConsentSetting) => void;
 }) {
   const t = useTranslations();
+  const languageCode = useLanguageCode();
   const editableSettings = settings.filter(
     (setting) =>
       typeof setting.text_id === "string" &&
@@ -348,12 +372,13 @@ function ConsentSettingsList({
 
   return (
     <div className="border-card-border mt-4 space-y-3 border-t pt-4">
-      <p className="text-sm text-gray-500">{t.accountEditableConsentsNote}</p>
+      <p className="text-muted text-sm">{t.accountEditableConsentsNote}</p>
       {error ? <p className="text-sm font-medium text-red-600">{error}</p> : null}
-      <div className="space-y-2">
+      <div className="grid gap-2 lg:grid-cols-2">
         {editableSettings.map((setting) => {
           const checked = setting.established_decision === true;
           const isPending = pendingTextId === setting.text_id;
+          const displayText = getConsentDisplayText(setting, languageCode);
           return (
             <button
               key={setting.text_id}
@@ -364,13 +389,13 @@ function ConsentSettingsList({
               onClick={() => onToggle(setting)}
               className="border-card-border bg-card-bg hover:border-picnic-red flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left transition-colors disabled:cursor-wait disabled:opacity-70"
             >
-              <span>
+              <span className="min-w-0">
                 <span className="text-foreground block text-sm font-medium">
-                  {setting.text?.title ?? setting.type ?? t.accountConsentSettingsLabel}
+                  {displayText.title || t.accountConsentSettingsLabel}
                 </span>
-                {setting.text?.text ? (
-                  <span className="mt-0.5 line-clamp-2 block text-xs text-gray-500">
-                    {setting.text.text}
+                {displayText.text ? (
+                  <span className="text-muted mt-0.5 line-clamp-2 block text-xs">
+                    {displayText.text}
                   </span>
                 ) : null}
               </span>
@@ -398,7 +423,7 @@ function Metric({ label, value }: { label: string; value: number | null | undefi
   return (
     <div className="border-card-border rounded-lg border px-3 py-2 text-center">
       <div className="text-foreground text-lg font-bold tabular-nums">{value ?? 0}</div>
-      <div className="text-xs text-gray-500">{label}</div>
+      <div className="text-muted text-xs">{label}</div>
     </div>
   );
 }
