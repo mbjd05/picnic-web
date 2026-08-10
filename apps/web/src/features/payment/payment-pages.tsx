@@ -7,7 +7,6 @@ import { getPaymentDisplayName, getPreferredPaymentOption } from "@/lib/payment/
 import type {
   CheckoutCancelResponse,
   CheckoutStatusResponse,
-  PaymentBank,
   PaymentProfile,
 } from "@/types/payment";
 
@@ -19,26 +18,7 @@ import { ApiClientError, fetchJson } from "../../lib/api-client";
 import { queryKeys } from "../../lib/query-config";
 
 const PAYMENT_BANK_STORAGE_KEY = "picnic_payment_option_banks";
-
-const IDEAL_BANKS: PaymentBank[] = [
-  { bank_id: "ABNANL2A", name: "ABN AMRO" },
-  { bank_id: "ASNBNL21", name: "ASN Bank" },
-  { bank_id: "BUNQNL2A", name: "bunq" },
-  { bank_id: "INGBNL2A", name: "ING" },
-  { bank_id: "KNABNL2H", name: "Knab" },
-  { bank_id: "RABONL2U", name: "Rabobank" },
-  { bank_id: "RBRBNL21", name: "RegioBank" },
-  { bank_id: "SNSBNL2A", name: "SNS" },
-  { bank_id: "TRIONL2U", name: "Triodos Bank" },
-  { bank_id: "FVLBNL22", name: "Van Lanschot" },
-  { bank_id: "REVOLT21", name: "Revolut" },
-  { bank_id: "NTSBDEB1", name: "N26" },
-  { bank_id: "NNBANL2G", name: "NN" },
-  { bank_id: "BITSNL2A", name: "Yoursafe" },
-  { bank_id: "ADYBNL2A", name: "Adyen" },
-  { bank_id: "FNOMNL22", name: "Finom" },
-  { bank_id: "BUUTNL2A", name: "BUUT" },
-];
+const EMPTY_BANKS: [] = [];
 
 type StoredBankMetadata = Record<string, { bankId: string; bankName: string }>;
 
@@ -77,14 +57,10 @@ export function PaymentAccountPage() {
   const profile = profileQuery.data ?? null;
   const preferredOption = profile ? getPreferredPaymentOption(profile) : null;
   const idealMethod = useMemo(
-    () =>
-      profile?.available_payment_methods?.find((method) => method.payment_method === "IDEAL") ?? {
-        payment_method: "IDEAL",
-        available_banks: IDEAL_BANKS,
-      },
+    () => profile?.available_payment_methods?.find((method) => method.payment_method === "IDEAL"),
     [profile]
   );
-  const selectedBanks = idealMethod.available_banks ?? IDEAL_BANKS;
+  const selectedBanks = idealMethod?.available_banks ?? EMPTY_BANKS;
   const resolveSelectedBank = useCallback(
     (bankId: string) =>
       selectedBanks.some((bank) => bank.bank_id === bankId)
@@ -108,6 +84,11 @@ export function PaymentAccountPage() {
     const activeSelectedBank = resolveSelectedBank(bankId);
 
     try {
+      if (!idealMethod) {
+        setActionError(t.paymentMethodUnsupported);
+        return;
+      }
+
       const data = await fetchJson<PaymentProfile>("/api/account/payment-profile/payment-options", {
         method: "POST",
         body: JSON.stringify({
@@ -200,7 +181,7 @@ export function PaymentAccountPage() {
           <section className="border-card-border rounded-xl border bg-white p-4">
             <h2 className="text-base font-semibold text-gray-900">{t.addPaymentMethod}</h2>
             <p className="mt-2 text-sm text-gray-600">{t.addPaymentMethodEffectNote}</p>
-            {selectedBanks.length ? (
+            {idealMethod ? (
               <form
                 className="mt-4 space-y-4"
                 onSubmit={(event) => {
@@ -216,24 +197,26 @@ export function PaymentAccountPage() {
                   </div>
                 </div>
 
-                <paymentForm.Field name="bankId">
-                  {(field) => (
-                    <label className="block text-sm font-medium text-gray-700">
-                      {t.paymentBankLabel}
-                      <select
-                        value={resolveSelectedBank(field.state.value)}
-                        onChange={(event) => field.handleChange(event.target.value)}
-                        className="border-input-border mt-1 block w-full rounded-lg border bg-white px-3 py-2 text-sm"
-                      >
-                        {selectedBanks.map((bank) => (
-                          <option key={bank.bank_id} value={bank.bank_id}>
-                            {bank.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  )}
-                </paymentForm.Field>
+                {selectedBanks.length ? (
+                  <paymentForm.Field name="bankId">
+                    {(field) => (
+                      <label className="block text-sm font-medium text-gray-700">
+                        {t.paymentBankLabel}
+                        <select
+                          value={resolveSelectedBank(field.state.value)}
+                          onChange={(event) => field.handleChange(event.target.value)}
+                          className="border-input-border mt-1 block w-full rounded-lg border bg-white px-3 py-2 text-sm"
+                        >
+                          {selectedBanks.map((bank) => (
+                            <option key={bank.bank_id} value={bank.bank_id}>
+                              {bank.name}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    )}
+                  </paymentForm.Field>
+                ) : null}
 
                 <button
                   type="submit"
@@ -244,7 +227,7 @@ export function PaymentAccountPage() {
                 </button>
               </form>
             ) : (
-              <p className="mt-2 text-sm text-gray-600">{t.noAvailablePaymentMethods}</p>
+              <p className="mt-2 text-sm text-gray-600">{t.paymentMethodUnsupported}</p>
             )}
           </section>
 

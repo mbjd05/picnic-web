@@ -12,7 +12,9 @@ This spec documents the discovered Picnic API flow needed to support:
 5. extraction and use of the direct payment redirect URL;
 6. safe cancellation of initiated checkout/payment transactions.
 
-The implementation must not hardcode iDEAL as the only possible payment method. The payment profile response exposes available payment methods dynamically. iDEAL is the confirmed working payment method most preferred by the developer, but it should be treated as one available payment method among others.
+The implementation must read payment profile data dynamically. iDEAL | Wero is the only confirmed payment-method setup flow in this project because it has only been tested with an NL account. Do not invent iDEAL availability client-side: expose setup only when `available_payment_methods` from Picnic contains `payment_method: "IDEAL"`.
+
+Other Picnic regions and payment methods may still be readable from `GET /payment-profile`, and checkout may work for accounts that already have a preferred payment option in their Picnic region. Creating or replacing non-iDEAL payment options remains unsupported until an authenticated account in that region confirms the request/response flow.
 
 Important naming note: the iDEAL option currently appears with display name:
 
@@ -1022,7 +1024,7 @@ It should display:
 5. an action to create/use the selected payment option;
 6. an action to remove an explicitly selected stored payment option.
 
-Do not hardcode iDEAL as the only method.
+Read the available methods from `GET /payment-profile`. The current web client may create/update only confirmed iDEAL | Wero options, and only when Picnic returns `payment_method: "IDEAL"` in `available_payment_methods`.
 
 For iDEAL, display the API-provided label:
 
@@ -1046,7 +1048,7 @@ show:
 Geen standaard betaalmethode ingesteld.
 ```
 
-If `available_payment_methods` contains a method with `available_banks`, show a bank picker.
+If the confirmed supported method contains `available_banks`, show a bank picker. Do not use a built-in fallback bank list when the API omits the method or bank list.
 
 If `stored_payment_options` contains the preferred option, show:
 
@@ -1059,6 +1061,8 @@ For iDEAL / Wero this is expected to show:
 ```text
 Standaard: iDEAL | Wero
 ```
+
+If iDEAL | Wero is absent, show a clear unsupported account/region message instead of a setup form. This is expected for unverified regions such as DE/FR until their payment profile shape and mutation flow are captured with region-local test accounts.
 
 ### ASN action example
 

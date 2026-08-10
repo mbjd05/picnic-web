@@ -96,7 +96,7 @@ const translations = {
     preferredPaymentMethod: "Ingestelde betaalmethode",
     addPaymentMethod: "Betaalmethode instellen",
     addPaymentMethodEffectNote:
-      "Alleen iDEAL | Wero wordt ondersteund. Als je een andere bank kiest, vervangen we de huidige betaalmethode.",
+      "Deze webflow ondersteunt alleen iDEAL | Wero wanneer Picnic die betaalmethode voor je account aanbiedt.",
     storedPaymentMethods: "Huidige betaalmethode",
     paymentBankLabel: "Bank",
     paymentBankUnknown: "Bank onbekend",
@@ -104,6 +104,8 @@ const translations = {
     savingPaymentMethod: "Opslaan...",
     removePaymentMethod: "Verwijderen",
     noAvailablePaymentMethods: "Geen betaalmethoden beschikbaar.",
+    paymentMethodUnsupported:
+      "iDEAL | Wero is niet beschikbaar voor dit account of deze Picnic-regio. Betaalmethoden voor andere regio's zijn nog niet bevestigd.",
     noStoredPaymentMethods: "Geen betaalmethode ingesteld.",
     paymentOptionSaveError: "Kan betaalmethode niet opslaan.",
     paymentOptionRemoveError: "Kan betaalmethode niet verwijderen.",
@@ -440,7 +442,7 @@ const translations = {
     preferredPaymentMethod: "Eingestellte Zahlungsmethode",
     addPaymentMethod: "Zahlungsmethode einstellen",
     addPaymentMethodEffectNote:
-      "Nur iDEAL | Wero wird unterstützt. Wenn du eine andere Bank wählst, ersetzen wir die aktuelle Zahlungsmethode.",
+      "Dieser Webflow unterstützt nur iDEAL | Wero, wenn Picnic diese Zahlungsmethode für dein Konto anbietet.",
     storedPaymentMethods: "Aktuelle Zahlungsmethode",
     paymentBankLabel: "Bank",
     paymentBankUnknown: "Bank unbekannt",
@@ -448,6 +450,8 @@ const translations = {
     savingPaymentMethod: "Speichern...",
     removePaymentMethod: "Entfernen",
     noAvailablePaymentMethods: "Keine Zahlungsmethoden verfügbar.",
+    paymentMethodUnsupported:
+      "iDEAL | Wero ist für dieses Konto oder diese Picnic-Region nicht verfügbar. Zahlungsmethoden für andere Regionen sind noch nicht bestätigt.",
     noStoredPaymentMethods: "Keine Zahlungsmethode festgelegt.",
     paymentOptionSaveError: "Zahlungsmethode konnte nicht gespeichert werden.",
     paymentOptionRemoveError: "Zahlungsmethode konnte nicht entfernt werden.",
@@ -774,7 +778,7 @@ const translations = {
     preferredPaymentMethod: "Moyen de paiement défini",
     addPaymentMethod: "Configurer un moyen de paiement",
     addPaymentMethodEffectNote:
-      "Seul iDEAL | Wero est pris en charge. Si vous choisissez une autre banque, le moyen de paiement actuel sera remplacé.",
+      "Ce parcours web ne prend en charge iDEAL | Wero que lorsque Picnic propose ce moyen de paiement pour votre compte.",
     storedPaymentMethods: "Moyen de paiement actuel",
     paymentBankLabel: "Banque",
     paymentBankUnknown: "Banque inconnue",
@@ -782,6 +786,8 @@ const translations = {
     savingPaymentMethod: "Enregistrement...",
     removePaymentMethod: "Supprimer",
     noAvailablePaymentMethods: "Aucun moyen de paiement disponible.",
+    paymentMethodUnsupported:
+      "iDEAL | Wero n'est pas disponible pour ce compte ou cette région Picnic. Les moyens de paiement des autres régions ne sont pas encore confirmés.",
     noStoredPaymentMethods: "Aucun moyen de paiement défini.",
     paymentOptionSaveError: "Impossible d'enregistrer le moyen de paiement.",
     paymentOptionRemoveError: "Impossible de supprimer le moyen de paiement.",
@@ -1071,7 +1077,7 @@ const englishTranslations: Translations = {
   preferredPaymentMethod: "Selected payment method",
   addPaymentMethod: "Set payment method",
   addPaymentMethodEffectNote:
-    "Only iDEAL | Wero is supported. If you choose another bank, we replace the current payment method.",
+    "This web flow only supports iDEAL | Wero when Picnic offers that method for your account.",
   storedPaymentMethods: "Current payment method",
   paymentBankLabel: "Bank",
   paymentBankUnknown: "Unknown bank",
@@ -1079,6 +1085,8 @@ const englishTranslations: Translations = {
   savingPaymentMethod: "Saving...",
   removePaymentMethod: "Remove",
   noAvailablePaymentMethods: "No payment methods available.",
+  paymentMethodUnsupported:
+    "iDEAL | Wero is not available for this account or Picnic region. Payment methods for other regions are not confirmed yet.",
   noStoredPaymentMethods: "No payment method set.",
   paymentOptionSaveError: "Could not save payment method.",
   paymentOptionRemoveError: "Could not remove payment method.",
