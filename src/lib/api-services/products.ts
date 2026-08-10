@@ -4,6 +4,7 @@ import { parseProductDetailPage } from "@/lib/parse/fusion-product";
 import { parseCategoryPageSections } from "@/lib/parse/fusion-search";
 import { extractPageTitle, parseSubcategoryPage } from "@/lib/parse/subcategories";
 import { buildPicnicClient } from "@/lib/picnic/client";
+import { buildProductSourceUrl } from "@/lib/picnic/share-links";
 import type { ApiErrorResponse } from "@/types/api";
 import type {
   CategoryProductsApiResponse,
@@ -50,7 +51,16 @@ export async function getProductDetailService(
       return { body: { error: "Product not found" }, status: 404 };
     }
 
-    return { body: productDetail };
+    const sourceUrl = buildProductSourceUrl(countryCode, productId);
+    return {
+      body: {
+        ...productDetail,
+        share: productDetail.share ?? {
+          text: productDetail.name,
+          url: sourceUrl,
+        },
+      },
+    };
   } catch (error) {
     if (isApiTokenExpiredError(error)) {
       return {

@@ -84,6 +84,8 @@ Recommended implementation:
 
 Reference: MCP Picnic.
 
+Status: implemented on `feature/recipe-url-resolution`. Cookbook search accepts Picnic recipe IDs or supported Picnic recipe links on Enter and opens the resolved recipe detail page. The Worker exposes an authenticated resolver route for HTTPS `picnic.app` share links, with redirect host revalidation before accepting a resolved recipe ID.
+
 Direct Picnic behavior:
 
 - Bare recipe/selling-group IDs.

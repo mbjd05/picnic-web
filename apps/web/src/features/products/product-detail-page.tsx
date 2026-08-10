@@ -9,6 +9,7 @@ import { ProductDescription } from "@/components/product-description";
 import { ProductHighlights } from "@/components/product-highlights";
 import { ProductInfoHeader } from "@/components/product-info-header";
 import { ProductLabels } from "@/components/product-labels";
+import { ShareButton } from "@/components/share-button";
 import { estimatedBundlePriceDelta } from "@/lib/cart/price-estimates";
 import { formatPrice } from "@/lib/format/price";
 import { buildImageUrl } from "@/lib/media/image-url";
@@ -146,13 +147,27 @@ function ProductDetailContent({ product }: { product: ProductDetail }) {
 
         <div className="space-y-4 md:w-1/2">
           <ProductLabels labels={product.labels} />
-          <ProductInfoHeader
-            name={product.name}
-            brand={product.brand}
-            unitQuantity={product.unitQuantity}
-            unitPrice={product.unitPrice}
-            categoryTag={product.categoryTag}
-          />
+          <div className="flex items-start gap-3">
+            <div className="min-w-0 flex-1">
+              <ProductInfoHeader
+                name={product.name}
+                brand={product.brand}
+                unitQuantity={product.unitQuantity}
+                unitPrice={product.unitPrice}
+                categoryTag={product.categoryTag}
+              />
+            </div>
+            <ShareButton
+              info={product.share}
+              title={product.name}
+              label={t.shareProduct}
+              copiedLabel={t.shareLinkCopied}
+              sharedLabel={t.shareCompleted}
+              sharingLabel={t.shareInProgress}
+              variant="icon"
+              className="text-text-muted shrink-0"
+            />
+          </div>
           <ProductPriceSection
             displayPrice={product.displayPrice}
             originalPrice={product.originalPrice}

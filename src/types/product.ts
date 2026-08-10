@@ -1,4 +1,5 @@
 import type { BundleThreshold } from "@/types/cart";
+import type { ShareInfo } from "@/types/share";
 
 export type BadgeVariant =
   "promo" | "discount" | "size" | "freshness" | "availability" | "info" | "unit-price" | "bundle";
@@ -224,4 +225,6 @@ export type ProductDetail = {
   similarProducts: SliderProduct[];
   /** Structured nutrition rows (extracted from Voedingswaarde). May be empty. */
   nutritionRows: NutritionRow[];
+  /** Picnic-provided social share message and app link, when exposed by Fusion. */
+  share: ShareInfo | null;
 };
