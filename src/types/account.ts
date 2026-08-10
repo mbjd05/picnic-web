@@ -92,6 +92,7 @@ export type AccountHouseholdUpdateResponse = {
 
 export type AccountConsentUpdateResponse = {
   consentSettings: ConsentSetting[];
+  generalConsentSettings: ConsentSetting[];
   result: {
     consent_request_text_ids?: string[];
   } | null;

@@ -83,11 +83,15 @@ export async function updateConsentSettingsService(
   try {
     const client = buildPicnicClient(authToken, countryCode) as unknown as AccountClient;
     const result = await client.consent.setConsentSettings(validation.data);
-    const consentSettings = await client.consent.getConsentSettings();
+    const [consentSettings, generalConsentSettings] = await Promise.all([
+      client.consent.getConsentSettings(),
+      client.consent.getConsentSettings(true),
+    ]);
     return {
       body: {
         result: asRecord(result),
         consentSettings: asArray(consentSettings),
+        generalConsentSettings: asArray(generalConsentSettings),
       } as AccountConsentUpdateResponse,
     };
   } catch (error) {

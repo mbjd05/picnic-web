@@ -64,6 +64,10 @@ function AccountProfileContent({ profile }: { profile: AccountProfileResponse })
   const address = user.address ?? profile.profileMenu.user?.address ?? null;
   const activeSubscriptions = countSubscribed(user.subscriptions);
   const activePushSubscriptions = countSubscribed(user.push_subscriptions);
+  const editableConsentSettings = mergeConsentSettings(
+    profile.generalConsentSettings,
+    profile.consentSettings
+  );
   const householdMutation = useMutation({
     mutationFn: (
       household: Required<Pick<HouseholdDetails, "adults" | "children" | "cats" | "dogs">>
@@ -96,7 +100,14 @@ function AccountProfileContent({ profile }: { profile: AccountProfileResponse })
     onSuccess: (data) => {
       queryClient.setQueryData<AccountProfileResponse>(
         queryKeys.accountProfile(countryCode),
-        (current) => (current ? { ...current, consentSettings: data.consentSettings } : current)
+        (current) =>
+          current
+            ? {
+                ...current,
+                consentSettings: data.consentSettings,
+                generalConsentSettings: data.generalConsentSettings,
+              }
+            : current
       );
     },
   });
@@ -121,85 +132,88 @@ function AccountProfileContent({ profile }: { profile: AccountProfileResponse })
         </div>
       </section>
 
-      <div className="grid items-start gap-5 lg:grid-cols-2">
-        <InfoSection title={t.accountDetailsTitle}>
-          <DetailList>
-            <DetailRow label={t.accountNameLabel} value={displayName} />
-            <DetailRow label={t.accountCustomerTypeLabel} value={user.customer_type} />
-          </DetailList>
-        </InfoSection>
+      <div className="grid gap-5 lg:grid-cols-2">
+        <div className="flex flex-col gap-5">
+          <InfoSection title={t.accountDetailsTitle}>
+            <DetailList>
+              <DetailRow label={t.accountNameLabel} value={displayName} />
+              <DetailRow label={t.accountCustomerTypeLabel} value={user.customer_type} />
+            </DetailList>
+          </InfoSection>
 
-        <InfoSection title={t.accountContactTitle}>
-          <DetailList>
-            <DetailRow label={t.accountEmailLabel} value={user.contact_email} />
-            <DetailRow
-              label={t.accountPhoneLabel}
-              value={profile.userInfo.redacted_phone_number ?? user.phone}
-            />
-          </DetailList>
-        </InfoSection>
+          <InfoSection title={t.accountAddressTitle}>
+            <DetailList>
+              <DetailRow label={t.accountAddressTitle} value={formatAddress(address, null)} />
+            </DetailList>
+          </InfoSection>
 
-        <InfoSection title={t.accountAddressTitle}>
-          <DetailList>
-            <DetailRow label={t.accountAddressTitle} value={formatAddress(address, null)} />
-          </DetailList>
-        </InfoSection>
+          <InfoSection title={t.accountLinksTitle} className="lg:flex-1">
+            <Link
+              to="/account/payment"
+              search={{ from: undefined }}
+              className="text-picnic-red inline-flex text-sm font-semibold hover:underline"
+            >
+              {t.accountPaymentLink}
+            </Link>
+          </InfoSection>
+        </div>
 
-        <InfoSection title={t.accountHouseholdTitle}>
-          <HouseholdEditor
-            household={user.household_details ?? null}
-            isSaving={householdMutation.isPending}
-            error={householdMutation.isError ? t.accountHouseholdSaveError : null}
-            onSave={(household) => householdMutation.mutate(household)}
-          />
-        </InfoSection>
+        <div className="flex flex-col gap-5">
+          <InfoSection title={t.accountContactTitle}>
+            <DetailList>
+              <DetailRow label={t.accountEmailLabel} value={user.contact_email} />
+              <DetailRow
+                label={t.accountPhoneLabel}
+                value={profile.userInfo.redacted_phone_number ?? user.phone}
+              />
+            </DetailList>
+          </InfoSection>
 
-        <InfoSection title={t.accountPreferencesTitle} className="lg:col-span-2">
-          <DetailList className="grid gap-3 sm:grid-cols-2">
-            <DetailRow
-              label={t.accountSubscriptionsLabel}
-              value={t.accountSubscribedCount.replace("{count}", String(activeSubscriptions))}
+          <InfoSection title={t.accountHouseholdTitle}>
+            <HouseholdEditor
+              household={user.household_details ?? null}
+              isSaving={householdMutation.isPending}
+              error={householdMutation.isError ? t.accountHouseholdSaveError : null}
+              onSave={(household) => householdMutation.mutate(household)}
             />
-            <DetailRow
-              label={t.accountPushSubscriptionsLabel}
-              value={t.accountSubscribedCount.replace("{count}", String(activePushSubscriptions))}
-            />
-            <DetailRow
-              label={t.accountConsentSettingsLabel}
-              value={t.accountConfiguredCount.replace(
-                "{count}",
-                String(profile.consentSettings.length)
-              )}
-            />
-            <DetailRow
-              label={t.accountGeneralConsentSettingsLabel}
-              value={t.accountConfiguredCount.replace(
-                "{count}",
-                String(profile.generalConsentSettings.length)
-              )}
-            />
-          </DetailList>
-          <ConsentSettingsList
-            settings={profile.consentSettings}
-            pendingTextId={
-              consentMutation.isPending ? (consentMutation.variables?.text_id ?? null) : null
-            }
-            error={consentMutation.isError ? t.accountConsentSaveError : null}
-            onToggle={(setting) => consentMutation.mutate(setting)}
-          />
-          <p className="text-muted mt-3 text-xs">{t.accountGeneralConsentsReadOnly}</p>
-        </InfoSection>
-
-        <InfoSection title={t.accountLinksTitle}>
-          <Link
-            to="/account/payment"
-            search={{ from: undefined }}
-            className="text-picnic-red inline-flex text-sm font-semibold hover:underline"
-          >
-            {t.accountPaymentLink}
-          </Link>
-        </InfoSection>
+          </InfoSection>
+        </div>
       </div>
+
+      <InfoSection title={t.accountPreferencesTitle}>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <PreferenceSummary
+            label={t.accountSubscriptionsLabel}
+            value={t.accountSubscribedCount.replace("{count}", String(activeSubscriptions))}
+          />
+          <PreferenceSummary
+            label={t.accountPushSubscriptionsLabel}
+            value={t.accountSubscribedCount.replace("{count}", String(activePushSubscriptions))}
+          />
+          <PreferenceSummary
+            label={t.accountConsentSettingsLabel}
+            value={t.accountConfiguredCount.replace(
+              "{count}",
+              String(editableConsentSettings.length)
+            )}
+          />
+          <PreferenceSummary
+            label={t.accountGeneralConsentSettingsLabel}
+            value={t.accountConfiguredCount.replace(
+              "{count}",
+              String(profile.generalConsentSettings.length)
+            )}
+          />
+        </div>
+        <ConsentSettingsList
+          settings={editableConsentSettings}
+          pendingTextId={
+            consentMutation.isPending ? (consentMutation.variables?.text_id ?? null) : null
+          }
+          error={consentMutation.isError ? t.accountConsentSaveError : null}
+          onToggle={(setting) => consentMutation.mutate(setting)}
+        />
+      </InfoSection>
     </div>
   );
 }
@@ -242,6 +256,15 @@ function DetailRow({ label, value }: DetailRowProps) {
       <dd className="text-foreground text-sm font-medium break-words sm:text-right">
         {displayValue}
       </dd>
+    </div>
+  );
+}
+
+function PreferenceSummary({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border-card-border bg-muted-bg rounded-lg border px-3 py-2">
+      <div className="text-muted text-xs">{label}</div>
+      <div className="text-foreground mt-1 text-sm font-semibold">{value}</div>
     </div>
   );
 }
@@ -467,6 +490,17 @@ function householdValues(household: HouseholdDetails | null) {
     cats: household?.cats ?? 0,
     dogs: household?.dogs ?? 0,
   };
+}
+
+function mergeConsentSettings(...settingGroups: ConsentSetting[][]): ConsentSetting[] {
+  const settings = new Map<string, ConsentSetting>();
+
+  for (const setting of settingGroups.flat()) {
+    const key = setting.text_id ?? setting.id;
+    if (key && !settings.has(key)) settings.set(key, setting);
+  }
+
+  return [...settings.values()];
 }
 
 function formatAddress(address: AccountAddress | null, fallback: string | null): string | null {

@@ -50,8 +50,9 @@ Current implementation:
 - `/account` reads `GET /user`, `GET /user-info`, `GET /profile-menu?fetch_mgm=true`, and consent settings through an authenticated Worker route.
 - The page shows account, contact, delivery address, household, delivery count, subscription, and consent summaries.
 - Household composition is editable through `POST /user-onboarding/household-details`.
-- Normal privacy/marketing consents are editable through `PUT /consents`.
-- Address, contact details, business details, push subscriptions, and general consents remain read-only or hidden until their mutation semantics are safer.
+- Privacy/marketing consent switches merge normal and general settings-page items and are editable through `PUT /consents`.
+- The general consent request itself remains hidden/read-only because `PUT /consents/general` still lacks a confirmed safe payload.
+- Address, contact details, business details, and push subscription device registrations remain read-only or hidden until their mutation semantics are safer.
 - Focused address rediscovery on 2026-08-10 did not find a current package, public-web, deeplink, Fusion page, or Page Task route for authenticated delivery-address edits. Keep address editing out of the UI until the official app flow can be observed.
 
 ### 2. Onboarding Support

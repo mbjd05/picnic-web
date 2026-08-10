@@ -812,6 +812,14 @@ General consent declaration must be provided with generalConsent=true
 
 A same-value payload containing all current general settings plus the current `check_general_consent` value still returned `422`. This makes normal consents editable now, but general consents should remain read-only until a real mobile-app payload or clearer package behavior is captured.
 
+Focused recheck on 2026-08-10 clarified the distinction:
+
+- `GET /consents/general` returns the general consent request/intro text. Its `PUT /consents/general` update contract still returned `422` for same-value false payload variants and should not be used in this app yet.
+- `GET /consents/general/settings-page` returns individual consent settings. These overlap with `/consents/settings-page`, except some accounts may expose a general-only Push notification consent there.
+- A same-value declaration for that general-only Push consent was accepted by `PUT /consents` and reflected unchanged by the next general settings-page read.
+
+Implementation implication: merge `/consents/settings-page` and `/consents/general/settings-page` for display, dedupe by `text_id`, and update individual switches through `PUT /consents`. Do not expose the general consent request itself as editable until `PUT /consents/general` is understood.
+
 Practical CRUD interpretation:
 
 ```text

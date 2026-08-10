@@ -117,7 +117,7 @@ const translations = {
     accountContactTitle: "Contact",
     accountHouseholdTitle: "Huishouden",
     accountPreferencesTitle: "Voorkeuren",
-    accountLinksTitle: "Instellingen",
+    accountLinksTitle: "Meer instellingen",
     accountReadOnlyNote:
       "Je kunt bevestigde instellingen hier aanpassen. Gevoelige accountgegevens blijven alleen-lezen totdat de Picnic-routes veilig zijn bevestigd.",
     accountNameLabel: "Naam",
@@ -141,7 +141,7 @@ const translations = {
     accountSavingChanges: "Opslaan...",
     accountHouseholdSaveError: "Kan huishouden niet opslaan.",
     accountConsentSaveError: "Kan voorkeur niet opslaan.",
-    accountEditableHouseholdNote: "Deze aantallen kun je veilig aanpassen.",
+    accountEditableHouseholdNote: "Hier kun je de samenstelling van je huishouden wijzigen.",
     accountEditableConsentsNote: "Privacy- en marketingvoorkeuren kun je hier direct wijzigen.",
     accountGeneralConsentsReadOnly: "Algemene toestemmingen blijven voorlopig alleen-lezen.",
     cookbookNavLink: "Recepten",
@@ -462,7 +462,7 @@ const translations = {
     accountContactTitle: "Kontakt",
     accountHouseholdTitle: "Haushalt",
     accountPreferencesTitle: "Einstellungen",
-    accountLinksTitle: "Einstellungen",
+    accountLinksTitle: "Weitere Einstellungen",
     accountReadOnlyNote:
       "Bestätigte Einstellungen kannst du hier ändern. Sensible Kontodaten bleiben schreibgeschützt, bis die Picnic-Routen sicher bestätigt sind.",
     accountNameLabel: "Name",
@@ -486,7 +486,7 @@ const translations = {
     accountSavingChanges: "Speichern...",
     accountHouseholdSaveError: "Haushalt konnte nicht gespeichert werden.",
     accountConsentSaveError: "Einstellung konnte nicht gespeichert werden.",
-    accountEditableHouseholdNote: "Diese Zahlen kannst du sicher anpassen.",
+    accountEditableHouseholdNote: "Hier kannst du die Zusammensetzung deines Haushalts ändern.",
     accountEditableConsentsNote:
       "Datenschutz- und Marketingeinstellungen kannst du hier direkt ändern.",
     accountGeneralConsentsReadOnly: "Allgemeine Einwilligungen bleiben vorerst schreibgeschützt.",
@@ -797,7 +797,7 @@ const translations = {
     accountContactTitle: "Contact",
     accountHouseholdTitle: "Foyer",
     accountPreferencesTitle: "Préférences",
-    accountLinksTitle: "Paramètres",
+    accountLinksTitle: "Plus de paramètres",
     accountReadOnlyNote:
       "Vous pouvez modifier ici les paramètres confirmés. Les données sensibles du compte restent en lecture seule tant que les routes Picnic ne sont pas confirmées en toute sécurité.",
     accountNameLabel: "Nom",
@@ -821,7 +821,7 @@ const translations = {
     accountSavingChanges: "Enregistrement...",
     accountHouseholdSaveError: "Impossible d'enregistrer le foyer.",
     accountConsentSaveError: "Impossible d'enregistrer la préférence.",
-    accountEditableHouseholdNote: "Vous pouvez modifier ces nombres en toute sécurité.",
+    accountEditableHouseholdNote: "Vous pouvez modifier ici la composition de votre foyer.",
     accountEditableConsentsNote:
       "Vous pouvez modifier ici les préférences de confidentialité et de marketing.",
     accountGeneralConsentsReadOnly:
@@ -1096,7 +1096,7 @@ const englishTranslations: Translations = {
   accountContactTitle: "Contact",
   accountHouseholdTitle: "Household",
   accountPreferencesTitle: "Preferences",
-  accountLinksTitle: "Settings",
+  accountLinksTitle: "More settings",
   accountReadOnlyNote:
     "Confirmed settings can be edited here. Sensitive account details stay read-only until the Picnic routes are safely confirmed.",
   accountNameLabel: "Name",
@@ -1120,7 +1120,7 @@ const englishTranslations: Translations = {
   accountSavingChanges: "Saving...",
   accountHouseholdSaveError: "Could not save household.",
   accountConsentSaveError: "Could not save preference.",
-  accountEditableHouseholdNote: "You can safely change these counts.",
+  accountEditableHouseholdNote: "You can change your household composition here.",
   accountEditableConsentsNote: "You can change privacy and marketing preferences here directly.",
   accountGeneralConsentsReadOnly: "General consents remain read-only for now.",
   cookbookNavLink: "Recipes",
