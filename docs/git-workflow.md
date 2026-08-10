@@ -35,13 +35,19 @@ Examples:
 - Delete branches after merge or when superseded.
 - Do not keep old PR branches around as documentation; document decisions in `docs/` instead.
 
-## Current Backlog Branches
+## Current Backlog
 
-The unfinished work tracked in `docs/python-api-compat-map.md` starts from:
+The active unfinished feature branch is:
 
 - `feature/wallet-transactions`
-- `feature/recipe-url-resolution`
-- `feature/barcode-gtin-lookup`
-- `feature/cookbook-user-recipes`
-- `feature/product-category-name-resolution`
+
+This branch is intentionally parked until wallet transaction data exists for validation.
+
+The next branches should be created from fresh `main` in this order:
+
 - `research/profile-settings-crud`
+- `feature/profile-menu`
+- `feature/onboarding-flow`
+- `feature/product-category-name-resolution`
+- `feature/cookbook-user-recipes`
+- `feature/barcode-gtin-lookup`

@@ -11,9 +11,170 @@ This document does not replace profile/settings CRUD research in `docs/registrat
 
 ## Ranked Implementation Queue
 
-The previous delivery-related entries are intentionally merged into one first chunk, because they touch the same delivery detail/service area.
+Wallet transaction reads have an unfinished branch, `feature/wallet-transactions`, but remain parked until a test account has transaction data. The active queue now prioritizes account/profile work before the remaining convenience lookups.
 
-### 1. Delivery Management Actions
+### 1. Profile Settings CRUD Research And Profile Menu
+
+Reference: `docs/registration-onboarding-flow.md`, Python fork, MCP Picnic.
+
+Status: next up.
+
+Direct Picnic surfaces currently confirmed or strongly indicated:
+
+```text
+GET /user
+GET /profile-menu?fetch_mgm=true
+GET /consents/settings-page
+PUT /consents
+GET /consents/general/settings-page
+PUT /consents/general
+POST /user-onboarding/household-details
+POST /user-onboarding/business-details
+```
+
+Why it makes the cut:
+
+- It is core account functionality rather than a convenience feature.
+- Read-only profile display can be useful before every write route is proven.
+- Consent settings have clearer confirmed read/update routes than delivery address edits.
+
+Recommended implementation:
+
+- Start with a profile menu/page that reads safe account/profile data and links to focused settings areas.
+- Keep delivery address read-only until an authenticated address-change route is discovered and tested.
+- Add consent updates only with reversible, explicit user actions.
+- Treat household and business details as separately guarded settings after payload validation.
+
+### 2. Onboarding Support
+
+Reference: `docs/registration-onboarding-flow.md`.
+
+Direct Picnic surfaces:
+
+```text
+POST /public-api/17/user-onboarding/check-address
+POST /public-api/17/user-onboarding/register
+POST /public-api/17/user-onboarding/register-leadlist
+POST /public-api/17/user-onboarding/activate
+```
+
+Why it makes the cut:
+
+- It is the largest missing first-run flow.
+- It should build on the profile/settings route research so region, address, household, consent, and activation behavior are not duplicated or guessed.
+
+Recommended implementation:
+
+- Implement only after profile/settings research clarifies the post-login account model.
+- Keep public onboarding routes isolated from authenticated settings routes.
+- Prefer a guided flow with explicit region and address validation before registration/activation.
+
+### 3. Product Detail Category Name Resolution
+
+Reference: Python fork.
+
+Direct Picnic surface:
+
+```text
+GET /pages/L2-category-page-root?category_id={l2}&l3_category_id={l3}
+```
+
+The Python fork uses category IDs from the product page category button, then reads the selected L3 category label from the category page.
+
+Why it makes the cut:
+
+- Direct Picnic category metadata.
+- Improves product detail navigation without guessing labels.
+
+Recommended implementation:
+
+- Resolve category labels from Picnic category pages when product detail exposes category IDs.
+- Keep the UI small, likely as a navigable breadcrumb/tag rather than another prominent control.
+
+### 4. User-Created Recipe Scope
+
+Reference: MCP Picnic.
+
+Direct Picnic surface:
+
+```text
+GET /pages/cookbook-page-content
+```
+
+Relevant data:
+
+```text
+segment_type = USER_DEFINED_RECIPES
+segment_type = SAVED_RECIPES
+```
+
+Why it makes the cut:
+
+- Real Picnic cookbook functionality.
+- Read-only.
+- Our app already supports featured, category, search, and saved recipe scopes, so an "Eigen recepten" scope is a natural extension if the API exposes it.
+
+Recommended implementation:
+
+- Extend cookbook parsing to preserve segment types.
+- Add an own-recipes scope only when `USER_DEFINED_RECIPES` is present.
+- Prefer dynamic segment discovery over hardcoded assumptions.
+
+### 5. Barcode / GTIN Product Lookup
+
+Reference: Python fork.
+
+Direct Picnic behavior:
+
+```text
+https://picnic.app/{country}/qr/gtin/{ean}
+```
+
+The Python fork follows Picnic redirects to discover a product ID, then fetches the product detail.
+
+Why it makes the cut:
+
+- Direct Picnic product lookup behavior.
+
+Why it is lower priority:
+
+- No current scanner/manual barcode UI.
+- Adds little to the current web shopping workflow unless we build barcode entry/scanning.
+
+## Parked Until Test Data Exists
+
+### Wallet Transaction Reads
+
+Reference: MCP Picnic.
+
+Status: parked on `feature/wallet-transactions`. Keep this branch rebased, but do not merge until wallet transaction list/detail rendering can be tested with populated transaction data.
+
+Direct Picnic surfaces through `picnic-api`:
+
+```text
+payment.getWalletTransactions(pageNumber)
+payment.getWalletTransactionDetails(transactionId)
+```
+
+Research status:
+
+- `picnic-api@4.6.0` exposes both methods.
+- The JS package maps them to:
+  - `POST /wallet/transactions` with `{ page_number }`
+  - `GET /wallet/transactions/{walletTransactionId}`
+- `scripts/picnic-checkout-probe.mjs wallet-shape 1` confirmed the list endpoint is accepted for the current test account.
+- The current test account returned an empty first page, so live item/detail shape remains unconfirmed in populated data.
+- Package types indicate list fields including `id`, `timestamp`, `amount_in_cents`, `display_name`, `brand`, `status`, `transaction_method`, and `transaction_type`; details include delivery/order item, deposit, fee, refund, and payment-option fields.
+
+Recommended implementation:
+
+- Keep the current branch separate and current with `main`.
+- Validate list/detail rendering once a wallet with transactions is available.
+- Only then decide whether the page belongs under account/payment or a broader account menu.
+
+## Already Implemented From This Queue
+
+### Delivery Management Actions
 
 Reference: MCP Picnic.
 
@@ -43,44 +204,7 @@ Recommended implementation:
 - Add invoice resend where it naturally fits completed delivery details.
 - Do not expose rating unless the API clearly indicates the delivery is rateable.
 
-### 2. Wallet Transaction Reads
-
-Reference: MCP Picnic.
-
-Direct Picnic surfaces through `picnic-api`:
-
-```text
-payment.getWalletTransactions(pageNumber)
-payment.getWalletTransactionDetails(transactionId)
-```
-
-Research status:
-
-- `picnic-api@4.6.0` exposes both methods.
-- The JS package maps them to:
-  - `POST /wallet/transactions` with `{ page_number }`
-  - `GET /wallet/transactions/{walletTransactionId}`
-- `scripts/picnic-checkout-probe.mjs wallet-shape 1` confirmed the list endpoint is accepted for the current test account.
-- The current test account returned an empty first page, so live item/detail shape remains unconfirmed in populated data.
-- Package types indicate list fields including `id`, `timestamp`, `amount_in_cents`, `display_name`, `brand`, `status`, `transaction_method`, and `transaction_type`; details include delivery/order item, deposit, fee, refund, and payment-option fields.
-
-Why it makes the cut:
-
-- Direct Picnic account/payment functionality.
-- Read-only.
-- Useful for grocery spending and Picnic credit visibility.
-
-Why it ranks below delivery status/cancellation:
-
-- Needs response-shape inspection across NL/DE/FR.
-- Needs a considered UI location under account/payment without cluttering payment-method management.
-
-Recommended implementation:
-
-- First add normalized API routes and a minimal read-only account page/section.
-- Only expand UI if response data is consistently useful.
-
-### 3. Recipe URL And Share-Link Resolution
+### Recipe URL And Share-Link Resolution
 
 Reference: MCP Picnic.
 
@@ -99,84 +223,10 @@ Why it makes the cut:
 - Useful if we add a direct "open recipe URL" flow.
 - MCP Picnic has good safety constraints: allow only HTTPS `picnic.app` hosts and re-check redirect targets.
 
-Why it is deferred:
+Current UI:
 
-- We currently do not expose a recipe URL input.
-- It should be implemented only when there is a UI flow that needs it.
-
-### 4. Barcode / GTIN Product Lookup
-
-Reference: Python fork.
-
-Direct Picnic behavior:
-
-```text
-https://picnic.app/{country}/qr/gtin/{ean}
-```
-
-The Python fork follows Picnic redirects to discover a product ID, then fetches the product detail.
-
-Why it makes the cut:
-
-- Direct Picnic product lookup behavior.
-
-Why it is lower priority:
-
-- No current scanner/manual barcode UI.
-- Adds little to the current web shopping workflow unless we build barcode entry/scanning.
-
-### 5. User-Created Recipe Scope
-
-Reference: MCP Picnic.
-
-Direct Picnic surface:
-
-```text
-GET /pages/cookbook-page-content
-```
-
-Relevant data:
-
-```text
-segment_type = USER_DEFINED_RECIPES
-segment_type = SAVED_RECIPES
-```
-
-MCP Picnic maps recipe IDs to cookbook segment membership from analytics contexts.
-
-Why it makes the cut:
-
-- Real Picnic cookbook functionality.
-- Read-only.
-- Our app already supports featured, category, search, and saved recipe scopes, so an "Eigen recepten" scope is a natural extension if the API exposes it.
-
-Recommended implementation:
-
-- Extend cookbook parsing to preserve segment types.
-- Add an own-recipes scope only when `USER_DEFINED_RECIPES` is present.
-- Prefer dynamic segment discovery over hardcoded assumptions.
-
-### 6. Product Detail Category Name Resolution
-
-Reference: Python fork.
-
-Direct Picnic surface:
-
-```text
-GET /pages/L2-category-page-root?category_id={l2}&l3_category_id={l3}
-```
-
-The Python fork uses category IDs from the product page category button, then reads the selected L3 category label from the category page.
-
-Why it makes the cut:
-
-- Direct Picnic category metadata.
-
-Why it is lowest priority:
-
-- We already parse product page `categoryIds`.
-- The current product detail UI has the product's category tag.
-- Breadcrumb/category navigation needs a small UI decision to avoid clutter.
+- Cookbook search accepts direct Picnic recipe links and IDs.
+- Global search accepts supported Picnic links and routes to the resolved recipe or product.
 
 ## Already Adopted
 
