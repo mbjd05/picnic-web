@@ -63,3 +63,55 @@ export type CheckoutStatusResponse = {
   status?: string;
   raw?: unknown;
 };
+
+export type WalletTransaction = {
+  account?: string | null;
+  amount_in_cents: number;
+  brand?: string | null;
+  display_name?: string | null;
+  domains?: string[];
+  icon_url?: string | null;
+  id: string;
+  status?: string | null;
+  timestamp?: number | null;
+  transaction_method?: string | null;
+  transaction_type?: string | null;
+};
+
+export type ReturnedContainer = {
+  localized_name?: string | null;
+  price?: number | null;
+  quantity?: number | null;
+  type?: string | null;
+};
+
+export type WalletDeposit = {
+  count?: number | null;
+  type?: string | null;
+  value?: number | null;
+};
+
+export type WalletTransactionDetails = {
+  amount_in_cents?: number | null;
+  article_issue_refunds?: unknown[];
+  debt_resolution?: unknown | null;
+  delivery_debt?: unknown | null;
+  delivery_id?: string | null;
+  deposits?: WalletDeposit[];
+  fees?: unknown[];
+  payment_execution_timestamp?: number | null;
+  payment_method_icon_url?: string | null;
+  payment_option_account?: string | null;
+  payment_option_display_name?: string | null;
+  refunded_items?: unknown[];
+  returned_containers?: ReturnedContainer[];
+  shop_items?: unknown[];
+  transaction_method?: string | null;
+  transaction_status?: string | null;
+  transaction_type?: string | null;
+};
+
+export type WalletTransactionsResponse = {
+  page: number;
+  transactions: WalletTransaction[];
+};

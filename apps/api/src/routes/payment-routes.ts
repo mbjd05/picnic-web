@@ -3,6 +3,8 @@ import type { Hono } from "hono";
 import {
   createPaymentOptionService,
   getPaymentProfileService,
+  getWalletTransactionDetailsService,
+  getWalletTransactionsService,
   removePaymentOptionService,
   setPreferredPaymentOptionService,
 } from "@/lib/api-services/payments";
@@ -57,6 +59,19 @@ export function registerPaymentRoutes(app: Hono): void {
   app.put("/api/account/payment-profile/payment-options/:paymentOptionId/preferred", async (c) => {
     return authenticatedJson(c, ({ token, countryCode }) =>
       setPreferredPaymentOptionService(token, countryCode, c.req.param("paymentOptionId"))
+    );
+  });
+
+  app.get("/api/account/wallet/transactions", async (c) => {
+    const rawPage = Number(c.req.query("page") ?? "1");
+    return authenticatedJson(c, ({ token, countryCode }) =>
+      getWalletTransactionsService(token, countryCode, rawPage)
+    );
+  });
+
+  app.get("/api/account/wallet/transactions/:transactionId", async (c) => {
+    return authenticatedJson(c, ({ token, countryCode }) =>
+      getWalletTransactionDetailsService(token, countryCode, c.req.param("transactionId"))
     );
   });
 }

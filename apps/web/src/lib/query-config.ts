@@ -16,6 +16,8 @@ export const queryStaleTime = {
   savedRecipes: 2 * 60 * 1000,
   accountProfile: 2 * 60 * 1000,
   paymentProfile: 2 * 60 * 1000,
+  walletTransactions: 60 * 1000,
+  walletTransactionDetails: 60 * 1000,
 } as const;
 
 export const queryGcTime = {
@@ -52,6 +54,10 @@ export const queryKeys = {
     ["delivery-order-status", orderId, countryCode] as const,
   accountProfile: (countryCode: CountryCode) => ["account-profile", countryCode] as const,
   paymentProfile: () => ["payment-profile"] as const,
+  walletTransactions: (page: number, countryCode: CountryCode) =>
+    ["wallet-transactions", page, countryCode] as const,
+  walletTransactionDetails: (transactionId: string, countryCode: CountryCode) =>
+    ["wallet-transaction-details", transactionId, countryCode] as const,
   cookbookView: (categoryId: string | null, countryCode: CountryCode) =>
     ["cookbook", "view", categoryId ?? "__featured__", countryCode] as const,
   cookbookSearch: (query: string, countryCode: CountryCode) =>

@@ -138,6 +138,14 @@ const paymentRoute = createRoute({
     "PaymentAccountPage"
   ),
 });
+const walletRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: "/account/wallet",
+  component: lazyRouteComponent(
+    () => import("../features/payment/wallet-page"),
+    "WalletTransactionsPage"
+  ),
+});
 const productRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/product/$id",
@@ -168,6 +176,7 @@ const routeTree = rootRoute.addChildren([
     deliveriesRoute,
     accountRoute,
     paymentRoute,
+    walletRoute,
     productRoute,
     recipeRoute,
   ]),

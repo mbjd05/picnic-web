@@ -157,7 +157,7 @@ Why it is lower priority:
 
 Reference: MCP Picnic.
 
-Status: parked on `feature/wallet-transactions`. Keep this branch rebased, but do not merge until wallet transaction list/detail rendering can be tested with populated transaction data.
+Status: implemented on parked branch `feature/wallet-transactions` as a read-only account transaction page and authenticated Worker proxy. Keep this branch rebased, but do not merge until wallet transaction list/detail rendering can be tested with populated transaction data.
 
 Direct Picnic surfaces through `picnic-api`:
 
@@ -182,6 +182,7 @@ Recommended implementation:
 
 - Keep the current branch separate and current with `main`.
 - Validate list/detail rendering once a wallet with transactions is available.
+- Keep populated arrays in a generic debug-friendly presentation until real wallet data proves the stable detail shape.
 - Only then decide whether the page belongs under account/payment or a broader account menu.
 
 ## Already Implemented From This Queue

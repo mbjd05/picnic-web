@@ -429,6 +429,14 @@ function AppHeader({ setBottomBarHost }: { setBottomBarHost: (host: HTMLElement 
           >
             {t.accountPaymentLink}
           </Link>
+          <Link
+            to="/account/wallet"
+            onClick={() => setIsMenuOpen(false)}
+            tabIndex={isMenuOpen ? undefined : -1}
+            className="hover:text-foreground block rounded-md px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
+          >
+            {t.walletTransactionsNavLink}
+          </Link>
         </div>
         <div className="border-card-border border-t px-1.5 py-1">
           <button

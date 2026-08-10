@@ -16,6 +16,8 @@ import type {
   CheckoutPaymentResponse,
   CheckoutStatusResponse,
   PaymentProfile,
+  WalletTransactionDetails,
+  WalletTransactionsResponse,
 } from "@/types/payment";
 import type { CountryCode } from "@/types/locale";
 
@@ -182,5 +184,69 @@ export async function getCheckoutStatusService(
     }
 
     return mapPaymentError(error, "[checkout service] Failed to fetch status");
+  }
+}
+
+export async function getWalletTransactionsService(
+  authToken: string,
+  countryCode: CountryCode,
+  page: number
+): Promise<ApiServiceResult<WalletTransactionsResponse | ApiErrorResponse>> {
+  const pageNumber = Number.isInteger(page) && page > 0 ? page : 1;
+
+  try {
+    const client = buildPicnicClient(authToken, countryCode);
+    const transactions = await sendPicnicRequest(
+      client,
+      "POST",
+      "/wallet/transactions",
+      { page_number: pageNumber },
+      false
+    );
+
+    return {
+      body: {
+        page: pageNumber,
+        transactions: Array.isArray(transactions) ? transactions : [],
+      } as WalletTransactionsResponse,
+    };
+  } catch (error) {
+    return mapPaymentError(
+      error,
+      "[wallet service] Failed to fetch transactions",
+      "Kan transacties niet laden. Probeer het later opnieuw."
+    );
+  }
+}
+
+export async function getWalletTransactionDetailsService(
+  authToken: string,
+  countryCode: CountryCode,
+  transactionId: string
+): Promise<ApiServiceResult<WalletTransactionDetails | ApiErrorResponse>> {
+  if (!transactionId) {
+    return {
+      body: { error: "Missing required route parameter: transactionId" },
+      status: 400,
+    };
+  }
+
+  try {
+    const client = buildPicnicClient(authToken, countryCode);
+    const details = await sendPicnicRequest(
+      client,
+      "GET",
+      `/wallet/transactions/${encodeURIComponent(transactionId)}`,
+      null,
+      false
+    );
+
+    return { body: details as WalletTransactionDetails };
+  } catch (error) {
+    return mapPaymentError(
+      error,
+      "[wallet service] Failed to fetch transaction details",
+      "Kan transactiedetails niet laden. Probeer het later opnieuw."
+    );
   }
 }

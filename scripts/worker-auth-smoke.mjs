@@ -510,6 +510,10 @@ async function main() {
     "Account profile menu missing"
   );
 
+  const wallet = (await request("/api/account/wallet/transactions?page=1")).body;
+  assert(wallet.page === 1, "Wallet transactions response did not preserve page number");
+  assert(Array.isArray(wallet.transactions), "Wallet transactions response is malformed");
+
   const finalCart = (await request("/api/cart")).body;
   assert(
     sameQuantities(initialCartQuantities, cartQuantities(finalCart)),
