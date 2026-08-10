@@ -569,6 +569,38 @@ POST /user/2fa/verify
 
 This fork reinforces that `GET /user` is currently the stable address/settings read surface, but it does not reveal a delivery-address update target. Its README links Picnic's "Adding Write Functionality to Pages with Self-Service APIs" blog post, which explains that new mutations are increasingly implemented as Page Platform Tasks rather than feature-specific Java endpoints.
 
+Focused rediscovery on 2026-08-10:
+
+- `picnic-api` npm was still at `4.6.0`, with no newer user/address domain.
+- `simonmartyr/picnic-api` was inspected as a third-party Go reference. It models address data as a read-only field on `GET /user` and does not expose profile/settings/address writes.
+- Current public `picnic.app` scripts still expose only public onboarding address validation and lead-list registration:
+
+```text
+POST /rest/public-api/15/user-onboarding/check-address
+POST /rest/public-api/15/user-onboarding/register-leadlist
+```
+
+- Focused authenticated reads of `GET /profile-menu?fetch_mgm=true`, `GET /user-info`, and `GET /bootstrap` still did not reveal a profile/settings/address page reference.
+- Focused candidate Fusion pages such as `profile-page-root`, `settings-page-root`, `address-change-page-root`, `delivery-address-page-root`, `moving-page-root`, and `customer-details-page-root` were not available for the verified account.
+- Focused candidate task names were rejected as unknown task IDs with empty bodies:
+
+```text
+/pages/task/address-change
+/pages/task/change-address
+/pages/task/update-address
+/pages/task/save-address
+/pages/task/edit-address
+/pages/task/delivery-address-change
+/pages/task/change-delivery-address
+/pages/task/update-delivery-address
+/pages/task/moving-address
+/pages/task/relocation-address
+/pages/task/user-address-change
+/pages/task/user-onboarding-address
+```
+
+This keeps the current conclusion unchanged: address editing should remain hidden/read-only until a real authenticated address-change flow is observed. The strongest remaining discovery path is capturing the official app's own requests while opening or using its address-change flow.
+
 Picnic's blog post describes Tasks as a Page Platform response type that can return arbitrary JSON and execute backend operations through a generic command binding. It explicitly uses adding a recipe to favorites as the kind of operation moved from a conventional backend API call to a Page Platform Task. That matches routes we already use, such as:
 
 ```text
