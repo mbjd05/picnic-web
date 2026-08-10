@@ -25,6 +25,20 @@ type DetailRowProps = {
   value: string | number | null | undefined;
 };
 
+type ConsentCategoryId = "newsletter" | "push" | "privacy";
+
+type ConsentCategory = {
+  id: ConsentCategoryId;
+  label: string;
+  settings: ConsentSetting[];
+};
+
+const NEWSLETTER_CONSENT_TEXT_IDS = new Set([
+  "f82ad0a2-97ba-41a1-a2a3-833aa59affbe",
+  "ec6ab75a-a246-4ae2-b631-1afde465353e",
+]);
+const PUSH_CONSENT_TEXT_IDS = new Set(["7759b7d5-fb63-474c-9452-f7f2673924dc"]);
+
 export function AccountProfilePage() {
   const t = useTranslations();
   const profileQuery = useAccountProfile();
@@ -62,17 +76,11 @@ function AccountProfileContent({ profile }: { profile: AccountProfileResponse })
     [user.firstname, user.lastname].filter(Boolean).join(" ") ??
     null;
   const address = user.address ?? profile.profileMenu.user?.address ?? null;
-  const activeSubscriptions = countSubscribed(user.subscriptions);
-  const activePushSubscriptions = countSubscribed(user.push_subscriptions);
   const editableConsentSettings = mergeConsentSettings(
     profile.generalConsentSettings,
     profile.consentSettings
   ).filter(isEditableConsentSetting);
-  const enabledConsentSettings = countEnabledConsentSettings(editableConsentSettings);
-  const generalOnlyConsentCount = countGeneralOnlyConsentSettings(
-    profile.generalConsentSettings,
-    profile.consentSettings
-  );
+  const consentCategories = groupConsentSettings(editableConsentSettings, t);
   const householdMutation = useMutation({
     mutationFn: (
       household: Required<Pick<HouseholdDetails, "adults" | "children" | "cats" | "dogs">>
@@ -190,31 +198,16 @@ function AccountProfileContent({ profile }: { profile: AccountProfileResponse })
 
       <InfoSection title={t.accountPreferencesTitle}>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <PreferenceSummary
-            label={t.accountSubscriptionsLabel}
-            value={t.accountSubscribedCount.replace("{count}", String(activeSubscriptions))}
-          />
-          <PreferenceSummary
-            label={t.accountPushSubscriptionsLabel}
-            value={t.accountSubscribedCount.replace("{count}", String(activePushSubscriptions))}
-          />
-          <PreferenceSummary
-            label={t.accountConsentSettingsLabel}
-            value={t.accountEnabledOutOfTotal
-              .replace("{enabled}", String(enabledConsentSettings))
-              .replace("{total}", String(editableConsentSettings.length))}
-            note={
-              generalOnlyConsentCount > 0
-                ? t.accountGeneralConsentsIncluded.replace(
-                    "{count}",
-                    String(generalOnlyConsentCount)
-                  )
-                : undefined
-            }
-          />
+          {consentCategories.map((category) => (
+            <PreferenceSummary
+              key={category.id}
+              label={category.label}
+              value={formatEnabledOutOfTotal(category.settings, t)}
+            />
+          ))}
         </div>
         <ConsentSettingsList
-          settings={editableConsentSettings}
+          categories={consentCategories}
           pendingTextId={
             consentMutation.isPending ? (consentMutation.variables?.text_id ?? null) : null
           }
@@ -389,66 +382,73 @@ function HouseholdInput({
 }
 
 function ConsentSettingsList({
-  settings,
+  categories,
   pendingTextId,
   error,
   onToggle,
 }: {
-  settings: ConsentSetting[];
+  categories: ConsentCategory[];
   pendingTextId: string | null;
   error: string | null;
   onToggle: (setting: ConsentSetting) => void;
 }) {
   const t = useTranslations();
   const languageCode = useLanguageCode();
-  const editableSettings = settings.filter(isEditableConsentSetting);
+  const populatedCategories = categories.filter((category) => category.settings.length > 0);
 
-  if (editableSettings.length === 0) return null;
+  if (populatedCategories.length === 0) return null;
 
   return (
     <div className="border-card-border mt-4 space-y-3 border-t pt-4">
       <p className="text-muted text-sm">{t.accountEditableConsentsNote}</p>
       {error ? <p className="text-sm font-medium text-red-600">{error}</p> : null}
-      <div className="grid gap-2 lg:grid-cols-2">
-        {editableSettings.map((setting) => {
-          const checked = setting.established_decision === true;
-          const isPending = pendingTextId === setting.text_id;
-          const displayText = getConsentDisplayText(setting, languageCode);
-          return (
-            <button
-              key={setting.text_id}
-              type="button"
-              role="switch"
-              aria-checked={checked}
-              disabled={isPending}
-              onClick={() => onToggle(setting)}
-              className="border-card-border bg-card-bg hover:border-picnic-red flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left transition-colors disabled:cursor-wait disabled:opacity-70"
-            >
-              <span className="min-w-0">
-                <span className="text-foreground block text-sm font-medium">
-                  {displayText.title || t.accountConsentSettingsLabel}
-                </span>
-                {displayText.text ? (
-                  <span className="text-muted mt-0.5 line-clamp-2 block text-xs">
-                    {displayText.text}
-                  </span>
-                ) : null}
-              </span>
-              <span
-                className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-                  checked ? "bg-picnic-red" : "bg-gray-300"
-                }`}
-                aria-hidden="true"
-              >
-                <span
-                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
-                    checked ? "translate-x-5" : "translate-x-0.5"
-                  }`}
-                />
-              </span>
-            </button>
-          );
-        })}
+      <div className="space-y-4">
+        {populatedCategories.map((category) => (
+          <section key={category.id} className="space-y-2">
+            <h3 className="text-foreground text-sm font-semibold">{category.label}</h3>
+            <div className="grid gap-2 lg:grid-cols-2">
+              {category.settings.map((setting) => {
+                const checked = setting.established_decision === true;
+                const isPending = pendingTextId === setting.text_id;
+                const displayText = getConsentDisplayText(setting, languageCode);
+                return (
+                  <button
+                    key={setting.text_id}
+                    type="button"
+                    role="switch"
+                    aria-checked={checked}
+                    disabled={isPending}
+                    onClick={() => onToggle(setting)}
+                    className="border-card-border bg-card-bg hover:border-picnic-red flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left transition-colors disabled:cursor-wait disabled:opacity-70"
+                  >
+                    <span className="min-w-0">
+                      <span className="text-foreground block text-sm font-medium">
+                        {displayText.title || t.accountConsentSettingsLabel}
+                      </span>
+                      {displayText.text ? (
+                        <span className="text-muted mt-0.5 line-clamp-2 block text-xs">
+                          {displayText.text}
+                        </span>
+                      ) : null}
+                    </span>
+                    <span
+                      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+                        checked ? "bg-picnic-red" : "bg-gray-300"
+                      }`}
+                      aria-hidden="true"
+                    >
+                      <span
+                        className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
+                          checked ? "translate-x-5" : "translate-x-0.5"
+                        }`}
+                      />
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        ))}
       </div>
     </div>
   );
@@ -491,10 +491,6 @@ function Avatar({ name, imageUrl }: { name: string | null; imageUrl?: string | n
   );
 }
 
-function countSubscribed(subscriptions: AccountProfileResponse["user"]["subscriptions"]): number {
-  return subscriptions?.filter((subscription) => subscription.subscribed).length ?? 0;
-}
-
 function householdValues(household: HouseholdDetails | null) {
   return {
     adults: household?.adults ?? 0,
@@ -515,15 +511,37 @@ function mergeConsentSettings(...settingGroups: ConsentSetting[][]): ConsentSett
   return [...settings.values()];
 }
 
-function countGeneralOnlyConsentSettings(
-  generalConsentSettings: ConsentSetting[],
-  consentSettings: ConsentSetting[]
-): number {
-  const normalKeys = new Set(consentSettings.map((setting) => setting.text_id ?? setting.id));
-  return generalConsentSettings.filter((setting) => {
-    const key = setting.text_id ?? setting.id;
-    return Boolean(key && !normalKeys.has(key));
-  }).length;
+function groupConsentSettings(
+  settings: ConsentSetting[],
+  t: ReturnType<typeof useTranslations>
+): ConsentCategory[] {
+  const categories: ConsentCategory[] = [
+    { id: "newsletter", label: t.accountSubscriptionsLabel, settings: [] },
+    { id: "push", label: t.accountPushSubscriptionsLabel, settings: [] },
+    { id: "privacy", label: t.accountConsentSettingsLabel, settings: [] },
+  ];
+  const categoryById = new Map(categories.map((category) => [category.id, category]));
+
+  for (const setting of settings) {
+    categoryById.get(getConsentCategoryId(setting))?.settings.push(setting);
+  }
+
+  return categories;
+}
+
+function getConsentCategoryId(setting: ConsentSetting): ConsentCategoryId {
+  if (setting.text_id && NEWSLETTER_CONSENT_TEXT_IDS.has(setting.text_id)) return "newsletter";
+  if (setting.text_id && PUSH_CONSENT_TEXT_IDS.has(setting.text_id)) return "push";
+  return "privacy";
+}
+
+function formatEnabledOutOfTotal(
+  settings: ConsentSetting[],
+  t: ReturnType<typeof useTranslations>
+) {
+  return t.accountEnabledOutOfTotal
+    .replace("{enabled}", String(countEnabledConsentSettings(settings)))
+    .replace("{total}", String(settings.length));
 }
 
 function countEnabledConsentSettings(settings: ConsentSetting[]): number {
@@ -559,7 +577,5 @@ function formatAddress(address: AccountAddress | null, fallback: string | null):
   if (!address) return fallback;
   const houseNumber = [address.house_number, address.house_number_ext].filter(Boolean).join("");
   const street = [address.street, houseNumber].filter(Boolean).join(" ");
-  const city = [address.postcode, address.city].filter(Boolean).join(" ");
-  const formatted = [street, city].filter(Boolean).join(", ");
-  return formatted || fallback;
+  return [street, address.postcode, address.city].filter(Boolean).join(", ") || fallback;
 }
