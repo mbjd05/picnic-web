@@ -2,13 +2,21 @@ export function RecipeSearchInput({
   value,
   placeholder,
   onChange,
+  onSubmit,
 }: {
   value: string;
   placeholder: string;
   onChange: (value: string) => void;
+  onSubmit?: () => void;
 }) {
   return (
-    <div className="relative flex-1 sm:max-w-xs">
+    <form
+      className="relative flex-1 sm:max-w-xs"
+      onSubmit={(event) => {
+        event.preventDefault();
+        onSubmit?.();
+      }}
+    >
       <input
         type="search"
         value={value}
@@ -16,6 +24,6 @@ export function RecipeSearchInput({
         placeholder={placeholder}
         className="focus:border-picnic-red focus:ring-picnic-red w-full rounded-xl border border-gray-200 bg-white py-2.5 pr-4 pl-4 text-sm shadow-sm transition-colors placeholder:text-gray-400 focus:ring-2 focus:outline-none"
       />
-    </div>
+    </form>
   );
 }

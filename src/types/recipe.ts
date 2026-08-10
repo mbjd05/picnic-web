@@ -65,3 +65,8 @@ export type RecipeDetail = {
 };
 
 export type RecipeDetailApiResponse = RecipeDetail;
+
+export type RecipeReferenceResolveResponse = {
+  recipeId: string;
+  sourceUrl: string;
+};

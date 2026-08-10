@@ -5,6 +5,7 @@ import {
   addRecipeToCartService,
   getCookbookCountsService,
   getRecipeDetailService,
+  resolveRecipeReferenceService,
   updateSavedRecipeService,
 } from "@/lib/api-services/recipes";
 
@@ -29,6 +30,13 @@ export function registerRecipeRoutes(app: Hono): void {
     const query = c.req.query("q")?.trim() ?? "";
     return authenticatedJson(c, ({ token, countryCode }) =>
       searchCookbookService(token, countryCode, query)
+    );
+  });
+
+  app.get("/api/recipe/resolve", async (c) => {
+    const reference = c.req.query("ref")?.trim() ?? "";
+    return authenticatedJson(c, ({ countryCode }) =>
+      resolveRecipeReferenceService(countryCode, reference)
     );
   });
 

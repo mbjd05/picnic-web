@@ -6,9 +6,19 @@ import { useNavigate, useParams } from "@tanstack/react-router";
 import { formatEuroPrice } from "@/lib/format/price";
 import { buildRecipeImageUrl } from "@/lib/media/image-url";
 import { getRecipeIngredientCount } from "@/lib/recipes/quantity";
+import {
+  extractRecipeIdFromReference,
+  isPotentialRecipeReference,
+} from "@/lib/recipes/recipe-reference";
 import { DEBOUNCE_DELAY_MS } from "@/lib/config/app-constants";
 import type { CountryCode } from "@/types/locale";
-import type { CookbookApiResponse, RecipeCategory, RecipeDetail, RecipeItem } from "@/types/recipe";
+import type {
+  CookbookApiResponse,
+  RecipeCategory,
+  RecipeDetail,
+  RecipeItem,
+  RecipeReferenceResolveResponse,
+} from "@/types/recipe";
 
 import { ErrorView, LoadingView } from "../../components/page-state";
 import { useDocumentTitle } from "../../hooks/use-document-title";
@@ -87,6 +97,8 @@ export function CookbookPage() {
   const [savedRecipeIds, setSavedRecipeIds] = useState<Set<string>>(() => new Set());
   const [savingRecipeIds, setSavingRecipeIds] = useState<Set<string>>(() => new Set());
   const [lastBrowseCategory, setLastBrowseCategory] = useState<string | null>(null);
+  const [recipeReferenceError, setRecipeReferenceError] = useState<string | null>(null);
+  const [isResolvingRecipeReference, setIsResolvingRecipeReference] = useState(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const pageTitle = selectedCategory === "__saved__" ? t.cookbookSaved : t.cookbookTitle;
   useDocumentTitle(pageTitle);
@@ -96,7 +108,8 @@ export function CookbookPage() {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  const hasActiveQuery = debouncedQuery.length > 0;
+  const hasRecipeReferenceQuery = isPotentialRecipeReference(debouncedQuery);
+  const hasActiveQuery = debouncedQuery.length > 0 && !hasRecipeReferenceQuery;
   const useGlobalSearch = hasActiveQuery && searchScope === "all";
   const savedRecipesQuery = useSavedRecipes(countryCode);
   const cookbookViewQuery = useCookbookView(selectedCategory, countryCode, !useGlobalSearch);
@@ -176,6 +189,30 @@ export function CookbookPage() {
     setRecipesState({ status: "loading" });
     setVisibleCount(PAGE_SIZE);
   }, [debouncedQuery, lastBrowseCategory, searchInput, selectedCategory]);
+
+  const handleOpenRecipeReference = useCallback(async () => {
+    const reference = searchInput.trim();
+    if (!isPotentialRecipeReference(reference) || isResolvingRecipeReference) return;
+
+    setRecipeReferenceError(null);
+    const directRecipeId = extractRecipeIdFromReference(reference);
+    if (directRecipeId) {
+      void navigate({ to: "/recipe/$id", params: { id: directRecipeId } });
+      return;
+    }
+
+    setIsResolvingRecipeReference(true);
+    try {
+      const resolved = await fetchJson<RecipeReferenceResolveResponse>(
+        `/api/recipe/resolve?ref=${encodeURIComponent(reference)}`
+      );
+      void navigate({ to: "/recipe/$id", params: { id: resolved.recipeId } });
+    } catch {
+      setRecipeReferenceError(t.recipeReferenceResolveError);
+    } finally {
+      setIsResolvingRecipeReference(false);
+    }
+  }, [isResolvingRecipeReference, navigate, searchInput, t.recipeReferenceResolveError]);
 
   const handleBack = useCallback(() => {
     if (selectedCategory === "__saved__") {
@@ -332,10 +369,20 @@ export function CookbookPage() {
           placeholder={t.cookbookSearchPlaceholder}
           onChange={(value) => {
             setSearchInput(value);
+            setRecipeReferenceError(null);
             setVisibleCount(PAGE_SIZE);
             if (searchScope === "all") setRecipesState({ status: "loading" });
           }}
+          onSubmit={handleOpenRecipeReference}
         />
+        {isResolvingRecipeReference ? (
+          <span className="text-text-muted text-sm">{t.recipeReferenceResolving}</span>
+        ) : null}
+        {recipeReferenceError ? (
+          <span className="text-sm text-red-600 dark:text-red-300" role="alert">
+            {recipeReferenceError}
+          </span>
+        ) : null}
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <span className="text-text-muted text-sm font-medium">{t.cookbookSearchWithin}</span>
           <div className="dark:border-card-border dark:bg-card-bg flex rounded-xl border border-gray-200 bg-white p-1 shadow-sm">

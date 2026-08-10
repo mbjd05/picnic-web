@@ -5,9 +5,14 @@ import { extractProductNutritionRows, extractProductTileData } from "@/lib/parse
 import { parseRecipeDetail } from "@/lib/parse/recipe-detail";
 import { buildPicnicClient } from "@/lib/picnic/client";
 import type { PicnicClientInstance } from "@/lib/picnic/client";
+import { buildRecipeSourceUrl, resolveRecipeReference } from "@/lib/recipes/recipe-reference";
 import type { ApiErrorResponse } from "@/types/api";
 import type { CountryCode } from "@/types/locale";
-import type { RecipeDetailApiResponse, RecipeIngredient } from "@/types/recipe";
+import type {
+  RecipeDetailApiResponse,
+  RecipeIngredient,
+  RecipeReferenceResolveResponse,
+} from "@/types/recipe";
 
 import type { ApiServiceResult } from "./types";
 
@@ -47,6 +52,32 @@ export async function getRecipeDetailService(
     }
 
     return { body: { error: "Failed to load recipe" }, status: 502 };
+  }
+}
+
+export async function resolveRecipeReferenceService(
+  countryCode: CountryCode,
+  reference: string
+): Promise<ApiServiceResult<RecipeReferenceResolveResponse | ApiErrorResponse>> {
+  if (!reference.trim()) {
+    return { body: { error: "Missing recipe reference" }, status: 400 };
+  }
+
+  try {
+    const recipeId = await resolveRecipeReference(reference);
+    return {
+      body: {
+        recipeId,
+        sourceUrl: buildRecipeSourceUrl(countryCode, recipeId),
+      },
+    };
+  } catch (error) {
+    return {
+      body: {
+        error: error instanceof Error ? error.message : "Could not resolve recipe link",
+      },
+      status: 400,
+    };
   }
 }
 
