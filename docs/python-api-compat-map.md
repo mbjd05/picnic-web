@@ -17,7 +17,7 @@ Wallet transaction reads have an unfinished branch, `feature/wallet-transactions
 
 Reference: `docs/registration-onboarding-flow.md`, Python fork, MCP Picnic.
 
-Status: next up.
+Status: first read-only profile menu implemented on `feature/profile-menu`.
 
 Direct Picnic surfaces currently confirmed or strongly indicated:
 
@@ -44,6 +44,12 @@ Recommended implementation:
 - Keep delivery address read-only until an authenticated address-change route is discovered and tested.
 - Add consent updates only with reversible, explicit user actions.
 - Treat household and business details as separately guarded settings after payload validation.
+
+Current implementation:
+
+- `/account` reads `GET /user`, `GET /user-info`, `GET /profile-menu?fetch_mgm=true`, and consent settings through an authenticated Worker route.
+- The page shows account, contact, delivery address, household, delivery count, subscription, and consent summaries.
+- All fields are read-only; no account-setting mutation route is exposed yet.
 
 ### 2. Onboarding Support
 

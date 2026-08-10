@@ -390,6 +390,22 @@ node .\scripts\settings-api-probe.mjs --confirm-idempotent-writes
 
 Do not use the idempotent-write mode casually: even sending the current values back may update server timestamps or consent audit records.
 
+The default mode also skips the old broad address-candidate matrix. Use the following only for an explicitly approved, focused rediscovery pass:
+
+```powershell
+node .\scripts\settings-api-probe.mjs --include-address-candidate-matrix
+```
+
+Read-only recheck on 2026-08-10 confirmed the same stable profile surfaces and current response shape:
+
+- `GET /user` includes profile, address, household, subscription, push subscription, consent decision, and delivery-count data.
+- `GET /user-info` includes redacted phone and feature toggles.
+- `GET /profile-menu?fetch_mgm=true` includes profile-menu user data plus at least one highlight for the current NL test account.
+- `GET /consents/settings-page` returned 7 normal settings for the current account.
+- `GET /consents/general/settings-page` returned 5 general settings.
+- `PUT /consents` with an empty declaration list still returns `200`.
+- `POST /user-onboarding/household-details` and `POST /user-onboarding/business-details` still exist and reject empty input with validation errors.
+
 ### Profile and address reads
 
 `picnic-api` exposes:

@@ -24,6 +24,7 @@ const token = process.env.PICNIC_TOKEN;
 const countryCode = process.env.PICNIC_COUNTRY_CODE ?? "NL";
 const apiVersion = process.env.PICNIC_API_VERSION ?? "17";
 const confirmIdempotentWrites = process.argv.includes("--confirm-idempotent-writes");
+const includeAddressCandidateMatrix = process.argv.includes("--include-address-candidate-matrix");
 
 if (!token) {
   console.error("PICNIC_TOKEN is missing. Run: node .\\scripts\\picnic-auth-probe.mjs login");
@@ -157,24 +158,26 @@ async function routeMatrix() {
     ["POST", "/user/phone_verification/verify", {}],
   ];
 
-  const addressCandidates = [
-    "/address",
-    "/addresses",
-    "/user/address",
-    "/user/addresses",
-    "/user/address-change",
-    "/user/address_change",
-    "/user/move",
-    "/user/relocation",
-    "/user/delivery-address",
-    "/user/delivery_address",
-    "/user-onboarding/address",
-    "/user-onboarding/check-address",
-    "/user-onboarding/register-address",
-    "/user-onboarding/update-address",
-    "/address/check",
-    "/address/autocomplete",
-  ];
+  const addressCandidates = includeAddressCandidateMatrix
+    ? [
+        "/address",
+        "/addresses",
+        "/user/address",
+        "/user/addresses",
+        "/user/address-change",
+        "/user/address_change",
+        "/user/move",
+        "/user/relocation",
+        "/user/delivery-address",
+        "/user/delivery_address",
+        "/user-onboarding/address",
+        "/user-onboarding/check-address",
+        "/user-onboarding/register-address",
+        "/user-onboarding/update-address",
+        "/address/check",
+        "/address/autocomplete",
+      ]
+    : [];
 
   for (const path of addressCandidates) {
     probes.push(["GET", path]);

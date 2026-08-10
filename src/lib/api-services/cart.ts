@@ -189,7 +189,7 @@ export async function setDeliverySlotService(
       {
         slot_id: validation.data.slotId,
       },
-      false
+      true
     );
 
     return { body: parseCartResponse(rawCart, countryCode) };
