@@ -45,8 +45,6 @@ This branch is intentionally parked until wallet transaction data exists for val
 
 The next branches should be created from fresh `main` in this order:
 
-- `research/profile-settings-crud`
-- `feature/profile-menu`
 - `feature/onboarding-flow`
 - `feature/product-category-name-resolution`
 - `feature/cookbook-user-recipes`

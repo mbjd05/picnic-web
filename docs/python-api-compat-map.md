@@ -11,13 +11,13 @@ This document does not replace profile/settings CRUD research in `docs/registrat
 
 ## Ranked Implementation Queue
 
-Wallet transaction reads have an unfinished branch, `feature/wallet-transactions`, but remain parked until a test account has transaction data. The active queue now prioritizes account/profile work before the remaining convenience lookups.
+Wallet transaction reads have an unfinished branch, `feature/wallet-transactions`, but remain parked until a test account has transaction data. Profile/settings CRUD research and the first editable account settings have been merged into `main`; the active queue now starts with onboarding support.
 
 ### 1. Profile Settings CRUD Research And Profile Menu
 
 Reference: `docs/registration-onboarding-flow.md`, Python fork, MCP Picnic.
 
-Status: profile menu plus first editable settings implemented on `feature/profile-menu`.
+Status: merged into `main` through PR #8. The initial profile menu/account settings scope is complete; remaining unknown profile mutations stay documented as intentionally unsupported until their Picnic routes are safely confirmed.
 
 Direct Picnic surfaces currently confirmed or strongly indicated:
 
@@ -32,13 +32,13 @@ POST /user-onboarding/household-details
 POST /user-onboarding/business-details
 ```
 
-Why it makes the cut:
+Why it made the cut:
 
 - It is core account functionality rather than a convenience feature.
 - Read-only profile display can be useful before every write route is proven.
 - Consent settings have clearer confirmed read/update routes than delivery address edits.
 
-Recommended implementation:
+Implemented approach:
 
 - Start with a profile menu/page that reads safe account/profile data and links to focused settings areas.
 - Keep delivery address read-only until an authenticated address-change route is discovered and tested.
