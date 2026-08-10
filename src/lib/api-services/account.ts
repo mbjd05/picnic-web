@@ -16,6 +16,12 @@ import type { CountryCode } from "@/types/locale";
 import type { ApiServiceResult } from "./types";
 
 type AccountClient = {
+  sendRequest: (
+    method: "GET" | "POST" | "PUT" | "DELETE",
+    path: string,
+    data?: unknown,
+    includePicnicHeaders?: boolean
+  ) => Promise<unknown>;
   user: {
     getUserDetails: () => Promise<unknown>;
     getUserInfo: () => Promise<unknown>;
@@ -24,9 +30,6 @@ type AccountClient = {
   consent: {
     getConsentSettings: (general?: boolean) => Promise<unknown>;
     setConsentSettings: (input: unknown) => Promise<unknown>;
-  };
-  userOnboarding: {
-    setHouseholdDetails: (details: Record<string, number>) => Promise<unknown>;
   };
 };
 
@@ -59,7 +62,7 @@ export async function updateHouseholdDetailsService(
 
   try {
     const client = buildPicnicClient(authToken, countryCode) as unknown as AccountClient;
-    await client.userOnboarding.setHouseholdDetails(validation.data);
+    await client.sendRequest("POST", "/user-onboarding/household-details", validation.data, true);
     const user = await client.user.getUserDetails();
     return { body: { user: asRecord(user) } as AccountHouseholdUpdateResponse };
   } catch (error) {

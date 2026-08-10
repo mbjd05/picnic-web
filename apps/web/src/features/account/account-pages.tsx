@@ -177,7 +177,9 @@ function AccountProfileContent({ profile }: { profile: AccountProfileResponse })
           <p className="text-xs text-gray-500">{t.accountGeneralConsentsReadOnly}</p>
           <ConsentSettingsList
             settings={profile.consentSettings}
-            pendingTextId={consentMutation.variables?.text_id ?? null}
+            pendingTextId={
+              consentMutation.isPending ? (consentMutation.variables?.text_id ?? null) : null
+            }
             error={consentMutation.isError ? t.accountConsentSaveError : null}
             onToggle={(setting) => consentMutation.mutate(setting)}
           />
