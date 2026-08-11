@@ -180,8 +180,7 @@ const translations = {
     walletSubtitle: "Bekijk je Picnic-saldo, verrekeningen, statiegeld en terugbetalingen.",
     walletLoadError: "Kan portemonnee niet laden.",
     walletBalanceLabel: "Picnic-saldo",
-    walletSettlementFallback:
-      "Saldo wordt automatisch verrekend met je volgende bestelling wanneer Picnic dat aanbiedt.",
+    walletSettlementFallback: "Wordt verrekend met je volgende bestelling.",
     walletDebtsLabel: "Openstaande verrekeningen",
     walletNoDebts: "Geen openstaande verrekeningen.",
     walletDebtsCount: "{count} openstaande verrekening(en).",
@@ -557,8 +556,7 @@ const translations = {
     walletSubtitle: "Sieh dir dein Picnic-Guthaben, Verrechnungen, Pfand und Rückerstattungen an.",
     walletLoadError: "Wallet konnte nicht geladen werden.",
     walletBalanceLabel: "Picnic-Guthaben",
-    walletSettlementFallback:
-      "Guthaben wird automatisch mit deiner nächsten Bestellung verrechnet, wenn Picnic das anbietet.",
+    walletSettlementFallback: "Wird mit deiner nächsten Bestellung verrechnet.",
     walletDebtsLabel: "Offene Verrechnungen",
     walletNoDebts: "Keine offenen Verrechnungen.",
     walletDebtsCount: "{count} offene Verrechnung(en).",
@@ -924,8 +922,7 @@ const translations = {
     walletSubtitle: "Consultez votre solde Picnic, les ajustements, consignes et remboursements.",
     walletLoadError: "Impossible de charger le wallet.",
     walletBalanceLabel: "Solde Picnic",
-    walletSettlementFallback:
-      "Le solde est automatiquement déduit de votre prochaine commande lorsque Picnic le propose.",
+    walletSettlementFallback: "Sera déduit de votre prochaine commande.",
     walletDebtsLabel: "Ajustements ouverts",
     walletNoDebts: "Aucun ajustement ouvert.",
     walletDebtsCount: "{count} ajustement(s) ouvert(s).",
@@ -1249,8 +1246,7 @@ const englishTranslations: Translations = {
   walletSubtitle: "View your Picnic balance, settlements, deposits, and refunds.",
   walletLoadError: "Could not load wallet.",
   walletBalanceLabel: "Picnic balance",
-  walletSettlementFallback:
-    "Balance is automatically settled against your next order when Picnic offers it.",
+  walletSettlementFallback: "Will be settled against your next order.",
   walletDebtsLabel: "Open settlements",
   walletNoDebts: "No open settlements.",
   walletDebtsCount: "{count} open settlement(s).",
