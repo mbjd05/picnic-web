@@ -7,6 +7,7 @@ import {
   readPaymentProfile,
   removePaymentOption,
   sendPicnicRequest,
+  setPreferredPaymentOption,
   startCheckoutPayment,
 } from "@/lib/payment/checkout";
 import type { ApiErrorResponse } from "@/types/api";
@@ -82,6 +83,30 @@ export async function removePaymentOptionService(
       error,
       "[payment option service] Failed to delete option",
       "Kan betaalmethode niet verwijderen. Probeer het opnieuw."
+    );
+  }
+}
+
+export async function setPreferredPaymentOptionService(
+  authToken: string,
+  countryCode: CountryCode,
+  paymentOptionId: string
+): Promise<ApiServiceResult<PaymentProfile | ApiErrorResponse>> {
+  if (!paymentOptionId) {
+    return {
+      body: { error: "Missing required route parameter: paymentOptionId" },
+      status: 400,
+    };
+  }
+
+  try {
+    const client = buildPicnicClient(authToken, countryCode);
+    return { body: await setPreferredPaymentOption(client, paymentOptionId) };
+  } catch (error) {
+    return mapPaymentError(
+      error,
+      "[payment option service] Failed to set preferred option",
+      "Kan standaard betaalmethode niet aanpassen. Probeer het opnieuw."
     );
   }
 }

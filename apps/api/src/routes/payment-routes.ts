@@ -4,6 +4,7 @@ import {
   createPaymentOptionService,
   getPaymentProfileService,
   removePaymentOptionService,
+  setPreferredPaymentOptionService,
 } from "@/lib/api-services/payments";
 
 import { authenticatedJson } from "../lib/authenticated-handler";
@@ -50,6 +51,12 @@ export function registerPaymentRoutes(app: Hono): void {
   app.delete("/api/account/payment-profile/payment-options/:paymentOptionId", async (c) => {
     return authenticatedJson(c, ({ token, countryCode }) =>
       removePaymentOptionService(token, countryCode, c.req.param("paymentOptionId"))
+    );
+  });
+
+  app.put("/api/account/payment-profile/payment-options/:paymentOptionId/preferred", async (c) => {
+    return authenticatedJson(c, ({ token, countryCode }) =>
+      setPreferredPaymentOptionService(token, countryCode, c.req.param("paymentOptionId"))
     );
   });
 }

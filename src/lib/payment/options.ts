@@ -50,9 +50,10 @@ export function getPaymentMethodDetails(
 }
 
 export function getPaymentDisplayName(profile: PaymentProfile, paymentMethod: string): string {
-  if (paymentMethod === "IDEAL") {
-    return "iDEAL | Wero";
-  }
+  const apiDisplayName = getPaymentMethodDetails(profile, paymentMethod)?.display_name;
+  if (apiDisplayName) return apiDisplayName;
 
-  return getPaymentMethodDetails(profile, paymentMethod)?.display_name ?? paymentMethod;
+  if (paymentMethod === "IDEAL") return "iDEAL | Wero";
+
+  return paymentMethod;
 }

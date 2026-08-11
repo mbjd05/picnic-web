@@ -12,9 +12,9 @@ This spec documents the discovered Picnic API flow needed to support:
 5. extraction and use of the direct payment redirect URL;
 6. safe cancellation of initiated checkout/payment transactions.
 
-The implementation must read payment profile data dynamically. iDEAL | Wero is the only confirmed payment-method setup flow in this project because it has only been tested with an NL account. Do not invent iDEAL availability client-side: expose setup only when `available_payment_methods` from Picnic contains `payment_method: "IDEAL"`.
+The implementation must read payment profile data dynamically. The web client should expose only methods currently returned by `available_payment_methods` from `GET /payment-profile`; do not invent iDEAL or other availability client-side.
 
-Other Picnic regions and payment methods may still be readable from `GET /payment-profile`, and checkout may work for accounts that already have a preferred payment option in their Picnic region. Creating or replacing non-iDEAL payment options remains unsupported until an authenticated account in that region confirms the request/response flow.
+Confirmed NL setup flows include iDEAL | Wero through API method `IDEAL` and the Rabobank card-flow option observed by the Picnic app as API method `MAESTRO` with bank `RABONL2U`. Other Picnic regions and payment methods may still be readable from `GET /payment-profile`; their setup behavior remains unconfirmed until a region-local account captures or probes the flow.
 
 Contributors with DE, FR, or other Picnic-region accounts can help close this
 gap. Follow the regional API testing guidance in
@@ -114,6 +114,7 @@ Not Found
 | ----------------------------------- | -----: | ------------------------------------------------------ | ------------: |
 | Read payment profile                |    GET | `/payment-profile`                                     |        `true` |
 | Create/store payment option         |   POST | `/payment-profile/payment-options`                     |        `true` |
+| Set preferred stored option         |    PUT | `/payment-profile/preferred-payment-option/{id}`       |        `true` |
 | Remove stored payment option        | DELETE | `/payment-profile/payment-options/{payment_option_id}` |        `true` |
 | Start checkout                      |   POST | `/cart/checkout/start`                                 |        `true` |
 | Initiate payment                    |   POST | `/cart/checkout/initiate_payment`                      |        `true` |
@@ -396,12 +397,12 @@ This creates a stored payment option and makes it preferred.
 
 ### Body shape
 
-Generic body:
+Generic body observed in current Picnic app traffic:
 
 ```json
 {
   "payment_method": "IDEAL",
-  "bank_id": "ASNBNL21"
+  "selected_bank_id": "ASNBNL21"
 }
 ```
 
@@ -410,11 +411,18 @@ For iDEAL / Wero with ASN Bank:
 ```json
 {
   "payment_method": "IDEAL",
-  "bank_id": "ASNBNL21"
+  "selected_bank_id": "ASNBNL21"
 }
 ```
 
-For other methods, use the dynamic `payment_method` and `bank_id` values exposed by `GET /payment-profile`.
+For other methods, use the dynamic `payment_method` and bank values exposed by `GET /payment-profile`. The captured Picnic app flow for Rabobank used:
+
+```json
+{
+  "payment_method": "MAESTRO",
+  "selected_bank_id": "RABONL2U"
+}
+```
 
 ### Call
 
@@ -424,7 +432,7 @@ await client.sendRequest(
   "/payment-profile/payment-options",
   {
     payment_method: selectedPaymentMethod,
-    bank_id: selectedBankId,
+    selected_bank_id: selectedBankId,
   },
   true
 );
@@ -470,14 +478,15 @@ Therefore the mutation response body must not be trusted. Always verify by re-re
 
 1. Call `GET /payment-profile`.
 2. Determine whether the current `preferred_payment_option_id` points to a stored option matching the desired `payment_method`.
-3. If it already matches, do nothing.
-4. If no matching preferred option exists, check whether the desired method is available in `available_payment_methods`.
-5. If the method exposes `available_banks`, require a valid `bank_id`.
-6. Call `POST /payment-profile/payment-options`.
-7. If the POST succeeds, continue.
-8. If the POST throws `Unexpected end of JSON input`, treat it as possibly successful.
-9. Immediately call `GET /payment-profile`.
-10. Treat the operation as successful if:
+3. If an existing matching stored option exists, call `PUT /payment-profile/preferred-payment-option/{id}` instead of creating a duplicate.
+4. If it already matches, do nothing.
+5. If no matching preferred option exists, check whether the desired method is available in `available_payment_methods`.
+6. If the method exposes `available_banks`, require a valid bank and send it as `selected_bank_id`.
+7. Call `POST /payment-profile/payment-options`.
+8. If the POST succeeds, continue.
+9. If the POST throws `Unexpected end of JSON input`, treat it as possibly successful.
+10. Immediately call `GET /payment-profile`.
+11. Treat the operation as successful if:
     - `preferred_payment_option_id` is non-null; and
     - `preferred_payment_option_id` points to a stored option with the desired `payment_method`.
 
@@ -1323,7 +1332,11 @@ The return page should:
 ## Confirmed successful end-to-end flow
 
 1. `GET /payment-profile`.
-2. If no preferred option exists for the selected method:
+2. If a stored option already exists for the selected method and bank, prefer it with:
+   ```http
+   PUT /payment-profile/preferred-payment-option/{payment_option_id}
+   ```
+3. If no preferred option exists for the selected method:
    ```http
    POST /payment-profile/payment-options
    ```
@@ -1331,20 +1344,20 @@ The return page should:
    ```json
    {
      "payment_method": "IDEAL",
-     "bank_id": "ASNBNL21"
+     "selected_bank_id": "ASNBNL21"
    }
    ```
-3. Re-read `GET /payment-profile`.
-4. Verify a preferred option exists for the selected method.
-5. `POST /cart/checkout/start`.
-6. Extract `order_id`.
-7. `POST /cart/checkout/initiate_payment`.
-8. Extract:
+4. Re-read `GET /payment-profile`.
+5. Verify a preferred option exists for the selected method.
+6. `POST /cart/checkout/start`.
+7. Extract `order_id`.
+8. `POST /cart/checkout/initiate_payment`.
+9. Extract:
    ```js
    payment.action.redirect_url ?? payment.issuer_authentication_url;
    ```
-9. Open Buckaroo payment URL in a new tab.
-10. For cancellation/testing, call:
+10. Open Buckaroo payment URL in a new tab.
+11. For cancellation/testing, call:
     ```http
     POST /cart/checkout/cancel
     ```
@@ -1385,7 +1398,5 @@ Confirmed by live probing:
 
 Not yet confirmed:
 
-- Creating/storing non-iDEAL payment methods through `/payment-profile/payment-options`
-- Selecting one existing stored payment option by `id`
 - Full post-payment return/status success state after completing real iDEAL/Wero payment
 ````

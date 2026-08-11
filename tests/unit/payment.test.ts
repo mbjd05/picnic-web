@@ -63,10 +63,19 @@ describe("payment helpers", () => {
     expect(getPaymentMethodDetails(profile, "WERO")).toBeNull();
   });
 
-  it("uses the product display name required for the supported iDEAL and Wero flow", () => {
-    expect(getPaymentDisplayName(profile, "IDEAL")).toBe("iDEAL | Wero");
+  it("uses API-provided display names with a legacy iDEAL fallback", () => {
+    expect(getPaymentDisplayName(profile, "IDEAL")).toBe("iDEAL");
     expect(getPaymentDisplayName(profile, "CARD")).toBe("Card");
     expect(getPaymentDisplayName(profile, "UNKNOWN")).toBe("UNKNOWN");
+    expect(
+      getPaymentDisplayName(
+        {
+          ...profile,
+          payment_methods: [],
+        },
+        "IDEAL"
+      )
+    ).toBe("iDEAL | Wero");
   });
 
   it("normalizes error messages used by API wrappers", () => {

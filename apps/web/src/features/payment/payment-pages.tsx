@@ -1,13 +1,14 @@
 import { Link, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { getPaymentDisplayName, getPreferredPaymentOption } from "@/lib/payment/options";
 import type {
+  AvailablePaymentMethod,
   CheckoutCancelResponse,
   CheckoutStatusResponse,
   PaymentProfile,
+  PaymentBank,
 } from "@/types/payment";
 
 import { ErrorView, LoadingView } from "../../components/page-state";
@@ -19,6 +20,7 @@ import { queryKeys } from "../../lib/query-config";
 
 const PAYMENT_BANK_STORAGE_KEY = "picnic_payment_option_banks";
 const EMPTY_BANKS: [] = [];
+const EMPTY_AVAILABLE_METHODS: [] = [];
 
 type StoredBankMetadata = Record<string, { bankId: string; bankName: string }>;
 
@@ -42,6 +44,8 @@ export function PaymentAccountPage() {
   const showBackToCart = search.from === "cart";
 
   const [storedBankMetadata, setStoredBankMetadata] = useState<StoredBankMetadata>({});
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
+  const [selectedBankId, setSelectedBankId] = useState("");
   const [actionError, setActionError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const profileQuery = usePaymentProfile();
@@ -56,11 +60,18 @@ export function PaymentAccountPage() {
 
   const profile = profileQuery.data ?? null;
   const preferredOption = profile ? getPreferredPaymentOption(profile) : null;
-  const idealMethod = useMemo(
-    () => profile?.available_payment_methods?.find((method) => method.payment_method === "IDEAL"),
+  const availableMethods = useMemo(
+    () => profile?.available_payment_methods ?? EMPTY_AVAILABLE_METHODS,
     [profile]
   );
-  const selectedBanks = idealMethod?.available_banks ?? EMPTY_BANKS;
+  const selectedMethod = useMemo(
+    () =>
+      availableMethods.find((method) => method.payment_method === selectedPaymentMethod) ??
+      availableMethods[0] ??
+      null,
+    [availableMethods, selectedPaymentMethod]
+  );
+  const selectedBanks = selectedMethod?.available_banks ?? EMPTY_BANKS;
   const resolveSelectedBank = useCallback(
     (bankId: string) =>
       selectedBanks.some((bank) => bank.bank_id === bankId)
@@ -69,22 +80,32 @@ export function PaymentAccountPage() {
     [selectedBanks]
   );
 
-  const paymentForm = useForm({
-    defaultValues: {
-      bankId: "",
-    },
-    onSubmit: async ({ value }) => {
-      await handleSavePaymentOption(value.bankId);
-    },
-  });
+  useEffect(() => {
+    if (!availableMethods.length) {
+      setSelectedPaymentMethod("");
+      setSelectedBankId("");
+      return;
+    }
 
-  async function handleSavePaymentOption(bankId: string) {
+    setSelectedPaymentMethod((current) =>
+      availableMethods.some((method) => method.payment_method === current)
+        ? current
+        : (availableMethods[0]?.payment_method ?? "")
+    );
+  }, [availableMethods]);
+
+  useEffect(() => {
+    setSelectedBankId((current) => resolveSelectedBank(current));
+  }, [resolveSelectedBank]);
+
+  async function handleSavePaymentOption() {
     setIsSaving(true);
     setActionError(null);
-    const activeSelectedBank = resolveSelectedBank(bankId);
+    const activeMethod = selectedMethod;
+    const activeSelectedBank = resolveSelectedBank(selectedBankId);
 
     try {
-      if (!idealMethod) {
+      if (!activeMethod) {
         setActionError(t.paymentMethodUnsupported);
         return;
       }
@@ -92,7 +113,7 @@ export function PaymentAccountPage() {
       const data = await fetchJson<PaymentProfile>("/api/account/payment-profile/payment-options", {
         method: "POST",
         body: JSON.stringify({
-          paymentMethod: "IDEAL",
+          paymentMethod: activeMethod.payment_method,
           bankId: activeSelectedBank || null,
         }),
       });
@@ -103,12 +124,11 @@ export function PaymentAccountPage() {
         data.stored_payment_options?.find(
           (option) => option.id === data.preferred_payment_option_id
         );
-      const selectedBankName = selectedBanks.find(
-        (bank) => bank.bank_id === activeSelectedBank
-      )?.name;
+      const selectedBankName = findBank(activeMethod, activeSelectedBank)?.name;
 
       if (createdOption && activeSelectedBank && selectedBankName) {
         const nextMetadata = {
+          ...storedBankMetadata,
           [createdOption.id]: {
             bankId: activeSelectedBank,
             bankName: selectedBankName,
@@ -118,6 +138,23 @@ export function PaymentAccountPage() {
         writeStoredBankMetadata(nextMetadata);
       }
 
+      queryClient.setQueryData(queryKeys.paymentProfile(), data);
+    } catch (error) {
+      setActionError(error instanceof ApiClientError ? error.message : t.paymentOptionSaveError);
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleSetPreferredPaymentOption(paymentOptionId: string) {
+    setIsSaving(true);
+    setActionError(null);
+
+    try {
+      const data = await fetchJson<PaymentProfile>(
+        `/api/account/payment-profile/payment-options/${encodeURIComponent(paymentOptionId)}/preferred`,
+        { method: "PUT" }
+      );
       queryClient.setQueryData(queryKeys.paymentProfile(), data);
     } catch (error) {
       setActionError(error instanceof ApiClientError ? error.message : t.paymentOptionSaveError);
@@ -181,41 +218,48 @@ export function PaymentAccountPage() {
           <section className="border-card-border rounded-xl border bg-white p-4">
             <h2 className="text-base font-semibold text-gray-900">{t.addPaymentMethod}</h2>
             <p className="mt-2 text-sm text-gray-600">{t.addPaymentMethodEffectNote}</p>
-            {idealMethod ? (
+            {availableMethods.length ? (
               <form
                 className="mt-4 space-y-4"
                 onSubmit={(event) => {
                   event.preventDefault();
                   event.stopPropagation();
-                  void paymentForm.handleSubmit();
+                  void handleSavePaymentOption();
                 }}
               >
-                <div className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700">
                   {t.paymentMethodTitle}
-                  <div className="border-input-border mt-1 rounded-lg border bg-gray-50 px-3 py-2 text-sm font-normal text-gray-900">
-                    {getPaymentDisplayName(profile, "IDEAL")}
-                  </div>
-                </div>
+                  <select
+                    value={selectedMethod?.payment_method ?? ""}
+                    onChange={(event) => {
+                      setSelectedPaymentMethod(event.target.value);
+                      setSelectedBankId("");
+                    }}
+                    className="border-input-border mt-1 block w-full rounded-lg border bg-white px-3 py-2 text-sm"
+                  >
+                    {availableMethods.map((method) => (
+                      <option key={method.payment_method} value={method.payment_method}>
+                        {getPaymentDisplayName(profile, method.payment_method)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
                 {selectedBanks.length ? (
-                  <paymentForm.Field name="bankId">
-                    {(field) => (
-                      <label className="block text-sm font-medium text-gray-700">
-                        {t.paymentBankLabel}
-                        <select
-                          value={resolveSelectedBank(field.state.value)}
-                          onChange={(event) => field.handleChange(event.target.value)}
-                          className="border-input-border mt-1 block w-full rounded-lg border bg-white px-3 py-2 text-sm"
-                        >
-                          {selectedBanks.map((bank) => (
-                            <option key={bank.bank_id} value={bank.bank_id}>
-                              {bank.name}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                    )}
-                  </paymentForm.Field>
+                  <label className="block text-sm font-medium text-gray-700">
+                    {t.paymentBankLabel}
+                    <select
+                      value={resolveSelectedBank(selectedBankId)}
+                      onChange={(event) => setSelectedBankId(event.target.value)}
+                      className="border-input-border mt-1 block w-full rounded-lg border bg-white px-3 py-2 text-sm"
+                    >
+                      {selectedBanks.map((bank) => (
+                        <option key={bank.bank_id} value={bank.bank_id}>
+                          {bank.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                 ) : null}
 
                 <button
@@ -235,7 +279,7 @@ export function PaymentAccountPage() {
             <h2 className="text-base font-semibold text-gray-900">{t.storedPaymentMethods}</h2>
             {profile.stored_payment_options?.length ? (
               <div className="mt-3 divide-y divide-gray-100">
-                {profile.stored_payment_options.slice(0, 1).map((option) => (
+                {profile.stored_payment_options.map((option) => (
                   <div
                     key={option.id}
                     className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between"
@@ -250,15 +294,32 @@ export function PaymentAccountPage() {
                           option.brand ??
                           t.paymentBankUnknown}
                       </p>
+                      {option.id === profile.preferred_payment_option_id ? (
+                        <p className="text-picnic-red mt-1 text-xs font-semibold">
+                          {t.preferredPaymentMethod}
+                        </p>
+                      ) : null}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => void handleRemovePaymentOption(option.id)}
-                      disabled={isSaving}
-                      className="text-sm font-semibold text-red-600 disabled:text-gray-400 dark:text-red-300"
-                    >
-                      {t.removePaymentMethod}
-                    </button>
+                    <div className="flex flex-wrap gap-3 sm:justify-end">
+                      {option.id !== profile.preferred_payment_option_id ? (
+                        <button
+                          type="button"
+                          onClick={() => void handleSetPreferredPaymentOption(option.id)}
+                          disabled={isSaving}
+                          className="text-picnic-red text-sm font-semibold disabled:text-gray-400"
+                        >
+                          {t.useAsPreferredPaymentMethod}
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => void handleRemovePaymentOption(option.id)}
+                        disabled={isSaving}
+                        className="text-sm font-semibold text-red-600 disabled:text-gray-400 dark:text-red-300"
+                      >
+                        {t.removePaymentMethod}
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -276,6 +337,11 @@ export function PaymentAccountPage() {
       ) : null}
     </main>
   );
+}
+
+function findBank(method: AvailablePaymentMethod, bankId: string): PaymentBank | null {
+  if (!bankId) return null;
+  return method.available_banks?.find((bank) => bank.bank_id === bankId) ?? null;
 }
 
 type ReturnState =

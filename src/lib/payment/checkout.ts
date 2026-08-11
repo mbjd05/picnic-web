@@ -52,38 +52,12 @@ export async function createPreferredPaymentOption(
   bankId: string | null
 ): Promise<PaymentProfile> {
   const before = await readPaymentProfile(client);
-
-  if (paymentMethod !== "IDEAL") {
-    throw new PaymentFlowError(
-      "PAYMENT_METHOD_UNAVAILABLE",
-      "Alleen iDEAL | Wero wordt momenteel ondersteund in deze webflow.",
-      400
-    );
-  }
-
-  for (const option of before.stored_payment_options ?? []) {
-    try {
-      await sendPicnicRequest(
-        client,
-        "DELETE",
-        `/payment-profile/payment-options/${encodeURIComponent(option.id)}`,
-        null,
-        true
-      );
-    } catch (error) {
-      if (!isEmptyJsonResponseError(error)) {
-        throw error;
-      }
-    }
-  }
-
-  const profileAfterRemoval = await readPaymentProfile(client);
-  const availableMethod = getAvailablePaymentMethod(profileAfterRemoval, paymentMethod);
+  const availableMethod = getAvailablePaymentMethod(before, paymentMethod);
 
   if (!availableMethod) {
     throw new PaymentFlowError(
       "PAYMENT_METHOD_UNAVAILABLE",
-      "iDEAL | Wero is niet beschikbaar voor dit account.",
+      "Deze betaalmethode is niet beschikbaar voor dit account.",
       400
     );
   }
@@ -102,8 +76,19 @@ export async function createPreferredPaymentOption(
     }
   }
 
+  const matchingStoredOptions =
+    before.stored_payment_options?.filter((option) => option.payment_method === paymentMethod) ??
+    [];
+  const existingOption =
+    matchingStoredOptions.find((option) => Boolean(bankId) && option.brand === bankId) ??
+    (matchingStoredOptions.length === 1 ? matchingStoredOptions[0] : null);
+
+  if (existingOption) {
+    return setPreferredPaymentOption(client, existingOption.id);
+  }
+
   const payload = bankId
-    ? { payment_method: paymentMethod, bank_id: bankId }
+    ? { payment_method: paymentMethod, selected_bank_id: bankId }
     : { payment_method: paymentMethod };
 
   try {
@@ -131,6 +116,49 @@ export async function createPreferredPaymentOption(
     throw new PaymentFlowError(
       "CHECKOUT_PAYMENT_FAILED",
       "Betaalmethode kon niet worden opgeslagen.",
+      502
+    );
+  }
+
+  return after;
+}
+
+export async function setPreferredPaymentOption(
+  client: PicnicClientInstance,
+  paymentOptionId: string
+): Promise<PaymentProfile> {
+  const before = await readPaymentProfile(client);
+  const existsBefore = before.stored_payment_options?.some(
+    (option) => option.id === paymentOptionId
+  );
+
+  if (!existsBefore) {
+    throw new PaymentFlowError("PAYMENT_OPTION_NOT_FOUND", "Betaaloptie bestaat niet.", 404);
+  }
+
+  if (before.preferred_payment_option_id === paymentOptionId) {
+    return before;
+  }
+
+  try {
+    await sendPicnicRequest(
+      client,
+      "PUT",
+      `/payment-profile/preferred-payment-option/${encodeURIComponent(paymentOptionId)}`,
+      null,
+      true
+    );
+  } catch (error) {
+    if (!isEmptyJsonResponseError(error)) {
+      throw error;
+    }
+  }
+
+  const after = await readPaymentProfile(client);
+  if (after.preferred_payment_option_id !== paymentOptionId) {
+    throw new PaymentFlowError(
+      "CHECKOUT_PAYMENT_FAILED",
+      "Standaard betaalmethode kon niet worden aangepast.",
       502
     );
   }

@@ -153,9 +153,15 @@ Page Platform and account-settings surfaces that can materially improve the app:
 
 5. Payment preference handling
    - Candidate route: `PUT /payment-profile/preferred-payment-option/{id}`.
-   - Current app: replaces/removes options around iDEAL/Wero setup.
-   - Opportunity: safer preferred-option switching when multiple stored options
-     exist, reducing destructive payment-option churn.
+   - Current app: payment profile improvements now use this route to switch
+     stored options instead of deleting all existing options before setup.
+   - Captured shape: Picnic's app created the Dutch Rabobank card-flow option
+     as `payment_method: "MAESTRO"` with `selected_bank_id: "RABONL2U"`.
+     Treat this as MAESTRO in API code even if the consumer-facing app copy is
+     ambiguous.
+   - Opportunity: keep the UI fully data-driven from `available_payment_methods`
+     and continue verifying non-NL region payment methods through fresh app
+     captures.
 
 6. Wallet and debts
    - Candidate routes: `wallet/debts`, `wallet/transactions`, saldo/portemonnee
@@ -276,9 +282,12 @@ Findings:
 
 ### Phase 4: Small Robustness Wins
 
-- [ ] Replace destructive payment setup assumptions with preferred-option
+- [x] Replace destructive payment setup assumptions with preferred-option
       switching where `PUT /payment-profile/preferred-payment-option/{id}` is
       safe and confirmed.
+- [x] Use Picnic's app-observed payment option creation payload:
+      `payment_method` plus `selected_bank_id` when the selected method exposes
+      banks.
 - [ ] Investigate `POST /cart/clear` and add a guarded clear-cart implementation
       if it restores cleanly and avoids per-item mutation loops.
 - [ ] Add read-only wallet debt/balance summary if `wallet/debts` has a stable
