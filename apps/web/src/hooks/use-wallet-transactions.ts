@@ -1,10 +1,24 @@
 import { useQuery } from "@tanstack/react-query";
 
-import type { WalletTransactionDetails, WalletTransactionsResponse } from "@/types/payment";
+import type {
+  WalletSummary,
+  WalletTransactionDetails,
+  WalletTransactionsResponse,
+} from "@/types/payment";
 
 import { fetchJson } from "../lib/api-client";
 import { queryKeys, queryStaleTime } from "../lib/query-config";
 import { useCountryCode } from "../providers/country-context";
+
+export function useWalletSummary() {
+  const countryCode = useCountryCode();
+
+  return useQuery({
+    queryKey: queryKeys.walletSummary(countryCode),
+    queryFn: () => fetchJson<WalletSummary>("/api/account/wallet"),
+    staleTime: queryStaleTime.walletSummary,
+  });
+}
 
 export function useWalletTransactions(page: number) {
   const countryCode = useCountryCode();

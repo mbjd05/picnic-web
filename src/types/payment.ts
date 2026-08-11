@@ -115,3 +115,12 @@ export type WalletTransactionsResponse = {
   page: number;
   transactions: WalletTransaction[];
 };
+
+export type WalletDebt = Record<string, unknown>;
+
+export type WalletSummary = {
+  balanceCents: number | null;
+  balanceText: string | null;
+  settlementText: string | null;
+  deliveryDebts: WalletDebt[];
+};

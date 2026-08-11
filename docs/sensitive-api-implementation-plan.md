@@ -290,8 +290,9 @@ Findings:
       banks.
 - [ ] Investigate `POST /cart/clear` and add a guarded clear-cart implementation
       if it restores cleanly and avoids per-item mutation loops.
-- [ ] Add read-only wallet debt/balance summary if `wallet/debts` has a stable
-      non-sensitive shape.
+- [x] Add read-only wallet debt/balance summary from `saldo-balance-page` plus
+      `wallet/debts`; current capture confirms an empty debt shape as
+      `delivery_debts: []`.
 
 ### Phase 5: Browsing And Cookbook Improvements
 
@@ -308,7 +309,8 @@ Findings:
 ### Phase 6: Lower Priority Read-Only Surfaces
 
 - [ ] Add messages/reminders read-only UI if payloads are useful and not noisy.
-- [ ] Revisit wallet transactions when test data exists.
+- [ ] Revisit wallet transaction detail rendering when populated transaction
+      test data exists.
 - [ ] Revisit push subscriptions only if a browser-native equivalent can be
       implemented without pretending to be the Android app.
 

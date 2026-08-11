@@ -3,6 +3,7 @@ import type { Hono } from "hono";
 import {
   createPaymentOptionService,
   getPaymentProfileService,
+  getWalletSummaryService,
   getWalletTransactionDetailsService,
   getWalletTransactionsService,
   removePaymentOptionService,
@@ -59,6 +60,12 @@ export function registerPaymentRoutes(app: Hono): void {
   app.put("/api/account/payment-profile/payment-options/:paymentOptionId/preferred", async (c) => {
     return authenticatedJson(c, ({ token, countryCode }) =>
       setPreferredPaymentOptionService(token, countryCode, c.req.param("paymentOptionId"))
+    );
+  });
+
+  app.get("/api/account/wallet", async (c) => {
+    return authenticatedJson(c, ({ token, countryCode }) =>
+      getWalletSummaryService(token, countryCode)
     );
   });
 

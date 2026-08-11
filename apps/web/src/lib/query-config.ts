@@ -16,6 +16,7 @@ export const queryStaleTime = {
   savedRecipes: 2 * 60 * 1000,
   accountProfile: 2 * 60 * 1000,
   paymentProfile: 2 * 60 * 1000,
+  walletSummary: 60 * 1000,
   walletTransactions: 60 * 1000,
   walletTransactionDetails: 60 * 1000,
 } as const;
@@ -54,6 +55,7 @@ export const queryKeys = {
     ["delivery-order-status", orderId, countryCode] as const,
   accountProfile: (countryCode: CountryCode) => ["account-profile", countryCode] as const,
   paymentProfile: () => ["payment-profile"] as const,
+  walletSummary: (countryCode: CountryCode) => ["wallet-summary", countryCode] as const,
   walletTransactions: (page: number, countryCode: CountryCode) =>
     ["wallet-transactions", page, countryCode] as const,
   walletTransactionDetails: (transactionId: string, countryCode: CountryCode) =>

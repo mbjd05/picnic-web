@@ -157,7 +157,7 @@ Why it is lower priority:
 
 Reference: MCP Picnic.
 
-Status: implemented on parked branch `feature/wallet-transactions` as a read-only account transaction page and authenticated Worker proxy. Keep this branch rebased, but do not merge until wallet transaction list/detail rendering can be tested with populated transaction data.
+Status: active on branch `feature/wallet-transactions` as a read-only Picnic wallet page. The page now follows the app-observed `Portemonnee` / `Saldo` model first, with balance and delivery-debt summary before transaction history.
 
 Direct Picnic surfaces through `picnic-api`:
 
@@ -173,14 +173,20 @@ Research status:
   - `POST /wallet/transactions` with `{ page_number }`
   - `GET /wallet/transactions/{walletTransactionId}`
 - `scripts/picnic-checkout-probe.mjs wallet-shape 1` confirmed the list endpoint is accepted for the current test account.
+- Sensitive app traffic confirmed the official wallet entrypoints:
+  - `GET /pages/portemonnee-page`
+  - `GET /pages/saldo-overview-page`
+  - `GET /pages/saldo-balance-page`
+  - `GET /wallet/debts`
+  - `POST /wallet/transactions`
 - The current test account returned an empty first page, so live item/detail shape remains unconfirmed in populated data.
 - Package types indicate list fields including `id`, `timestamp`, `amount_in_cents`, `display_name`, `brand`, `status`, `transaction_method`, and `transaction_type`; details include delivery/order item, deposit, fee, refund, and payment-option fields.
 - Picnic's own payments engineering blog describes the wallet as a customer-facing abstraction for reducing and combining many delivery-related payment movements into understandable transactions.
-- Treat wallet as a payment ledger/spending-history feature, not as the direct iDEAL/Wero checkout initiation flow. Direct checkout remains based on `payment-profile` plus `/cart/checkout/initiate_payment`.
+- Treat wallet as Picnic balance first: refunds, deposit/statiegeld returns, and other settlements can produce saldo that is automatically settled against a later order. It is not the direct iDEAL/Wero checkout initiation flow. Direct checkout remains based on `payment-profile` plus `/cart/checkout/initiate_payment`.
 
 Recommended implementation:
 
-- Keep the current branch separate and current with `main`.
+- Keep the current branch separate and current with `main` until the empty-account UI is validated.
 - Validate list/detail rendering once a wallet with transactions is available.
 - Keep populated arrays in a generic debug-friendly presentation until real wallet data proves the stable detail shape.
 - Only then decide whether the page belongs under account/payment or a broader account menu.

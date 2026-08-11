@@ -1,4 +1,5 @@
 import { checkoutCancelSchema, paymentOptionSchema, validateInput } from "@/lib/api/validation";
+import { parseWalletDebts, parseWalletSummaryPage } from "@/lib/parse/wallet";
 import { getErrorMessage } from "@/lib/payment/options";
 import { buildPicnicClient } from "@/lib/picnic/client";
 import {
@@ -16,6 +17,7 @@ import type {
   CheckoutPaymentResponse,
   CheckoutStatusResponse,
   PaymentProfile,
+  WalletSummary,
   WalletTransactionDetails,
   WalletTransactionsResponse,
 } from "@/types/payment";
@@ -215,6 +217,32 @@ export async function getWalletTransactionsService(
       error,
       "[wallet service] Failed to fetch transactions",
       "Kan transacties niet laden. Probeer het later opnieuw."
+    );
+  }
+}
+
+export async function getWalletSummaryService(
+  authToken: string,
+  countryCode: CountryCode
+): Promise<ApiServiceResult<WalletSummary | ApiErrorResponse>> {
+  try {
+    const client = buildPicnicClient(authToken, countryCode);
+    const [balancePage, rawDebts] = await Promise.all([
+      sendPicnicRequest(client, "GET", "/pages/saldo-balance-page", null, true),
+      sendPicnicRequest(client, "GET", "/wallet/debts", null, false),
+    ]);
+
+    return {
+      body: {
+        ...parseWalletSummaryPage(balancePage),
+        deliveryDebts: parseWalletDebts(rawDebts),
+      },
+    };
+  } catch (error) {
+    return mapPaymentError(
+      error,
+      "[wallet service] Failed to fetch wallet summary",
+      "Kan portemonnee niet laden. Probeer het later opnieuw."
     );
   }
 }
