@@ -55,6 +55,48 @@ analytics, the notable Picnic API families are:
   code page routes.
 - Notifications: `GET /messages`, `GET /reminders`, and push subscription.
 
+## Priority Focus
+
+The first implementation work from this research branch should focus on the
+Page Platform and account-settings surfaces that can materially improve the app:
+
+1. Official in-app search handling
+   - Captured route family: `GET /pages/search-page-root` and repeated
+     `GET /pages/search-page-root-content`.
+   - Captured query shape includes focus/session flags such as
+     `search_term`, `search_session_id`, `pending_search_session_id`,
+     `is_text_input_focused`, `is_search_recommendations_active`,
+     `force_focus_from_tab`, `from`, and initial-search skipping flags.
+   - Current app: combines `catalog.search()` with older
+     `GET /pages/search-page-results?search_term=...`.
+   - Goal: compare official root/root-content output with our current merged
+     catalog/Fusion approach, then adopt it where it improves suggestions,
+     history/recommendations, section construction, or result metadata without
+     regressing uncategorized product coverage.
+
+2. Better product favorites handling
+   - Captured route family: `POST /pages/task/toggle-sellable-favorite`, plus
+     purchase/favorites page surfaces.
+   - Current app: recipe saving exists through a page task, but product
+     favorites are not exposed as a first-class product/card/detail action.
+   - Goal: implement product favorite state and toggling through Picnic's Page
+     Platform task if the parsed action/payload can be derived safely from page
+     responses. Prefer official task metadata over hardcoded request bodies.
+
+3. Delivery address details and editing
+   - Captured route family:
+     `POST /public-api/{version}/user-onboarding/suggest-address`,
+     `POST /public-api/{version}/user-onboarding/retrieve-address`,
+     `GET /address-specifications/enabled-fields`,
+     `GET /address-specifications/{id}`, `POST /address-specifications`, and
+     `POST /user`.
+   - Current app: account page displays delivery address but keeps address,
+     contact details, and business details read-only.
+   - Goal: first implement richer read/validation details, then only expose
+     editing after confirming whether the final mutation is a narrow address
+     update, an onboarding continuation, or a broader profile write. Address
+     mutation work must remain guarded until the exact semantics are known.
+
 ## Comparison Against Current App
 
 ### Already Implemented Or Mostly Covered
@@ -74,7 +116,23 @@ analytics, the notable Picnic API families are:
 
 ### Meaningful Gaps Or Improvement Candidates
 
-1. Address/profile editing research
+1. Official Page Platform search handling
+   - Candidate routes: `pages/search-page-root` and
+     `pages/search-page-root-content`.
+   - Current app: uses catalog search plus older `search-page-results`.
+   - Need: compare official search suggestions/recommendations, session/focus
+     behavior, and result sections against our current robust uncategorized-item
+     merge before switching any production behavior.
+
+2. Product favorites
+   - Candidate routes: `pages/task/toggle-sellable-favorite` and
+     purchase/favorites page surfaces.
+   - Current app: no product favorite UI or mutation support.
+   - Need: discover whether product detail/card page responses include the
+     complete task metadata, then build favorite toggling from parsed actions
+     instead of hardcoded task payloads.
+
+3. Address/profile editing research
    - Candidate routes: `address-specifications`, `enabled-fields`, public
      onboarding address helpers, and `POST /user`.
    - Current app: delivery address, contact details, and business details remain
@@ -82,66 +140,58 @@ analytics, the notable Picnic API families are:
    - Need: identify exact safe update payloads and whether `POST /user` is a
      partial profile update or a broader dangerous account write.
 
-2. Avatar management
+4. Avatar management
    - Candidate routes: `profile-menu/avatars`, `images/CUSTOMER_AVATAR`,
      `PUT /profile-menu/avatar`.
    - Current app: shows avatar only.
    - Opportunity: avatar picker/upload if payloads are safe and reversible.
 
-3. Payment preference handling
+5. Payment preference handling
    - Candidate route: `PUT /payment-profile/preferred-payment-option/{id}`.
    - Current app: replaces/removes options around iDEAL/Wero setup.
    - Opportunity: safer preferred-option switching when multiple stored options
      exist, reducing destructive payment-option churn.
 
-4. Wallet and debts
+6. Wallet and debts
    - Candidate routes: `wallet/debts`, `wallet/transactions`, saldo/portemonnee
      page routes.
    - Current app: wallet branch is parked due empty transaction data.
    - Opportunity: implement debt/balance summary first, then transaction list
      once populated data exists.
 
-5. Cart clear and basket footer behavior
+7. Cart clear and basket footer behavior
    - Candidate routes: `cart/clear`, `pages/basket-footer-section-root`.
    - Current app: removes line items through product mutations and parses cart
      totals from `/cart`.
    - Opportunity: clear-cart action and/or more API-compatible footer/minimum
      checkout messaging if the page route exposes richer data.
 
-6. Search recommendations and history
-   - Candidate routes: `pages/search-page-root` and
-     `pages/search-page-root-content`.
-   - Current app: uses catalog suggestions/search and client-side history.
-   - Opportunity: improve suggestion speed/quality and focused-search state by
-     matching official app page behavior.
-
-7. Meal planning and preferences
+8. Meal planning and preferences
    - Candidate routes: meal planner pages, meal preferences page, preference save
      task, assign basket day task.
    - Current app: cookbook and recipe-to-cart only.
    - Opportunity: add meal-planning features after preserving current cookbook
      simplicity.
 
-8. Promotions, favorites, and gifts
-   - Candidate routes: promo box task, promobox grid, toggle-sellable-favorite,
-     user gift campaign routes.
+9. Promotions and gifts
+   - Candidate routes: promo box task, promobox grid, user gift campaign routes.
    - Current app: promotion/product labels are parsed where they appear; no
-     product favorites or gift campaign UI.
-   - Opportunity: product favorites and richer promotions/gift entry points.
+     gift campaign UI.
+   - Opportunity: richer promotions/gift entry points.
 
-9. Messages and reminders
-   - Candidate routes: `messages`, `reminders`.
-   - Current app: no inbox/reminders surface.
-   - Opportunity: low-risk read-only notification/reminder center if payload
-     shape is clean.
+10. Messages and reminders
+    - Candidate routes: `messages`, `reminders`.
+    - Current app: no inbox/reminders surface.
+    - Opportunity: low-risk read-only notification/reminder center if payload
+      shape is clean.
 
-10. Push subscriptions
+11. Push subscriptions
     - Candidate route: `user-onboarding/subscribe-push`.
     - Current app: push subscription device registrations are hidden.
     - Opportunity: likely low priority; browser push semantics differ from the
       Android app and should not be copied blindly.
 
-11. Parcels/returns
+12. Parcels/returns
     - Candidate routes: parcel overview, vendor selection, label selection, and
       QR-code page routes.
     - Current app: no parcel or return flow.
@@ -155,13 +205,48 @@ analytics, the notable Picnic API families are:
 - [x] Add `docs/sensitive-api-research/` to `.gitignore`.
 - [x] Create this sanitized working plan.
 - [x] Confirm local flow-to-HAR conversion with `mitmdump -nr ... --set
-    hardump=...`; generated HAR remains ignored.
+  hardump=...`; generated HAR remains ignored.
 - [ ] Add a local-only extraction helper under `scripts/` that reads ignored
       captures and prints normalized route summaries without bodies or IDs.
 - [ ] Extend the helper with route-family filters for profile, payment, wallet,
       cart, recipes, and search.
 
-### Phase 1: Small Robustness Wins
+### Phase 1: Page Platform Search
+
+- [ ] Build a sanitized comparer for current `/pages/search-page-results` output
+      versus captured-style `/pages/search-page-root-content` output.
+- [ ] Confirm whether root-content can replace or supplement current
+      suggestions without flashing, slower rendering, or duplicate sections.
+- [ ] Preserve current uncategorized product coverage from `catalog.search()`
+      unless official root-content proves it returns the same products.
+- [ ] Implement only the proven better path behind the existing app search API
+      route, keeping the UI stable.
+
+### Phase 2: Product Favorites
+
+- [ ] Identify product detail/card response action metadata for favorites.
+- [ ] Confirm `POST /pages/task/toggle-sellable-favorite` can be executed from
+      parsed task metadata without hardcoding account-specific payload fields.
+- [ ] Add product favorite state to product cards and product detail pages if the
+      official API path is stable.
+- [ ] Add cache updates for category/search/product detail views so favorites do
+      not flicker or require reloads.
+
+### Phase 3: Delivery Address Details And Editing
+
+- [ ] Analyze sanitized request/response shapes for `address-specifications` and
+      `POST /user`.
+- [ ] Compare public address suggestion/retrieval helpers against onboarding
+      research notes and confirm whether they can safely power address lookup in
+      account settings.
+- [ ] Confirm whether delivery address editing is a safe partial update, a
+      validation-only flow, or a high-risk broader profile mutation.
+- [ ] Investigate avatar picker/upload routes and decide whether avatar editing
+      belongs in the profile menu.
+- [ ] Keep contact/address/business edits hidden until exact CRUD semantics are
+      proven.
+
+### Phase 4: Small Robustness Wins
 
 - [ ] Replace destructive payment setup assumptions with preferred-option
       switching where `PUT /payment-profile/preferred-payment-option/{id}` is
@@ -171,28 +256,15 @@ analytics, the notable Picnic API families are:
 - [ ] Add read-only wallet debt/balance summary if `wallet/debts` has a stable
       non-sensitive shape.
 
-### Phase 2: Profile Settings Expansion
+### Phase 5: Browsing And Cookbook Improvements
 
-- [ ] Analyze sanitized request/response shapes for `address-specifications` and
-      `POST /user`.
-- [ ] Confirm whether delivery address editing is a safe partial update, a
-      validation-only flow, or a high-risk broader profile mutation.
-- [ ] Investigate avatar picker/upload routes and decide whether avatar editing
-      belongs in the profile menu.
-- [ ] Keep contact/address/business edits hidden until exact CRUD semantics are
-      proven.
-
-### Phase 3: Browsing And Cookbook Improvements
-
-- [ ] Compare official search page-content suggestions against current catalog
-      suggestions and local history.
 - [ ] Compare `basket-footer-section-root` against current cart/order summary
       parsing.
 - [ ] Investigate meal planner and meal preference routes as a distinct cookbook
       enhancement branch.
-- [ ] Investigate product favorites and promo/gift routes as separate features.
+- [ ] Investigate promo/gift routes as separate features.
 
-### Phase 4: Lower Priority Read-Only Surfaces
+### Phase 6: Lower Priority Read-Only Surfaces
 
 - [ ] Add messages/reminders read-only UI if payloads are useful and not noisy.
 - [ ] Revisit wallet transactions when test data exists.
