@@ -64,14 +64,23 @@ function saveSectionIndex(index: number) {
   activeSectionByLocation.set(getSectionLocationKey(), index);
 }
 
+function getSearchSectionElement(index: number): HTMLElement | null {
+  return document.querySelector(`[data-search-section-index="${index}"]`);
+}
+
 function replaceUrlSectionHash(index: number) {
   const nextHash = `#${buildSectionId(index)}`;
   if (window.location.hash === nextHash) return;
+  const section = getSearchSectionElement(index);
+  section?.removeAttribute("id");
   window.history.replaceState(
     window.history.state,
     "",
     `${window.location.pathname}${window.location.search}${nextHash}`
   );
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => section?.setAttribute("id", buildSectionId(index)));
+  });
 }
 
 function ProductImage({
@@ -383,6 +392,7 @@ export function ProductGrid({
           <section
             key={`${section.title}-${index}`}
             id={buildSectionId(index)}
+            data-search-section-index={index}
             className="scroll-mt-36"
           >
             <h2 className="text-foreground mb-3 text-lg font-semibold">
@@ -769,7 +779,6 @@ export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
   const badgeRefs = useRef(new Map<number, HTMLButtonElement>());
   const manualSectionRef = useRef<number | null>(null);
   const canSyncHashRef = useRef(false);
-  const pendingHashSyncCleanupRef = useRef<(() => void) | null>(null);
   const sectionSignature = useMemo(
     () => sections.map((section) => section.title).join("\n"),
     [sections]
@@ -795,7 +804,7 @@ export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
     let best = 0;
     let nearestDistance = Number.POSITIVE_INFINITY;
     sections.forEach((_, index) => {
-      const element = document.getElementById(buildSectionId(index));
+      const element = getSearchSectionElement(index);
       if (!element) return;
       const rect = element.getBoundingClientRect();
       if (rect.top <= focusY && rect.bottom > focusY) {
@@ -834,8 +843,8 @@ export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
 
   const scrollSectionIntoView = useCallback(
     (index: number, behavior: ScrollBehavior = "auto") => {
-      const section = document.getElementById(buildSectionId(index));
-      if (!section) return false;
+      const section = getSearchSectionElement(index);
+      if (!section) return;
       const top = section.getBoundingClientRect().top + window.scrollY - stickyOffset();
       const shouldAnimate =
         behavior === "smooth" &&
@@ -845,37 +854,8 @@ export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
         top,
         behavior: shouldAnimate ? "smooth" : "auto",
       });
-      return shouldAnimate;
     },
     [stickyOffset]
-  );
-
-  const cancelPendingHashSync = useCallback(() => {
-    pendingHashSyncCleanupRef.current?.();
-    pendingHashSyncCleanupRef.current = null;
-  }, []);
-
-  const syncHashAfterScroll = useCallback(
-    (index: number) => {
-      cancelPendingHashSync();
-      let finished = false;
-      const finish = () => {
-        if (finished) return;
-        finished = true;
-        window.removeEventListener("scrollend", finish);
-        window.clearTimeout(timeout);
-        pendingHashSyncCleanupRef.current = null;
-        replaceUrlSectionHash(index);
-      };
-      const timeout = window.setTimeout(finish, 1_000);
-      window.addEventListener("scrollend", finish, { once: true });
-      pendingHashSyncCleanupRef.current = () => {
-        finished = true;
-        window.removeEventListener("scrollend", finish);
-        window.clearTimeout(timeout);
-      };
-    },
-    [cancelPendingHashSync]
   );
 
   const preloadSectionImages = useCallback(
@@ -893,19 +873,15 @@ export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
   );
 
   function selectSection(index: number) {
-    const section = document.getElementById(buildSectionId(index));
+    const section = getSearchSectionElement(index);
     if (!section) return;
 
     void preloadSectionImages(index);
     manualSectionRef.current = index;
     setActive(index);
     saveSectionIndex(index);
-    if (scrollSectionIntoView(index, "smooth")) {
-      syncHashAfterScroll(index);
-    } else {
-      cancelPendingHashSync();
-      replaceUrlSectionHash(index);
-    }
+    scrollSectionIntoView(index, "smooth");
+    replaceUrlSectionHash(index);
   }
 
   useLayoutEffect(() => {
@@ -918,27 +894,40 @@ export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
     saveSectionIndex(nextActive);
     scrollBadgeIntoView(nextActive);
 
-    if (hashIndex !== null) {
-      scrollSectionIntoView(hashIndex);
-    }
+    let frame: number | null = null;
+    let delayFrames = 2;
+    let attemptsRemaining = 120;
+    const restoreHashSection = () => {
+      if (delayFrames > 0) {
+        delayFrames -= 1;
+        frame = requestAnimationFrame(restoreHashSection);
+        return;
+      }
 
-    let innerFrame: number | null = null;
-    const frame = requestAnimationFrame(() => {
-      innerFrame = requestAnimationFrame(() => {
+      if (hashIndex === null) {
         canSyncHashRef.current = true;
-      });
-    });
-    return () => {
-      cancelAnimationFrame(frame);
-      if (innerFrame !== null) cancelAnimationFrame(innerFrame);
+        return;
+      }
+
+      if (getSearchSectionElement(hashIndex)) {
+        scrollSectionIntoView(hashIndex);
+        canSyncHashRef.current = true;
+        return;
+      }
+
+      if (attemptsRemaining <= 0) {
+        canSyncHashRef.current = true;
+        return;
+      }
+
+      attemptsRemaining -= 1;
+      frame = requestAnimationFrame(restoreHashSection);
     };
-  }, [
-    findViewportSectionIndex,
-    scrollBadgeIntoView,
-    scrollSectionIntoView,
-    sectionSignature,
-    sections.length,
-  ]);
+    frame = requestAnimationFrame(restoreHashSection);
+    return () => {
+      if (frame !== null) cancelAnimationFrame(frame);
+    };
+  }, [scrollBadgeIntoView, scrollSectionIntoView, sectionSignature, sections.length]);
 
   useEffect(() => {
     let frame: number | null = null;
@@ -989,7 +978,6 @@ export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
   useEffect(() => {
     const clearManualSelection = () => {
       manualSectionRef.current = null;
-      cancelPendingHashSync();
     };
     const clearFromPointer = (event: PointerEvent) => {
       if (!navRef.current?.contains(event.target as Node)) clearManualSelection();
@@ -1010,9 +998,7 @@ export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
       window.removeEventListener("pointerdown", clearFromPointer);
       window.removeEventListener("keydown", clearFromKeyboard);
     };
-  }, [cancelPendingHashSync]);
-
-  useEffect(() => cancelPendingHashSync, [cancelPendingHashSync]);
+  }, []);
 
   useEffect(() => {
     scrollBadgeIntoView(active, "smooth");

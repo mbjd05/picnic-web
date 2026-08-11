@@ -255,6 +255,7 @@ button:disabled {
 
 .section-nav-scrollbar {
   scrollbar-color: transparent transparent;
+  scrollbar-width: thin;
 }
 
 .section-nav-scrollbar:hover,
