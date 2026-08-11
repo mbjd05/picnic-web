@@ -54,7 +54,8 @@ analytics, the notable Picnic API families are:
   meal preferences, recipe saving, assign selling group to basket, and assign
   basket day tasks.
 - Promotions/favorites/gifts: promo box task, promobox grid, sellable favorite
-  task, purchase/favorites page, user gift campaigns.
+  task, purchase/favorites page, user gift campaigns, and gift campaign
+  selection.
 - Parcels/returns: parcel overview, vendor selection, label selection, and QR
   code page routes.
 - Notifications: `GET /messages`, `GET /reminders`, and push subscription.
@@ -178,10 +179,16 @@ Page Platform and account-settings surfaces that can materially improve the app:
      simplicity.
 
 9. Promotions and gifts
-   - Candidate routes: promo box task, promobox grid, user gift campaign routes.
+   - Candidate routes: promo box task, promobox grid, user gift campaign
+     read/selection routes.
    - Current app: promotion/product labels are parsed where they appear; no
-     gift campaign UI.
-   - Opportunity: richer promotions/gift entry points.
+     gift campaign UI or gift collection flow.
+   - Opportunity: richer promotions/gift entry points and a guarded gift
+     selector when Picnic exposes an active campaign.
+   - Captured gift shape: a user gift campaign read returns a selectable article
+     list and campaign display text; selection is a dedicated write route with
+     campaign, article, and status fields. Do not hardcode campaign identifiers;
+     derive them from the read response or Page Platform actions.
 
 10. Messages and reminders
     - Candidate routes: `messages`, `reminders`.
@@ -283,7 +290,11 @@ Findings:
       parsing.
 - [ ] Investigate meal planner and meal preference routes as a distinct cookbook
       enhancement branch.
-- [ ] Investigate promo/gift routes as separate features.
+- [ ] Investigate promo routes as a separate feature.
+- [ ] Investigate gift campaign collection as a separate guarded feature:
+      discover active campaigns, show available gift articles, submit selection
+      only from official campaign response metadata, and refresh cart/campaign
+      state afterward.
 
 ### Phase 6: Lower Priority Read-Only Surfaces
 
