@@ -109,18 +109,28 @@ export const addressUpdateSchema = v.object({
   address: retrievedAddressSchema,
 });
 
-export const addressSpecificationSchema = v.object({
-  addressId: nonEmptyStringSchema,
-  deliveryInstruction: v.optional(v.nullable(v.string())),
-  addressSpecification: v.object({
-    accessCodes: v.optional(v.array(v.string())),
-    buildingType: v.optional(v.nullable(v.picklist(["APARTMENT", "HOUSE", "BUSINESS"]))),
-    buildingIdentifier: v.optional(v.nullable(v.string())),
-    floor: v.optional(v.nullable(v.pipe(v.number(), v.integer(), v.minValue(-4), v.maxValue(50)))),
-    frontDoorGuidance: v.optional(v.nullable(v.string())),
-    elevator: v.optional(v.nullable(v.boolean())),
+export const addressSpecificationSchema = v.pipe(
+  v.object({
+    addressId: nonEmptyStringSchema,
+    deliveryInstruction: v.optional(v.nullable(v.string())),
+    addressSpecification: v.object({
+      accessCodes: v.optional(v.array(v.string())),
+      buildingType: v.optional(v.nullable(v.picklist(["APARTMENT", "HOUSE", "BUSINESS"]))),
+      buildingIdentifier: v.optional(v.nullable(v.string())),
+      floor: v.optional(
+        v.nullable(v.pipe(v.number(), v.integer(), v.minValue(-4), v.maxValue(50)))
+      ),
+      frontDoorGuidance: v.optional(v.nullable(v.string())),
+      elevator: v.optional(v.nullable(v.boolean())),
+    }),
   }),
-});
+  v.check(
+    ({ addressSpecification }) =>
+      addressSpecification.buildingType !== "APARTMENT" ||
+      (addressSpecification.floor !== null && addressSpecification.floor !== undefined),
+    "Floor is required for apartments"
+  )
+);
 
 export const avatarUpdateSchema = v.object({
   type: v.picklist(["STANDARD_SELECTED", "USER_DEFINED"]),

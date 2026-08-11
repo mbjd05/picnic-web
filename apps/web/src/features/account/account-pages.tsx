@@ -1399,6 +1399,7 @@ function AddressSpecificationEditor({
             <FloorSelect
               label={t.accountFloorLabel}
               value={values.floor}
+              required={values.buildingType === "APARTMENT"}
               onChange={(value) => setValues((current) => ({ ...current, floor: value }))}
             />
           ) : null}
@@ -1514,10 +1515,12 @@ function TextAreaInput({
 function FloorSelect({
   label,
   value,
+  required = false,
   onChange,
 }: {
   label: string;
   value: string;
+  required?: boolean;
   onChange: (value: string) => void;
 }) {
   const t = useTranslations();
@@ -1525,7 +1528,9 @@ function FloorSelect({
   return (
     <label className="text-muted block text-sm font-medium">
       {label}
+      {required ? <RequiredIndicator label={t.requiredFieldLabel} /> : null}
       <select
+        required={required}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         className="border-input-border bg-card-bg text-foreground mt-1 block w-full rounded-lg border px-3 py-2 text-sm"

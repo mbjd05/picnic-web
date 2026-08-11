@@ -102,5 +102,23 @@ describe("API validation schemas", () => {
         addressSpecification: { floor: 51 },
       }).ok
     ).toBe(false);
+    expect(
+      validateInput(addressSpecificationSchema, {
+        addressId: address.id,
+        addressSpecification: { buildingType: "APARTMENT", floor: null },
+      }).ok
+    ).toBe(false);
+    expect(
+      validateInput(addressSpecificationSchema, {
+        addressId: address.id,
+        addressSpecification: { buildingType: "APARTMENT" },
+      }).ok
+    ).toBe(false);
+    expect(
+      validateInput(addressSpecificationSchema, {
+        addressId: address.id,
+        addressSpecification: { buildingType: "BUSINESS" },
+      }).ok
+    ).toBe(true);
   });
 });
