@@ -142,8 +142,11 @@ Page Platform and account-settings surfaces that can materially improve the app:
      onboarding address helpers, and `POST /user`.
    - Current app: delivery address, contact details, and business details remain
      read-only/hidden.
-   - Need: identify exact safe update payloads and whether `POST /user` is a
-     partial profile update or a broader dangerous account write.
+   - New capture result: the official app changes delivery address through
+     public `suggest-address`, `retrieve-address`, `registration-properties`,
+     then authenticated `POST /user` with a narrow
+     `selected_address.address` payload. The same endpoint also accepts name
+     updates, so implementation must keep writes narrow and verified.
 
 4. Avatar management
    - Candidate routes: `profile-menu/avatars`, `images/CUSTOMER_AVATAR`,
@@ -268,13 +271,17 @@ Findings:
 
 ### Phase 3: Delivery Address Details And Editing
 
-- [ ] Analyze sanitized request/response shapes for `address-specifications` and
+- [x] Analyze sanitized request/response shapes for `address-specifications` and
       `POST /user`.
-- [ ] Compare public address suggestion/retrieval helpers against onboarding
+- [x] Compare public address suggestion/retrieval helpers against onboarding
       research notes and confirm whether they can safely power address lookup in
       account settings.
-- [ ] Confirm whether delivery address editing is a safe partial update, a
-      validation-only flow, or a high-risk broader profile mutation.
+- [x] Confirm whether delivery address editing is a safe partial update, a
+      validation-only flow, or a high-risk broader profile mutation: it is a
+      narrow selected-address update through generic `POST /user`, followed by
+      `GET /user` verification.
+- [ ] Implement guarded address lookup/change support as a separate feature
+      branch; do not mix address changes with unrelated profile updates.
 - [ ] Investigate avatar picker/upload routes and decide whether avatar editing
       belongs in the profile menu.
 - [ ] Keep contact/address/business edits hidden until exact CRUD semantics are
@@ -328,10 +335,10 @@ Findings:
 
 ## Open Questions
 
-- Does `POST /user` update only address/profile fields, or can it mutate broader
-  account state?
-- Is `address-specifications` sufficient to build a safe address-edit form, or
-  does it only describe validation fields?
+- Does `POST /user` have stable partial-update semantics in every account state,
+  or only for observed narrow selected-address/name payloads?
+- Is `address-specifications` create-only, upsert, or replacement for an already
+  selected address?
 - Does preferred payment switching work independently of option creation, and
   does it avoid deleting existing payment options?
 - Does `cart/clear` require cart MTS/version data, and does it return a fresh

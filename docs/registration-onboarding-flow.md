@@ -495,21 +495,105 @@ The `picnic-api` types also describe optional MGM referral details on this respo
 
 ### Address changes
 
-No confirmed authenticated address-change endpoint exists yet.
+Status update from local app traffic capture on 2026-08-11: the authenticated
+address-change route family is now identified. Earlier broad guesses were still
+wrong, but the official app flow confirms that address editing combines public
+onboarding address lookup with a generic authenticated `POST /user` update.
 
 What is confirmed:
 
 - Current delivery address is readable from `GET /user` and `GET /profile-menu?fetch_mgm=true`.
 - Public onboarding address validation/normalization uses `POST /public-api/17/user-onboarding/check-address`.
 - Public registration carries the initial address through `register` or `register-leadlist`.
+- Official app address search uses `POST /public-api/15/user-onboarding/suggest-address` with app identity fields plus `input`.
+- Official app address retrieval uses `POST /public-api/15/user-onboarding/retrieve-address` with app identity fields plus `address_id`.
+- Retrieved addresses include `id`, `formatted_address`, `city`, `street`, `house_number`, `house_number_ext`, `postcode`, `coordinates`, and `signature`.
+- The app checks `POST /public-api/15/user-onboarding/registration-properties` with the retrieved `address`; the captured response included `b2b_enabled` and `waitlist_area`.
+- The authenticated address switch is `POST /api/15/user` with:
+
+```json
+{
+  "selected_address": {
+    "address": {
+      "id": "...",
+      "formatted_address": "...",
+      "city": "...",
+      "street": "...",
+      "house_number": 1,
+      "house_number_ext": null,
+      "postcode": "...",
+      "coordinates": {
+        "latitude": 0,
+        "longitude": 0
+      },
+      "signature": "..."
+    }
+  }
+}
+```
+
+- A following `GET /user` reflected the changed address.
+- The same generic `POST /user` endpoint also accepted profile name changes with `{ "firstname": "...", "lastname": "..." }`.
+
+Address specification/access details are a separate route family:
+
+```text
+GET  /api/15/address-specifications/{address_id}
+GET  /api/15/address-specifications/enabled-fields
+POST /api/15/address-specifications
+```
+
+Observed `enabled-fields`:
+
+```json
+[
+  "delivery_instruction",
+  "building_type",
+  "building_identifier",
+  "floor",
+  "elevator"
+]
+```
+
+Observed create/update payload:
+
+```json
+{
+  "address_id": "...",
+  "delivery_instruction": null,
+  "address_specification": {
+    "access_codes": [],
+    "building_type": "APARTMENT",
+    "building_identifier": "...",
+    "floor": 3,
+    "front_door_guidance": "",
+    "elevator": true
+  }
+}
+```
 
 What remains unverified:
 
-- Whether Picnic exposes an authenticated "move house" or address-change flow through another route family.
-- Whether address changes are intentionally app/support-only after registration.
-- Whether the mobile app first creates an address-change request, checks delivery-area availability, or requires customer-service confirmation.
+- Whether every country and account state accepts the same public `suggest-address` / `retrieve-address` / `registration-properties` flow.
+- Whether `waitlist_area: true` should block an in-app address switch, require a warning, or only indicates broader registration properties.
+- Whether `POST /user` has partial-update semantics for all fields or can clear omitted user fields in some account states.
+- Whether delivery address changes can affect active carts, selected delivery slots, minimum order logic, or availability state.
+- Whether `address-specifications` is create-only, upsert, or replaces the existing specification for an address.
 
-Do not implement address editing until the authenticated route family is discovered and tested. Showing the address as read-only is currently the safe settings behavior.
+Implementation guidance:
+
+- Address editing can now be implemented behind a careful UI flow, but should
+  remain explicit and guarded because `POST /user` is a generic profile update
+  endpoint.
+- Build the lookup using public suggestion/retrieval endpoints and only submit
+  the exact retrieved address object under `selected_address.address`.
+- After `POST /user`, re-read `GET /user` and verify that the returned address
+  ID/fields match the selected address before updating UI state.
+- Do not send unrelated `POST /user` fields together with address changes.
+- Keep address specification/access details as a separate form/step, submitted
+  only after the selected address is confirmed.
+- Do not expose account-destructive or hard-to-reverse tests without explicit
+  user confirmation and a known restoration path.
 
 Validation probes rejected these authenticated address-route candidates with `404 Not Found` for `GET`, `POST`, and `PUT`:
 
@@ -567,7 +651,7 @@ POST /user/2fa/generate with channel "SMS" or "EMAIL"
 POST /user/2fa/verify
 ```
 
-This fork reinforces that `GET /user` is currently the stable address/settings read surface, but it does not reveal a delivery-address update target. Its README links Picnic's "Adding Write Functionality to Pages with Self-Service APIs" blog post, which explains that new mutations are increasingly implemented as Page Platform Tasks rather than feature-specific Java endpoints.
+This fork reinforces that `GET /user` is the stable address/settings read surface. It does not expose typed address writes, but the app capture now confirms that Picnic uses generic `POST /user` for selected-address and profile-name updates. Its README links Picnic's "Adding Write Functionality to Pages with Self-Service APIs" blog post, which explains that new mutations are increasingly implemented as Page Platform Tasks rather than feature-specific Java endpoints.
 
 Focused rediscovery on 2026-08-10:
 
@@ -599,7 +683,7 @@ POST /rest/public-api/15/user-onboarding/register-leadlist
 /pages/task/user-onboarding-address
 ```
 
-This keeps the current conclusion unchanged: address editing should remain hidden/read-only until a real authenticated address-change flow is observed. The strongest remaining discovery path is capturing the official app's own requests while opening or using its address-change flow.
+This 2026-08-10 conclusion has been superseded by the 2026-08-11 local app capture described above. Broad candidate guessing remains discouraged, but a real authenticated address-change flow has now been observed.
 
 Picnic's blog post describes Tasks as a Page Platform response type that can return arbitrary JSON and execute backend operations through a generic command binding. It explicitly uses adding a recipe to favorites as the kind of operation moved from a conventional backend API call to a Page Platform Task. That matches routes we already use, such as:
 
@@ -610,13 +694,13 @@ POST /api/17/pages/task/update-selling-group-number-of-portions-task
 POST /api/17/pages/task/remove-selling-group-from-basket
 ```
 
-Implication for address/settings discovery: the missing write route may not look like `/user/address` at all. It may be a task endpoint whose ID appears only inside a real server-driven settings or onboarding page response. Without that page response, broad route guessing is a weak strategy.
+Implication for address/settings discovery: the missing write route did not look like `/user/address`. For the captured app flow it was generic `POST /user` with a narrow `selected_address` payload, plus separate `address-specifications` routes for delivery/access details. Broad route guessing remains a weak strategy.
 
 Discovery caution:
 
-Broad live guessing with many address-like paths produced noisy HTML `403` responses that are not reliable route-existence signals and may temporarily affect subsequent requests from the same client context. Do not use large live sweeps as the normal research method. For the missing delivery-address update route, prefer one of:
+Broad live guessing with many address-like paths produced noisy HTML `403` responses that are not reliable route-existence signals and may temporarily affect subsequent requests from the same client context. Do not use large live sweeps as the normal research method. For any remaining profile/address uncertainty, prefer one of:
 
-- capture the official mobile app's own request while changing address;
+- capture the official mobile app's own request for the exact settings sub-flow;
 - inspect a newer `picnic-api` release if it adds a user/address domain;
 - find a Fusion page/task reference in a real app response;
 - ask for explicit approval before any focused account-changing test.
