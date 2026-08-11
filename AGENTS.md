@@ -40,3 +40,9 @@ pnpm smoke:api:auth
 - Never commit `.env`, tokens, credentials, local logs, generated repo dumps, build output, or Playwright artifacts.
 - Keep `.env.example` placeholder-only.
 - Run `pnpm format` before large cleanup commits and `pnpm validate` before pushing.
+
+## Repository Collaboration
+
+- This fork is no longer expected to remain compatible with the upstream source project.
+- Merge completed feature branches directly into this fork's `main` when requested.
+- Never open pull requests against the upstream repository.

@@ -268,17 +268,47 @@ Findings:
 
 ### Phase 3: Delivery Address Details And Editing
 
-- [ ] Analyze sanitized request/response shapes for `address-specifications` and
+- [x] Analyze sanitized request/response shapes for `address-specifications` and
       `POST /user`.
-- [ ] Compare public address suggestion/retrieval helpers against onboarding
+- [x] Compare public address suggestion/retrieval helpers against onboarding
       research notes and confirm whether they can safely power address lookup in
       account settings.
-- [ ] Confirm whether delivery address editing is a safe partial update, a
+- [x] Confirm whether delivery address editing is a safe partial update, a
       validation-only flow, or a high-risk broader profile mutation.
-- [ ] Investigate avatar picker/upload routes and decide whether avatar editing
+- [x] Investigate avatar picker/upload routes and decide whether avatar editing
       belongs in the profile menu.
-- [ ] Keep contact/address/business edits hidden until exact CRUD semantics are
-      proven.
+- [x] Keep contact and business edits hidden until exact CRUD semantics are
+      proven; expose only the captured narrow name and selected-address writes.
+
+Sanitized capture findings:
+
+- The official app updates the selected delivery address with `POST /user` and a
+  top-level `selected_address` object. It updates first/last name through a
+  separate `POST /user` request. Both captured writes returned `204`, followed
+  by successful `GET /user` reads, which supports narrow forms rather than a
+  general-purpose user editor.
+- Address lookup uses the public API v15 `suggest-address`, `retrieve-address`,
+  and `registration-properties` routes. Suggestion results are under `results`;
+  retrieval returns an `address`; registration properties expose only the
+  service-area/business flags needed by the UI.
+- Delivery details use API v15 `GET /address-specifications/{addressId}`,
+  `GET /address-specifications/enabled-fields`, and
+  `POST /address-specifications`. The write has only `address_id`,
+  `address_specification`, and `delivery_instruction` at the top level and
+  returned `201` in the capture.
+- Avatar management uses API v15 `GET /profile-menu/avatar`,
+  `GET /profile-menu/avatars`, `POST /images/CUSTOMER_AVATAR`, and
+  `PUT /profile-menu/avatar`. The avatar update contains only `image_id` and
+  `type`; captured updates returned `200`.
+- The same capture shows successful `POST /user-onboarding/subscribe-push`
+  requests with top-level `push_subscriptions`, followed by `GET /user`
+  readback. This supersedes the older `topics` assumption for the captured app
+  version, but the write remains device-specific rather than an account-wide
+  preference. The web app therefore does not expose this mutation. Its
+  Push notifications entry returned by the consent settings payload also does
+  not mirror the official app's device switch in live comparison. The web app
+  therefore hides both push controls until the browser registers its own push
+  token and can describe the setting as browser-specific.
 
 ### Phase 4: Small Robustness Wins
 
