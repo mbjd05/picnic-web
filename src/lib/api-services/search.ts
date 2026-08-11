@@ -40,6 +40,21 @@ export async function searchProductsService(
   try {
     const client = buildPicnicClient(authToken, countryCode);
     const t = getTranslations(countryCode);
+    const allResultsTitle = `${t.allResultsFor} "${query}"`;
+
+    const officialSearchResult = await getOfficialSearchResults(
+      client as unknown as SearchMetadataClient,
+      query,
+      allResultsTitle
+    );
+    if (officialSearchResult) {
+      return {
+        body: {
+          ...officialSearchResult,
+          query,
+        },
+      };
+    }
 
     const metadataPromise = (client as unknown as SearchMetadataClient)
       .sendRequest(
@@ -84,11 +99,7 @@ export async function searchProductsService(
     const products = orderedFallbackProducts.map(
       (product) => enrichedProductsById.get(product.id) ?? product
     );
-    const sections = buildMergedSearchSections(
-      parsedSections,
-      products,
-      `${t.allResultsFor} "${query}"`
-    );
+    const sections = buildMergedSearchSections(parsedSections, products, allResultsTitle);
 
     return {
       body: {
@@ -112,6 +123,41 @@ export async function searchProductsService(
       body: { error: "Failed to search for products. Please try again later." },
       status: 502,
     };
+  }
+}
+
+async function getOfficialSearchResults(
+  client: SearchMetadataClient,
+  query: string,
+  allResultsTitle: string
+): Promise<Omit<SearchApiResponse, "query"> | null> {
+  try {
+    const params = new URLSearchParams({
+      force_focus_from_tab: "false",
+      is_search_recommendations_active: "false",
+      is_text_input_focused: "false",
+      search_term: query,
+      show_dev_chooser: "false",
+      skip_initial_search_on_focus: "",
+    });
+    const rawPage = await client.sendRequest(
+      "GET",
+      `/pages/search-page-root-content?${params.toString()}`,
+      null,
+      true
+    );
+    const { products, sections: parsedSections } = parseFusionSearchSections(rawPage);
+    if (products.length === 0) return null;
+
+    return {
+      products,
+      sections: buildMergedSearchSections(parsedSections, products, allResultsTitle),
+    };
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unknown official search results error";
+    console.warn("[search service] Falling back to catalog/Fusion search:", message);
+    return null;
   }
 }
 

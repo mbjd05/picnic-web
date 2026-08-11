@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
+import { performance } from "node:perf_hooks";
 
 import PicnicClient from "picnic-api";
 
@@ -10,7 +11,7 @@ Official Picnic search Page Platform probe
 
 Read-only comparison of the current app search surfaces:
 
-  node .\scripts\search-page-content-probe.mjs banaan "appel bio" kaas
+  node .\scripts\search-page-content-probe.mjs --runs=3 banaan "appel bio" kaas
 
 The script prints sanitized counts and overlap metrics only. It does not print
 tokens, product IDs, product names, raw payloads, request bodies, or response
@@ -22,8 +23,14 @@ loadLocalEnvFile();
 const token = process.env.PICNIC_TOKEN;
 const countryCode = process.env.PICNIC_COUNTRY_CODE ?? "NL";
 const apiVersion = process.env.PICNIC_API_VERSION ?? "17";
-const queries = process.argv
-  .slice(2)
+const args = process.argv.slice(2);
+const runsArg = args.find((arg) => arg.startsWith("--runs="));
+const runs = Math.max(
+  1,
+  Math.min(Number.parseInt(runsArg?.slice("--runs=".length) ?? "3", 10), 10)
+);
+const queries = args
+  .filter((arg) => !arg.startsWith("--runs="))
   .map((query) => query.trim())
   .filter(Boolean);
 
@@ -190,6 +197,13 @@ async function pageRequest(path) {
   return client.sendRequest("GET", path, null, true);
 }
 
+async function timed(label, action) {
+  const start = performance.now();
+  const value = await action();
+  const durationMs = Math.round(performance.now() - start);
+  return { label, durationMs, value };
+}
+
 function rootContentPath(query, variant) {
   const params = new URLSearchParams({
     search_term: query,
@@ -203,29 +217,66 @@ function rootContentPath(query, variant) {
 }
 
 async function summarizeQuery(query) {
-  const currentPagePromise = pageRequest(
-    `/pages/search-page-results?search_term=${encodeURIComponent(query)}`
+  const currentPagePath = `/pages/search-page-results?search_term=${encodeURIComponent(query)}`;
+  const submittedRootContentPath = rootContentPath(query, "submitted");
+  const focusedRootContentPath = rootContentPath(query, "focused");
+  const timings = [];
+
+  const [currentPageResult, submittedRootContentResult, focusedRootContentResult, catalogResult] =
+    await Promise.all([
+      timed("current search-page-results", () => pageRequest(currentPagePath)),
+      timed("official root-content submitted", () => pageRequest(submittedRootContentPath)),
+      timed("official root-content focused", () => pageRequest(focusedRootContentPath)),
+      timed("catalog.search", () => client.catalog.search(query)),
+    ]);
+
+  timings.push(
+    ...[currentPageResult, submittedRootContentResult, focusedRootContentResult, catalogResult].map(
+      ({ label, durationMs }) => ({ label, durationMs })
+    )
   );
-  const submittedRootContentPromise = pageRequest(rootContentPath(query, "submitted"));
-  const focusedRootContentPromise = pageRequest(rootContentPath(query, "focused"));
-  const catalogPromise = client.catalog.search(query);
 
-  const [currentPage, submittedRootContent, focusedRootContent, catalog] = await Promise.all([
-    currentPagePromise,
-    submittedRootContentPromise,
-    focusedRootContentPromise,
-    catalogPromise,
-  ]);
+  const currentPage = currentPageResult.value;
+  const submittedRootContent = submittedRootContentResult.value;
+  const focusedRootContent = focusedRootContentResult.value;
+  const catalog = catalogResult.value;
 
+  const parseStart = performance.now();
   const current = summarizePage(currentPage);
+  const currentParseMs = Math.round(performance.now() - parseStart);
+
+  const submittedParseStart = performance.now();
   const submitted = summarizePage(submittedRootContent);
+  const submittedParseMs = Math.round(performance.now() - submittedParseStart);
+
+  const focusedParseStart = performance.now();
   const focused = summarizePage(focusedRootContent);
+  const focusedParseMs = Math.round(performance.now() - focusedParseStart);
+
+  const catalogParseStart = performance.now();
   const catalogSummary = summarizeCatalog(catalog);
+  const catalogParseMs = Math.round(performance.now() - catalogParseStart);
+
+  timings.push(
+    { label: "parse current search-page-results", durationMs: currentParseMs },
+    { label: "parse official root-content submitted", durationMs: submittedParseMs },
+    { label: "parse official root-content focused", durationMs: focusedParseMs },
+    { label: "parse catalog.search", durationMs: catalogParseMs },
+    {
+      label: "current production network critical path",
+      durationMs: Math.max(currentPageResult.durationMs, catalogResult.durationMs),
+    },
+    {
+      label: "single official root-content network path",
+      durationMs: submittedRootContentResult.durationMs,
+    }
+  );
 
   return {
     query,
     countryCode,
     apiVersion,
+    timings,
     catalog: { productCount: catalogSummary.productCount },
     currentSearchPageResults: {
       productCount: current.productCount,
@@ -252,14 +303,57 @@ async function summarizeQuery(query) {
 
 const summaries = [];
 for (const query of queries) {
-  try {
-    summaries.push(await summarizeQuery(query));
-  } catch (error) {
-    summaries.push({
-      query,
-      error: error instanceof Error ? error.message : "Unknown error",
-    });
+  const queryRuns = [];
+  for (let run = 1; run <= runs; run++) {
+    try {
+      queryRuns.push({ run, ...(await summarizeQuery(query)) });
+    } catch (error) {
+      queryRuns.push({
+        run,
+        query,
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
   }
+  summaries.push(summarizeRuns(query, queryRuns));
 }
 
 console.log(JSON.stringify({ generatedAt: new Date().toISOString(), summaries }, null, 2));
+
+function summarizeRuns(query, queryRuns) {
+  const successfulRuns = queryRuns.filter((run) => !run.error);
+  if (successfulRuns.length === 0) return { query, runs: queryRuns };
+
+  const timingLabels = [
+    ...new Set(successfulRuns.flatMap((run) => run.timings.map((timing) => timing.label))),
+  ];
+  const timingSummary = Object.fromEntries(
+    timingLabels.map((label) => {
+      const values = successfulRuns
+        .flatMap((run) => run.timings.filter((timing) => timing.label === label))
+        .map((timing) => timing.durationMs)
+        .sort((a, b) => a - b);
+      return [
+        label,
+        {
+          minMs: values[0],
+          medianMs: values[Math.floor(values.length / 2)],
+          maxMs: values[values.length - 1],
+        },
+      ];
+    })
+  );
+
+  const latest = successfulRuns[successfulRuns.length - 1];
+  return {
+    query,
+    runs: queryRuns.length,
+    timingSummary,
+    latestCoverage: {
+      catalog: latest.catalog,
+      currentSearchPageResults: latest.currentSearchPageResults,
+      officialRootContentSubmitted: latest.officialRootContentSubmitted,
+      officialRootContentFocused: latest.officialRootContentFocused,
+    },
+  };
+}

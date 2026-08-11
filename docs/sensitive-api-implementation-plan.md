@@ -232,8 +232,12 @@ Findings:
 - For tested submitted searches, official `search-page-root-content` returned
   the same product counts and section structure as the existing
   `search-page-results` path, with full overlap against `catalog.search()`.
-  Product result loading therefore stays on the current robust catalog/Fusion
-  merge for now.
+  Repeated timing probes showed the single official page path is usually
+  slightly faster than the current catalog-plus-metadata critical path,
+  especially for larger result sets, and it avoids one Picnic API request.
+  Product result loading now tries official submitted `search-page-root-content`
+  first and falls back to the older catalog/Fusion merge if the official page
+  shape cannot be parsed.
 - Focused `search-page-root-content` is a distinct suggestions/history surface,
   not a product-results surface. It is now used as the preferred source for
   typed search suggestions, with `catalog.getSuggestions()` retained as fallback
