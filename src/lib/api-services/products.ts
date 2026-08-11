@@ -2,8 +2,9 @@ import { isApiTokenExpiredError } from "@/lib/api/error";
 import type { SubcategoriesApiResponse } from "@/types/category";
 import { parseProductDetailPage } from "@/lib/parse/fusion-product";
 import { parseCategoryPageSections } from "@/lib/parse/fusion-search";
+import { parseOfficialSearchSuggestions } from "@/lib/parse/search-suggestions";
 import { extractPageTitle, parseSubcategoryPage } from "@/lib/parse/subcategories";
-import { buildPicnicClient } from "@/lib/picnic/client";
+import { buildPicnicClient, type PicnicClientInstance } from "@/lib/picnic/client";
 import { buildProductSourceUrl } from "@/lib/picnic/share-links";
 import type { ApiErrorResponse } from "@/types/api";
 import type {
@@ -91,9 +92,13 @@ export async function getSuggestionsService(
 
   try {
     const client = buildPicnicClient(authToken, countryCode);
+    const officialSuggestions = await getOfficialSearchSuggestions(client, query);
+    if (officialSuggestions.length > 0) {
+      return { body: { suggestions: officialSuggestions, query } };
+    }
+
     const rawSuggestions: Array<{ id: string; suggestion: string }> =
       await client.catalog.getSuggestions(query);
-
     const suggestions: SearchSuggestion[] = rawSuggestions.map((suggestion) => ({
       id: suggestion.id,
       suggestion: suggestion.suggestion,
@@ -115,6 +120,35 @@ export async function getSuggestionsService(
       body: { error: "Failed to fetch suggestions. Please try again later." },
       status: 502,
     };
+  }
+}
+
+async function getOfficialSearchSuggestions(
+  client: PicnicClientInstance,
+  query: string
+): Promise<SearchSuggestion[]> {
+  try {
+    const params = new URLSearchParams({
+      force_focus_from_tab: "false",
+      is_search_recommendations_active: "true",
+      is_text_input_focused: "true",
+      search_term: query,
+      show_dev_chooser: "false",
+      skip_initial_search_on_focus: "",
+    });
+    const rawPage = await (client as unknown as FusionRequestClient).sendRequest(
+      "GET",
+      `/pages/search-page-root-content?${params.toString()}`,
+      null,
+      true
+    );
+
+    return parseOfficialSearchSuggestions(rawPage);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unknown official suggestion parse error";
+    console.warn("[suggestions service] Falling back to catalog suggestions:", message);
+    return [];
   }
 }
 

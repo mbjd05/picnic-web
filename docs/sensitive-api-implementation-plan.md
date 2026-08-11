@@ -11,6 +11,10 @@ tokens, addresses, screenshots, or unredacted response bodies into this file.
 
 - Keep `docs/sensitive-api-research/` out of git.
 - Commit only normalized route names, behavior notes, and implementation plans.
+- When official app behavior is unclear, future sessions may ask the maintainer
+  to capture fresh Picnic app API traffic for the specific flow being
+  investigated. Add the capture under the ignored sensitive research folder and
+  summarize only redacted route/shape findings here.
 - Convert mitmproxy flows to an ignored HAR when structured inspection is
   needed:
 
@@ -204,23 +208,36 @@ Page Platform and account-settings surfaces that can materially improve the app:
 
 - [x] Add `docs/sensitive-api-research/` to `.gitignore`.
 - [x] Create this sanitized working plan.
-- [x] Confirm local flow-to-HAR conversion with `mitmdump -nr ... --set
-  hardump=...`; generated HAR remains ignored.
-- [ ] Add a local-only extraction helper under `scripts/` that reads ignored
-      captures and prints normalized route summaries without bodies or IDs.
+- [x] Confirm local flow-to-HAR conversion with the documented `mitmdump`
+      command; generated HAR remains ignored.
+- [x] Add local-only extraction/probe helpers under `scripts/` that print
+      normalized route summaries and API comparison metrics without bodies or
+      IDs.
 - [ ] Extend the helper with route-family filters for profile, payment, wallet,
       cart, recipes, and search.
 
 ### Phase 1: Page Platform Search
 
-- [ ] Build a sanitized comparer for current `/pages/search-page-results` output
+- [x] Build a sanitized comparer for current `/pages/search-page-results` output
       versus captured-style `/pages/search-page-root-content` output.
-- [ ] Confirm whether root-content can replace or supplement current
+- [x] Confirm whether root-content can replace or supplement current
       suggestions without flashing, slower rendering, or duplicate sections.
-- [ ] Preserve current uncategorized product coverage from `catalog.search()`
+- [x] Preserve current uncategorized product coverage from `catalog.search()`
       unless official root-content proves it returns the same products.
-- [ ] Implement only the proven better path behind the existing app search API
+- [x] Implement only the proven better path behind the existing app search API
       route, keeping the UI stable.
+
+Findings:
+
+- For tested submitted searches, official `search-page-root-content` returned
+  the same product counts and section structure as the existing
+  `search-page-results` path, with full overlap against `catalog.search()`.
+  Product result loading therefore stays on the current robust catalog/Fusion
+  merge for now.
+- Focused `search-page-root-content` is a distinct suggestions/history surface,
+  not a product-results surface. It is now used as the preferred source for
+  typed search suggestions, with `catalog.getSuggestions()` retained as fallback
+  if the official Page Platform shape changes or returns no usable suggestions.
 
 ### Phase 2: Product Favorites
 
