@@ -143,6 +143,24 @@ body {
     stroke 160ms ease-out !important;
 }
 
+.account-details-attention {
+  animation: account-details-attention 900ms ease-out;
+}
+
+@keyframes account-details-attention {
+  0%,
+  100% {
+    border-color: var(--card-border);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--picnic-red) 0%, transparent);
+  }
+
+  20%,
+  65% {
+    border-color: var(--picnic-red);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--picnic-red) 28%, transparent);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-old(root),
   ::view-transition-new(root) {
@@ -153,6 +171,10 @@ body {
   :root.theme-transitioning *::before,
   :root.theme-transitioning *::after {
     transition: none !important;
+  }
+
+  .account-details-attention {
+    animation-duration: 1ms;
   }
 }
 

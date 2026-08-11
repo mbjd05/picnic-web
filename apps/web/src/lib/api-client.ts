@@ -35,7 +35,8 @@ function isErrorPayload(value: unknown): value is ErrorPayload {
 export async function fetchJson<T>(input: string | URL, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
-  if (init.body !== undefined && !headers.has("Content-Type")) {
+  const hasFormDataBody = typeof FormData !== "undefined" && init.body instanceof FormData;
+  if (init.body !== undefined && !hasFormDataBody && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
 

@@ -1,5 +1,6 @@
 import PicnicClient from "picnic-api";
 
+import { parsePicnicDeviceId } from "@/lib/auth/picnic-token";
 import type { CountryCode } from "@/types/locale";
 import { DEFAULT_COUNTRY_CODE } from "@/types/locale";
 
@@ -16,12 +17,15 @@ export type PicnicClientInstance = InstanceType<typeof PicnicClient>;
  */
 export function buildPicnicClient(
   authToken: string,
-  countryCode: CountryCode = DEFAULT_COUNTRY_CODE
+  countryCode: CountryCode = DEFAULT_COUNTRY_CODE,
+  apiVersion: string = PICNIC_API_VERSION
 ): PicnicClientInstance {
+  const deviceId = parsePicnicDeviceId(authToken);
   return new PicnicClient({
     countryCode,
-    apiVersion: PICNIC_API_VERSION,
+    apiVersion,
     authKey: authToken,
+    ...(deviceId ? { deviceId } : {}),
   });
 }
 
