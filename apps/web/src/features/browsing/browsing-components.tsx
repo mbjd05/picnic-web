@@ -42,7 +42,6 @@ const SECTION_ACTIVE_VIEWPORT_RATIO = 0.38;
 const MAX_LOADED_PRODUCT_IMAGE_URLS = 500;
 const loadedProductImageUrls = new Set<string>();
 const pendingProductImagePreloads = new Map<string, Promise<void>>();
-const activeSectionByLocation = new Map<string, number>();
 
 function getSectionIndexFromHash(sectionCount: number): number | null {
   const id = window.location.hash.slice(1);
@@ -53,15 +52,6 @@ function getSectionIndexFromHash(sectionCount: number): number | null {
 
 function getSectionLocationKey(): string {
   return `${window.location.pathname}${window.location.search}`;
-}
-
-function getSavedSectionIndex(sectionCount: number): number | null {
-  const index = activeSectionByLocation.get(getSectionLocationKey());
-  return typeof index === "number" && index >= 0 && index < sectionCount ? index : null;
-}
-
-function saveSectionIndex(index: number) {
-  activeSectionByLocation.set(getSectionLocationKey(), index);
 }
 
 function getSearchSectionElement(index: number): HTMLElement | null {
@@ -772,8 +762,9 @@ export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
   const [active, setActive] = useState(() =>
     typeof window === "undefined"
       ? 0
-      : (getSectionIndexFromHash(sections.length) ?? getSavedSectionIndex(sections.length) ?? 0)
+      : (getSectionIndexFromHash(sections.length) ?? 0)
   );
+  const locationKey = typeof window === "undefined" ? "" : getSectionLocationKey();
   const navRef = useRef<HTMLElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const badgeRefs = useRef(new Map<number, HTMLButtonElement>());
@@ -879,7 +870,6 @@ export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
     void preloadSectionImages(index);
     manualSectionRef.current = index;
     setActive(index);
-    saveSectionIndex(index);
     scrollSectionIntoView(index, "smooth");
     replaceUrlSectionHash(index);
   }
@@ -889,10 +879,13 @@ export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
     canSyncHashRef.current = false;
 
     const hashIndex = getSectionIndexFromHash(sections.length);
-    const nextActive = hashIndex ?? getSavedSectionIndex(sections.length) ?? 0;
+    const nextActive = hashIndex ?? 0;
     setActive(nextActive);
-    saveSectionIndex(nextActive);
     scrollBadgeIntoView(nextActive);
+
+    if (hashIndex === null) {
+      window.scrollTo({ top: 0, behavior: "auto" });
+    }
 
     let frame: number | null = null;
     let delayFrames = 2;
@@ -927,7 +920,7 @@ export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
     return () => {
       if (frame !== null) cancelAnimationFrame(frame);
     };
-  }, [scrollBadgeIntoView, scrollSectionIntoView, sectionSignature, sections.length]);
+  }, [locationKey, scrollBadgeIntoView, scrollSectionIntoView, sectionSignature, sections.length]);
 
   useEffect(() => {
     let frame: number | null = null;
@@ -939,16 +932,12 @@ export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
       }
       const nextActive = findViewportSectionIndex();
       setActive(nextActive);
-      saveSectionIndex(nextActive);
       if (canSyncHashRef.current) replaceUrlSectionHash(nextActive);
     };
     const schedule = () => {
       if (frame === null) frame = requestAnimationFrame(update);
     };
-    if (
-      getSectionIndexFromHash(sections.length) === null &&
-      getSavedSectionIndex(sections.length) === null
-    ) {
+    if (getSectionIndexFromHash(sections.length) === null) {
       update();
     }
     window.addEventListener("scroll", schedule, { passive: true });
@@ -966,7 +955,6 @@ export function SectionNavBar({ sections }: { sections: SearchSection[] }) {
       if (index === null) return;
       manualSectionRef.current = index;
       setActive(index);
-      saveSectionIndex(index);
       scrollBadgeIntoView(index);
       scrollSectionIntoView(index);
     };
